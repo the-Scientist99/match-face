@@ -5,7 +5,7 @@ CREATE TABLE user_account (
 CREATE TABLE refresh_token (
   id BINARY(16) PRIMARY KEY, created_at DATETIME(6) NOT NULL,
   user_id BINARY(16) NOT NULL, token_hash CHAR(64) NOT NULL UNIQUE,
-  expires_at DATETIME(6) NOT NULL, revoked_at DATETIME(6) NULL,
+  expires_at DATETIME(6) NOT NULL, revoked_at DATETIME(6) NULL, rotated BOOLEAN NOT NULL DEFAULT FALSE,
   FOREIGN KEY (user_id) REFERENCES user_account(id) ON DELETE CASCADE
 );
 CREATE TABLE player (

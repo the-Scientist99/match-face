@@ -6,7 +6,8 @@ export type Me = Required<components['schemas']['MeResponse']>
 export type AuthResponse = { accessToken: string; user: Me }
 
 let accessToken: string | null = null
-let refreshing: Promise<AuthResponse | null> | null = null
+/** `offline` = the refresh request itself failed; the session may still be valid. */
+let refreshing: Promise<AuthResponse | null | 'offline'> | null = null
 let sessionExpired: (() => void) | null = null
 
 export function setAccessToken(token: string | null) {
@@ -21,8 +22,11 @@ export function onSessionExpired(cb: () => void): () => void {
   }
 }
 
-/** Swaps the refresh cookie for a new access token. Concurrent callers share one request. */
-export function refreshAccessToken(): Promise<AuthResponse | null> {
+/**
+ * Swaps the refresh cookie for a new access token. Concurrent callers share one request.
+ * Resolves to `null` when the session is over, `'offline'` when the server couldn't be reached.
+ */
+export function refreshAccessToken(): Promise<AuthResponse | null | 'offline'> {
   refreshing ??= (async () => {
     try {
       const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' })
@@ -30,8 +34,7 @@ export function refreshAccessToken(): Promise<AuthResponse | null> {
       setAccessToken(body?.accessToken ?? null)
       return body
     } catch {
-      setAccessToken(null)
-      return null
+      return 'offline' as const
     } finally {
       refreshing = null
     }
@@ -50,7 +53,9 @@ export async function authFetch(req: Request): Promise<Response> {
   const retry = req.clone() // the body can only be read once
   const res = await fetch(withToken(req))
   if (res.status !== 401 || new URL(req.url).pathname.startsWith('/api/auth/')) return res
-  if (!(await refreshAccessToken())) {
+  const refreshed = await refreshAccessToken()
+  if (refreshed === 'offline') return res
+  if (!refreshed) {
     sessionExpired?.()
     return res
   }

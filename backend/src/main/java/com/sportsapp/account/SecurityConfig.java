@@ -20,6 +20,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -51,9 +53,18 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
             .requestMatchers("/api/**").authenticated()
             .anyRequest().permitAll())
-        .oauth2ResourceServer(o -> o.jwt(j -> {}).authenticationEntryPoint(unauthorized))
+        .oauth2ResourceServer(o -> o.jwt(j -> {}).bearerTokenResolver(ignoringAuthEndpoints()).authenticationEntryPoint(unauthorized))
         .exceptionHandling(e -> e.authenticationEntryPoint(unauthorized))
         .build();
+  }
+
+  /**
+   * Auth endpoints work from the refresh cookie or credentials alone. A stale access token sent along
+   * (the SPA attaches it to every call) must not turn logout or refresh into a 401.
+   */
+  private static BearerTokenResolver ignoringAuthEndpoints() {
+    DefaultBearerTokenResolver standard = new DefaultBearerTokenResolver();
+    return request -> request.getRequestURI().startsWith("/api/auth/") ? null : standard.resolve(request);
   }
 
   @Bean

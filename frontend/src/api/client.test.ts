@@ -72,6 +72,22 @@ test('when refresh fails, returns the original 401, clears the token and calls o
   off()
 })
 
+test('a network error during refresh keeps the session: returns the 401 without expiring or clearing the token', async () => {
+  const expired = vi.fn()
+  const off = onSessionExpired(expired)
+  setAccessToken('old')
+  fetchMock
+    .mockResolvedValueOnce(json(401, { code: 'UNAUTHORIZED' }))
+    .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    .mockResolvedValueOnce(json(200, {}))
+  const res = await authFetch(new Request('http://localhost/api/me'))
+  expect(res.status).toBe(401)
+  expect(expired).not.toHaveBeenCalled()
+  await authFetch(new Request('http://localhost/api/me'))
+  expect(authHeader(2)).toBe('Bearer old')
+  off()
+})
+
 test('never tries to refresh for /api/auth/* requests', async () => {
   fetchMock.mockResolvedValueOnce(json(401, { code: 'BAD_CREDENTIALS' }))
   const res = await authFetch(new Request('http://localhost/api/auth/login', { method: 'POST' }))

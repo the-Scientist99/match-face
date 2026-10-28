@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void refreshAccessToken().then((res) => {
-      if (res) start(res)
+      if (res && res !== 'offline') start(res)
       setReady(true)
     })
     return onSessionExpired(() => {

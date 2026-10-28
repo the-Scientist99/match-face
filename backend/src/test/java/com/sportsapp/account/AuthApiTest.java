@@ -133,9 +133,42 @@ class AuthApiTest extends IntegrationTest {
         .andExpect(jsonPath("$.user.email").value("ana@mail.com"))
         .andReturn());
     assertThat(b.getValue()).isNotEqualTo(a.getValue());
+    rewindRotations(31);
     refresh(a).andExpect(status().isUnauthorized())
         .andExpect(header().string("Set-Cookie", containsString("Max-Age=0")));
     refresh(b).andExpect(status().isUnauthorized());
+  }
+
+  /** Moves every revocation into the past, beyond the reuse grace window when seconds > 30. */
+  private void rewindRotations(int seconds) {
+    jdbc.sql("UPDATE refresh_token SET revoked_at = revoked_at - INTERVAL :s SECOND WHERE revoked_at IS NOT NULL")
+        .param("s", seconds).update();
+  }
+
+  @Test
+  void reuseRightAfterRotationIsAGraceRefreshNotTheft() throws Exception {
+    // a reload or a second tab that sent the old cookie a moment after another refresh rotated it
+    Cookie a = refreshCookie(registerRaw("ana@mail.com", "password123", "Ana", "en").andReturn());
+    Cookie b = refreshCookie(refresh(a).andExpect(status().isOk()).andReturn());
+    Cookie c = refreshCookie(refresh(a).andExpect(status().isOk()).andReturn());
+    refresh(b).andExpect(status().isOk());
+    refresh(c).andExpect(status().isOk());
+  }
+
+  @Test
+  void reusingALoggedOutTokenIsNeverGraced() throws Exception {
+    Cookie a = refreshCookie(registerRaw("ana@mail.com", "password123", "Ana", "en").andReturn());
+    mvc.perform(post("/api/auth/logout").cookie(a)).andExpect(status().isNoContent());
+    refresh(a).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void logoutWithExpiredBearerStillRevokes() throws Exception {
+    // the SPA sends its (possibly expired) access token on every call, auth endpoints included
+    Cookie a = refreshCookie(registerRaw("ana@mail.com", "password123", "Ana", "en").andReturn());
+    mvc.perform(post("/api/auth/logout").cookie(a).header("Authorization", "Bearer garbage"))
+        .andExpect(status().isNoContent());
+    refresh(a).andExpect(status().isUnauthorized());
   }
 
   @Test

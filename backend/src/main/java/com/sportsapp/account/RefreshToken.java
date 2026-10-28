@@ -23,6 +23,9 @@ public class RefreshToken extends BaseEntity {
   @Column(name = "revoked_at")
   private Instant revokedAt;
 
+  /** True when revokedAt came from rotation (a successor exists), false when from logout or theft. */
+  private boolean rotated;
+
   protected RefreshToken() {}
 
   public RefreshToken(UUID userId, String tokenHash, Instant expiresAt, Instant revokedAt) {
@@ -40,4 +43,6 @@ public class RefreshToken extends BaseEntity {
   public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
   public Instant getRevokedAt() { return revokedAt; }
   public void setRevokedAt(Instant revokedAt) { this.revokedAt = revokedAt; }
+  public boolean isRotated() { return rotated; }
+  public void setRotated(boolean rotated) { this.rotated = rotated; }
 }

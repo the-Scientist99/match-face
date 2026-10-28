@@ -24,6 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
   static final Duration REFRESH_TTL = Duration.ofDays(30);
+  /**
+   * How long a just-rotated token may still be used. Covers a reload that aborted the refresh before the
+   * browser stored the new cookie, and tabs refreshing at once; without it those look like theft and log
+   * the user out everywhere. Cost: a thief replaying within this window is not detected.
+   */
+  static final Duration REUSE_GRACE = Duration.ofSeconds(30);
   /** BCrypt only reads the first 72 bytes of a password, and Spring's encoder refuses longer ones. */
   private static final int BCRYPT_MAX_BYTES = 72;
 
@@ -74,18 +80,26 @@ public class AuthService {
     return session(user, players.ownPlayer(user.getId()));
   }
 
-  /** Rotates the token. Reusing an already-rotated token revokes every session of its user, then fails. */
+  /**
+   * Rotates the token. Reusing a revoked token revokes every session of its user, then fails, unless the
+   * token was rotated less than {@link #REUSE_GRACE} ago.
+   */
   @Transactional(noRollbackFor = ApiException.class)
   public Session refresh(String raw) {
     if (raw == null || raw.isEmpty()) throw ApiException.unauthorized();
     Instant now = clock.instant();
     RefreshToken t = refreshTokens.findByTokenHash(Tokens.sha256Hex(raw)).orElseThrow(ApiException::unauthorized);
     if (t.getRevokedAt() != null) {
-      refreshTokens.revokeAllForUser(t.getUserId(), now);
-      throw ApiException.unauthorized();
+      boolean graced = t.isRotated() && now.isBefore(t.getRevokedAt().plus(REUSE_GRACE));
+      if (!graced) {
+        refreshTokens.revokeAllForUser(t.getUserId(), now);
+        throw ApiException.unauthorized();
+      }
+    } else {
+      t.setRevokedAt(now);
+      t.setRotated(true);
     }
     if (!now.isBefore(t.getExpiresAt())) throw ApiException.unauthorized();
-    t.setRevokedAt(now);
     UserAccount user = users.findById(t.getUserId()).orElseThrow(ApiException::unauthorized);
     return session(user, players.ownPlayer(user.getId()));
   }
