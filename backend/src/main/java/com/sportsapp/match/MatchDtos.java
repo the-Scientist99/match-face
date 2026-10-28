@@ -4,6 +4,8 @@ import com.sportsapp.common.Visibility;
 import com.sportsapp.sport.Score;
 import com.sportsapp.sport.Sport;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
@@ -44,6 +46,15 @@ public final class MatchDtos {
   }
 
   public record SetLineupRequest(@NotNull @Valid List<@NotNull LineupEntry> entries) {}
+
+  /** For OWN_GOAL, {@code side} is the side the scorer plays on. PATCH sends the whole event again. */
+  public record EventRequest(@NotNull EventType type, @NotNull Side side, UUID playerId, UUID assistPlayerId,
+      @Min(0) @Max(150) Integer minute) {}
+
+  public record VersionRequest(@NotNull Long version) {}
+
+  /** {@code penaltyWinner} decides a level cup match (M6). */
+  public record FinishRequest(@NotNull Long version, Side penaltyWinner) {}
 
   /** {@code name}: the team's name, or the pickup label. */
   public record SideView(UUID teamId, String name) {}
