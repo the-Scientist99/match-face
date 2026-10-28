@@ -1,4 +1,4 @@
-import { AppShell, Button, Group, Menu, SegmentedControl, Title } from '@mantine/core'
+import { AppShell, Button, Container, Group, Menu, SegmentedControl, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useNavigate } from 'react-router'
 import { useNotifyError } from '../api/errors'
@@ -18,10 +18,10 @@ export default function Layout() {
   const notifyError = useNotifyError()
   return (
     <AppShell header={{ height: 56 }} padding="md">
-      <AppShell.Header>
+      <AppShell.Header className="app-header" withBorder={false}>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
-          <Title order={4} renderRoot={(props) => <Link to="/" {...props} />}>
-            {t('app.name')}
+          <Title order={4} className="brand" renderRoot={(props) => <Link to="/" {...props} />}>
+            ⚽ {t('app.name')}
           </Title>
           <Group gap="xs" wrap="nowrap">
             {user &&
@@ -71,7 +71,9 @@ export default function Layout() {
         </Group>
       </AppShell.Header>
       <AppShell.Main>
-        <Outlet />
+        <Container size={760} px={0} pb="xl">
+          <Outlet />
+        </Container>
       </AppShell.Main>
     </AppShell>
   )

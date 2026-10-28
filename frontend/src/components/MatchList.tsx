@@ -9,27 +9,39 @@ export function formatKickoff(iso: string | null, lang: string): string | null {
   return iso ? new Date(iso).toLocaleString(htmlLang(lang as Lang), { dateStyle: 'medium', timeStyle: 'short' }) : null
 }
 
-/** One card per match: sides, score (once played), kickoff and status. Reused by competitions (M5). */
+/** One card per match: home · score · away, then kickoff and status. Reused by competitions (M5). */
 export default function MatchList({ matches, extra }: { matches: MatchSummary[]; extra?: (m: MatchSummary) => ReactNode }) {
   const { t, i18n } = useTranslation()
   return (
     <Stack gap="xs">
       {matches.map((m) => (
-        <Card key={m.id} withBorder padding="sm" component={Link} to={`/matches/${m.id}`}>
-          <Group justify="space-between" wrap="nowrap">
-            <Text fw={500} truncate>
-              {m.homeName ?? t('bracket.tbd')} {m.status === 'SCHEDULED' ? t('match.vs') : `${m.score.home} – ${m.score.away}`} {m.awayName ?? t('bracket.tbd')}
+        <Card key={m.id} padding="sm" className="pressable" component={Link} to={`/matches/${m.id}`}>
+          <Group wrap="nowrap" gap="sm">
+            <Text fw={600} ta="right" flex={1} truncate>
+              {m.homeName ?? t('bracket.tbd')}
+            </Text>
+            <Text className="score" fw={700} fz="lg" miw={60} ta="center" c={m.status === 'SCHEDULED' ? 'dimmed' : undefined}>
+              {m.status === 'SCHEDULED' ? t('match.vs') : `${m.score.home} – ${m.score.away}`}
+            </Text>
+            <Text fw={600} flex={1} truncate>
+              {m.awayName ?? t('bracket.tbd')}
+            </Text>
+          </Group>
+          <Group justify="center" gap="xs" mt={4}>
+            <Text size="xs" c="dimmed">
+              {formatKickoff(m.kickoffAt, i18n.language) ?? t('match.noKickoff')}
             </Text>
             {m.status !== 'SCHEDULED' && (
-              <Badge size="sm" variant="light" color={m.status === 'CANCELLED' ? 'gray' : 'green'}>
+              <Badge size="xs" color={m.status === 'CANCELLED' ? 'gray' : 'teal'}>
                 {t(`match.status.${m.status}`)}
               </Badge>
             )}
           </Group>
-          <Text size="sm" c="dimmed">
-            {formatKickoff(m.kickoffAt, i18n.language) ?? t('match.noKickoff')}
-          </Text>
-          {extra?.(m)}
+          {extra && (
+            <Group justify="center" mt={2}>
+              {extra(m)}
+            </Group>
+          )}
         </Card>
       ))}
     </Stack>

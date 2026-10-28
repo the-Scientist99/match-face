@@ -1,4 +1,4 @@
-import { Anchor, Button, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Anchor, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
@@ -35,34 +35,36 @@ export default function LoginPage() {
   }
 
   return (
-    <Stack component="form" onSubmit={submit} maw={400} mx="auto">
-      <Title order={2}>{t('auth.loginTitle')}</Title>
-      <TextInput
-        label={t('auth.email')}
-        type="email"
-        autoComplete="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.currentTarget.value)}
-        error={errors.email && t(errors.email)}
-      />
-      <PasswordInput
-        label={t('auth.password')}
-        autoComplete="current-password"
-        required
-        value={password}
-        onChange={(e) => setPassword(e.currentTarget.value)}
-        error={errors.password && t(errors.password)}
-      />
-      <Button type="submit" loading={busy}>
-        {t('auth.login')}
-      </Button>
-      <Text size="sm">
-        {t('auth.noAccount')}{' '}
-        <Anchor component={Link} to={`/register?next=${encodeURIComponent(next)}`}>
-          {t('auth.register')}
-        </Anchor>
-      </Text>
-    </Stack>
+    <Paper withBorder p="xl" maw={420} mx="auto" mt="xl">
+      <Stack component="form" onSubmit={submit}>
+        <Title order={2}>{t('auth.loginTitle')}</Title>
+        <TextInput
+          label={t('auth.email')}
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.currentTarget.value)}
+          error={errors.email && t(errors.email)}
+        />
+        <PasswordInput
+          label={t('auth.password')}
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.currentTarget.value)}
+          error={errors.password && t(errors.password)}
+        />
+        <Button type="submit" loading={busy}>
+          {t('auth.login')}
+        </Button>
+        <Text size="sm">
+          {t('auth.noAccount')}{' '}
+          <Anchor component={Link} to={`/register?next=${encodeURIComponent(next)}`}>
+            {t('auth.register')}
+          </Anchor>
+        </Text>
+      </Stack>
+    </Paper>
   )
 }

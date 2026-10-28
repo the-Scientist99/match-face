@@ -1,4 +1,4 @@
-import { Anchor, Button, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Anchor, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
@@ -36,45 +36,47 @@ export default function RegisterPage() {
   }
 
   return (
-    <Stack component="form" onSubmit={submit} maw={400} mx="auto">
-      <Title order={2}>{t('auth.registerTitle')}</Title>
-      <TextInput
-        label={t('auth.displayName')}
-        autoComplete="name"
-        required
-        maxLength={50}
-        value={displayName}
-        onChange={(e) => setDisplayName(e.currentTarget.value)}
-        error={errors.displayName && t(errors.displayName)}
-      />
-      <TextInput
-        label={t('auth.email')}
-        type="email"
-        autoComplete="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.currentTarget.value)}
-        error={errors.email && t(errors.email)}
-      />
-      <PasswordInput
-        label={t('auth.password')}
-        description={t('auth.passwordHint')}
-        autoComplete="new-password"
-        required
-        minLength={8}
-        value={password}
-        onChange={(e) => setPassword(e.currentTarget.value)}
-        error={errors.password && t(errors.password)}
-      />
-      <Button type="submit" loading={busy}>
-        {t('auth.register')}
-      </Button>
-      <Text size="sm">
-        {t('auth.haveAccount')}{' '}
-        <Anchor component={Link} to={`/login?next=${encodeURIComponent(next)}`}>
-          {t('auth.login')}
-        </Anchor>
-      </Text>
-    </Stack>
+    <Paper withBorder p="xl" maw={420} mx="auto" mt="xl">
+      <Stack component="form" onSubmit={submit}>
+        <Title order={2}>{t('auth.registerTitle')}</Title>
+        <TextInput
+          label={t('auth.displayName')}
+          autoComplete="name"
+          required
+          maxLength={50}
+          value={displayName}
+          onChange={(e) => setDisplayName(e.currentTarget.value)}
+          error={errors.displayName && t(errors.displayName)}
+        />
+        <TextInput
+          label={t('auth.email')}
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.currentTarget.value)}
+          error={errors.email && t(errors.email)}
+        />
+        <PasswordInput
+          label={t('auth.password')}
+          description={t('auth.passwordHint')}
+          autoComplete="new-password"
+          required
+          minLength={8}
+          value={password}
+          onChange={(e) => setPassword(e.currentTarget.value)}
+          error={errors.password && t(errors.password)}
+        />
+        <Button type="submit" loading={busy}>
+          {t('auth.register')}
+        </Button>
+        <Text size="sm">
+          {t('auth.haveAccount')}{' '}
+          <Anchor component={Link} to={`/login?next=${encodeURIComponent(next)}`}>
+            {t('auth.login')}
+          </Anchor>
+        </Text>
+      </Stack>
+    </Paper>
   )
 }

@@ -1,0 +1,70 @@
+/* Global polish on top of Mantine: materials, press feedback, numerals, typography. */
+
+/* Translucent chrome: content scrolls underneath, a hairline edge instead of a hard bar */
+.app-header {
+  background-color: color-mix(in srgb, var(--mantine-color-body) 72%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid color-mix(in srgb, var(--mantine-color-default-border) 55%, transparent);
+}
+
+/* Large text reads better slightly tighter; body text stays at 0 */
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+
+.brand {
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Scores and tables: digits of equal width, so columns and live scores don't jitter */
+.score,
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+.score-big {
+  font-size: clamp(2.75rem, 12vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+}
+
+/* Instant feedback on press, a soft lift on hover where a pointer can hover */
+.pressable {
+  transition: transform 120ms ease-out, box-shadow 160ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.pressable:active {
+  transform: scale(0.98);
+}
+@media (hover: hover) {
+  .pressable:hover {
+    box-shadow: var(--mantine-shadow-sm);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable,
+  .pressable:active {
+    transition: none;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-header {
+    background-color: var(--mantine-color-body);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .app-header {
+    background-color: var(--mantine-color-body);
+    border-bottom-color: var(--mantine-color-text);
+  }
+}

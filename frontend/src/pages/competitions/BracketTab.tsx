@@ -15,7 +15,11 @@ function Side({ name, score, won, pens }: { name: string | null; score: number |
         {name ?? t('bracket.tbd')}
         {pens && ` (${t('bracket.pens')})`}
       </Text>
-      {score !== null && <Text size="sm">{score}</Text>}
+      {score !== null && (
+        <Text size="sm" className="score" fw={won ? 700 : undefined}>
+          {score}
+        </Text>
+      )}
     </Group>
   )
 }
@@ -25,7 +29,7 @@ function MatchCard({ bm }: { bm: BracketMatch }) {
   const played = m.status === 'FINISHED'
   const winner = !played ? null : m.score.home > m.score.away ? 'HOME' : m.score.away > m.score.home ? 'AWAY' : bm.penaltyWinner
   return (
-    <Card withBorder padding="xs" w={180} component={Link} to={`/matches/${m.id}`}>
+    <Card padding="xs" w={180} className="pressable" component={Link} to={`/matches/${m.id}`}>
       <Side name={m.homeName} score={played ? m.score.home : null} won={winner === 'HOME'} pens={bm.penaltyWinner === 'HOME'} />
       <Side name={m.awayName} score={played ? m.score.away : null} won={winner === 'AWAY'} pens={bm.penaltyWinner === 'AWAY'} />
     </Card>

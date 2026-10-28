@@ -42,7 +42,7 @@ export default function EventEntry({ match, onAdd, disabled }: { match: Match; o
         .map((l) => (
           <Menu key={l.playerId} position="bottom-start" disabled={disabled}>
             <Menu.Target>
-              <Button variant="light" size="sm" justify="flex-start" disabled={disabled}>
+              <Button variant="light" size="md" justify="flex-start" fullWidth disabled={disabled}>
                 {l.inGoal ? '🧤 ' : ''}
                 {l.name}
               </Button>
@@ -59,7 +59,7 @@ export default function EventEntry({ match, onAdd, disabled }: { match: Match; o
             </Menu.Dropdown>
           </Menu>
         ))}
-      <Button variant="subtle" size="xs" disabled={disabled} onClick={() => onAdd({ type: 'GOAL', side })}>
+      <Button variant="subtle" size="sm" disabled={disabled} onClick={() => onAdd({ type: 'GOAL', side })}>
         {t('event.unknownGoal')}
       </Button>
     </Stack>
