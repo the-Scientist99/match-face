@@ -93,6 +93,20 @@ public abstract class IntegrationTest {
         .andExpect(status().isOk());
   }
 
+  /** {@code keyValues}: alternating event field names and values, e.g. "type", "GOAL", "side", "HOME", "playerId", id. */
+  protected void addEvent(TestUser owner, UUID matchId, Object... keyValues) throws Exception {
+    Map<String, Object> body = new java.util.HashMap<>();
+    for (int i = 0; i < keyValues.length; i += 2) body.put((String) keyValues[i], keyValues[i + 1]);
+    mvc.perform(post("/api/matches/{id}/events", matchId).with(as(owner)).contentType(APPLICATION_JSON).content(toJson(body)))
+        .andExpect(status().isCreated());
+  }
+
+  protected void finish(TestUser owner, UUID matchId) throws Exception {
+    mvc.perform(post("/api/matches/{id}/finish", matchId).with(as(owner)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("version", version(matchId)))))
+        .andExpect(status().isOk());
+  }
+
   protected long version(UUID matchId) {
     return jdbc.sql("SELECT version FROM sport_match WHERE id = UUID_TO_BIN(:id)").param("id", matchId.toString())
         .query(Long.class).single();

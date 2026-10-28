@@ -1,7 +1,9 @@
 package com.sportsapp.player;
 
 import com.sportsapp.common.Auth;
+import com.sportsapp.stats.PlayerStatsQuery;
 import com.sportsapp.player.PlayerDtos.CreatePlayerRequest;
+import com.sportsapp.player.PlayerDtos.PlayerProfileResponse;
 import com.sportsapp.player.PlayerDtos.PlayerResponse;
 import com.sportsapp.player.PlayerDtos.RenamePlayerRequest;
 import jakarta.validation.Valid;
@@ -24,9 +26,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class PlayerController {
 
   private final PlayerService players;
+  private final PlayerStatsQuery stats;
 
-  public PlayerController(PlayerService players) {
+  public PlayerController(PlayerService players, PlayerStatsQuery stats) {
     this.players = players;
+    this.stats = stats;
   }
 
   @PostMapping
@@ -47,8 +51,13 @@ public class PlayerController {
     return players.mine(Auth.userId(jwt));
   }
 
+  /** Open to anyone; the stats only count matches the viewer can see. */
   @GetMapping("/{id}")
-  PlayerResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
-    return players.response(Auth.userIdOrNull(jwt), players.getRequired(id));
+  PlayerProfileResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+    UUID viewer = Auth.userIdOrNull(jwt);
+    Player p = players.getRequired(id);
+    boolean canInvite = viewer != null && p.getUserId() == null && viewer.equals(p.getCreatedByUserId());
+    return new PlayerProfileResponse(p.getId(), p.getName(), p.getUserId() != null, players.canEdit(viewer, p), canInvite,
+        stats.totals(id, viewer), stats.matches(id, viewer));
   }
 }
