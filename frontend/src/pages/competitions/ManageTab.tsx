@@ -1,4 +1,4 @@
-import { ActionIcon, Button, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core'
+import { ActionIcon, Button, Group, NumberInput, Select, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,6 +13,9 @@ export default function ManageTab({ competition }: { competition: Competition })
   const id = competition.id
   const path = { params: { path: { id } } }
   const [teamId, setTeamId] = useState<string | null>(null)
+  const [seed, setSeed] = useState<number | string>('')
+  const cup = competition.type === 'CUP'
+  const seedValue = cup && typeof seed === 'number' ? seed : undefined
   const [newTeam, setNewTeam] = useState('')
   const teams = useQuery({ queryKey: ['teams', 'mine'], queryFn: () => call(api.GET('/api/teams/mine')) })
   const inIt = new Set(competition.teams.map((ct) => ct.teamId))
@@ -33,11 +36,11 @@ export default function ManageTab({ competition }: { competition: Competition })
   const run = (fn: () => Promise<unknown>) => {
     if (confirmed()) action.mutate(fn as () => Promise<Competition>)
   }
-  const add = (team: string) => run(() => call(api.POST('/api/competitions/{id}/teams', { ...path, body: { teamId: team } })))
+  const add = (team: string) => run(() => call(api.POST('/api/competitions/{id}/teams', { ...path, body: { teamId: team, seed: seedValue } })))
   const createAndAdd = async (name: string) => {
     const team = await call(api.POST('/api/teams', { body: { name } }))
     void queryClient.invalidateQueries({ queryKey: ['teams', 'mine'] })
-    return call(api.POST('/api/competitions/{id}/teams', { ...path, body: { teamId: team.id } }))
+    return call(api.POST('/api/competitions/{id}/teams', { ...path, body: { teamId: team.id, seed: seedValue } }))
   }
   const generate = () => run(() => call(api.POST('/api/competitions/{id}/generate', path)))
 
@@ -47,7 +50,10 @@ export default function ManageTab({ competition }: { competition: Competition })
       {competition.teams.length ? (
         competition.teams.map((ct) => (
           <Group key={ct.teamId} justify="space-between">
-            <Text>{ct.name}</Text>
+            <Text>
+              {ct.name}
+              {cup && ct.seed !== null && ` (${t('competition.seed')} ${ct.seed})`}
+            </Text>
             <ActionIcon
               variant="subtle"
               color="red"
@@ -62,6 +68,18 @@ export default function ManageTab({ competition }: { competition: Competition })
       ) : (
         <Text c="dimmed">{t('competition.noTeams')}</Text>
       )}
+      {cup && (
+        <NumberInput
+          label={t('competition.seed')}
+          description={t('competition.seedHint')}
+          min={1}
+          max={64}
+          allowDecimal={false}
+          value={seed}
+          onChange={setSeed}
+          w={160}
+        />
+      )}
       <Group align="flex-end" gap="xs">
         <Select label={t('competition.addTeam')} data={options} value={teamId} onChange={setTeamId} searchable flex={1} />
         <Button
@@ -69,6 +87,7 @@ export default function ManageTab({ competition }: { competition: Competition })
           onClick={() => {
             if (teamId) add(teamId)
             setTeamId(null)
+            setSeed('')
           }}
         >
           {t('common.add')}

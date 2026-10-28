@@ -46,7 +46,13 @@
     "TEAM_ALREADY_ADDED": "Taj tim je već u ligi.",
     "DUPLICATE_SEED": "Drugi tim već ima taj nosilački broj.",
     "COMPETITION_STARTED": "Ovo se ne može mijenjati kad raspored postoji.",
-    "NOT_A_LEAGUE": "Ovo važi samo za lige."
+    "NOT_A_LEAGUE": "Ovo važi samo za lige.",
+    "CUP_DRAW_NEEDS_PENALTIES": "Kup utakmica ne može završiti neriješeno. Izaberite pobjednika na penale.",
+    "LATER_ROUND_FINISHED": "Sljedeće kolo je već počelo, pa se ova utakmica ne može ponovo otvoriti.",
+    "TEAMS_NOT_SET": "Oba tima još nisu poznata.",
+    "CUP_MATCH_CANNOT_CANCEL": "Kup utakmice se ne mogu otkazati.",
+    "TOO_MANY_TEAMS": "Kup može imati najviše 64 tima.",
+    "NOT_A_CUP": "Ovo važi samo za kupove."
   },
   "auth": {
     "login": "Prijava",
@@ -125,7 +131,9 @@
     "keeper": "golman",
     "finish": "Završi",
     "cancel": "Otkaži utakmicu",
-    "reopen": "Ponovo otvori"
+    "reopen": "Ponovo otvori",
+    "whoWonPenalties": "Rezultat je neriješen. Ko je pobijedio na penale?",
+    "finishConfirm": "Završiti utakmicu rezultatom {{home}} – {{away}}?"
   },
   "event": {
     "type": {
@@ -173,9 +181,9 @@
     "done": "Dodato na vaš profil."
   },
   "competition": {
-    "new": "Nova liga",
-    "create": "Napravi ligu",
-    "name": "Naziv lige",
+    "new": "Novo takmičenje",
+    "create": "Napravi",
+    "name": "Naziv",
     "doubleRoundRobin": "Domaćin i gost (svako sa svakim dva puta)",
     "round": "{{round}}. kolo",
     "unscheduled": "Ostalo",
@@ -195,6 +203,13 @@
     "status": {
       "DRAFT": "U pripremi",
       "ACTIVE": "Aktivna"
+    },
+    "bracket": "Žrijeb",
+    "seed": "Nosilac",
+    "seedHint": "Ostavite prazno za slučajan žrijeb. Da promijenite nosioca, uklonite tim i ponovo ga dodajte.",
+    "type": {
+      "LEAGUE": "Liga",
+      "CUP": "Kup"
     }
   },
   "table": {
@@ -213,5 +228,14 @@
     "topAssists": "Asistenti",
     "cards": "Kartoni",
     "none": "Još ništa."
+  },
+  "bracket": {
+    "final": "Finale",
+    "semifinal": "Polufinale",
+    "quarterfinal": "Četvrtfinale",
+    "round": "{{round}}. kolo",
+    "tbd": "Čeka se",
+    "pens": "penali",
+    "winner": "Pobjednik"
   }
 }

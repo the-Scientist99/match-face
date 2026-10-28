@@ -16,8 +16,9 @@ export default function NewCompetitionPage() {
   const [name, setName] = useState('')
   const [visibility, setVisibility] = useState<Visibility>('PRIVATE')
   const [doubleRoundRobin, setDoubleRoundRobin] = useState(false)
+  const [type, setType] = useState<'LEAGUE' | 'CUP'>('LEAGUE')
   const create = useMutation({
-    mutationFn: () => call(api.POST('/api/competitions', { body: { name, type: 'LEAGUE', visibility, doubleRoundRobin } })),
+    mutationFn: () => call(api.POST('/api/competitions', { body: { name, type, visibility, doubleRoundRobin: type === 'LEAGUE' && doubleRoundRobin } })),
     onSuccess: (c) => {
       void queryClient.invalidateQueries({ queryKey: ['competitions', 'mine'] })
       navigate(`/competitions/${c.id}?tab=manage`)
@@ -35,6 +36,14 @@ export default function NewCompetitionPage() {
       }}
     >
       <Title order={2}>{t('competition.new')}</Title>
+      <SegmentedControl
+        value={type}
+        onChange={(v) => setType(v as 'LEAGUE' | 'CUP')}
+        data={[
+          { value: 'LEAGUE', label: t('competition.type.LEAGUE') },
+          { value: 'CUP', label: t('competition.type.CUP') },
+        ]}
+      />
       <TextInput label={t('competition.name')} value={name} maxLength={80} required onChange={(e) => setName(e.currentTarget.value)} />
       <SegmentedControl
         value={visibility}
@@ -44,7 +53,9 @@ export default function NewCompetitionPage() {
           { value: 'PUBLIC', label: t('match.visibility.PUBLIC') },
         ]}
       />
-      <Checkbox label={t('competition.doubleRoundRobin')} checked={doubleRoundRobin} onChange={(e) => setDoubleRoundRobin(e.currentTarget.checked)} />
+      {type === 'LEAGUE' && (
+        <Checkbox label={t('competition.doubleRoundRobin')} checked={doubleRoundRobin} onChange={(e) => setDoubleRoundRobin(e.currentTarget.checked)} />
+      )}
       <Button type="submit" loading={create.isPending}>
         {t('competition.create')}
       </Button>

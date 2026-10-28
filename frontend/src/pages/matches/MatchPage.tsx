@@ -8,6 +8,7 @@ import { api, call, type Match } from '../../api/client'
 import { errorCode, useNotifyError } from '../../api/errors'
 import EventEntry, { type NewEvent } from './EventEntry'
 import EventList from './EventList'
+import FinishDialog from './FinishDialog'
 import LineupEditor from './LineupEditor'
 import ScoreHeader from './ScoreHeader'
 
@@ -41,6 +42,7 @@ export default function MatchPage() {
   })
   const busy = action.isPending
   const [failedEvent, setFailedEvent] = useState<NewEvent | null>(null)
+  const [finishing, setFinishing] = useState(false)
 
   if (match.isPending) return <Loader />
   if (match.isError) return <Text>{t(`errors.${errorCode(match.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
@@ -106,12 +108,22 @@ export default function MatchPage() {
         <Group>
           {m.status === 'SCHEDULED' ? (
             <>
-              <Button disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/finish', { ...path, body: version })))}>
+              <Button disabled={busy} onClick={() => setFinishing(true)}>
                 {t('match.finish')}
               </Button>
-              <Button variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/cancel', { ...path, body: version })))}>
-                {t('match.cancel')}
-              </Button>
+              {!m.knockout && (
+                <Button variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/cancel', { ...path, body: version })))}>
+                  {t('match.cancel')}
+                </Button>
+              )}
+              <FinishDialog
+                match={m}
+                opened={finishing}
+                onClose={() => setFinishing(false)}
+                onFinish={(penaltyWinner) =>
+                  run(() => call(api.POST('/api/matches/{id}/finish', { ...path, body: { ...version, penaltyWinner } })))
+                }
+              />
             </>
           ) : (
             <Button variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/reopen', { ...path, body: version })))}>

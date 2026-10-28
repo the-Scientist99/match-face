@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { groupByRound, isoToLocal, localToIso, pickerOptions, showAddGuest, splitMatches } from './matchLogic'
+import { groupByRound, isoToLocal, localToIso, needsPenalties, pickerOptions, roundLabel, showAddGuest, splitMatches } from './matchLogic'
 
 const m = (id: string, status: 'SCHEDULED' | 'FINISHED' | 'CANCELLED', kickoffAt: string | null) =>
   ({ id, status, kickoffAt }) as Parameters<typeof splitMatches>[0][number]
@@ -56,4 +56,18 @@ test('groupByRound keeps API order inside each round and rounds ascending', () =
     [2, ['a', 'c']],
     [null, ['d']],
   ])
+})
+
+test('roundLabel names the last three rounds and numbers the rest', () => {
+  expect(roundLabel(4, 4)).toEqual(['bracket.final', {}])
+  expect(roundLabel(3, 4)).toEqual(['bracket.semifinal', {}])
+  expect(roundLabel(2, 4)).toEqual(['bracket.quarterfinal', {}])
+  expect(roundLabel(1, 4)).toEqual(['bracket.round', { round: 1 }])
+  expect(roundLabel(1, 1)).toEqual(['bracket.final', {}])
+})
+
+test('needsPenalties only for a level knockout match', () => {
+  expect(needsPenalties({ knockout: true, score: { home: 1, away: 1 } })).toBe(true)
+  expect(needsPenalties({ knockout: true, score: { home: 2, away: 1 } })).toBe(false)
+  expect(needsPenalties({ knockout: false, score: { home: 0, away: 0 } })).toBe(false)
 })

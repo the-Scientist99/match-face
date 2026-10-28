@@ -2,6 +2,7 @@ import { Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, call, type CompetitionStats } from '../../api/client'
+import { errorCode } from '../../api/errors'
 
 function Board({ title, rows }: { title: string; rows: { key: string; name: string; value: string }[] }) {
   const { t } = useTranslation()
@@ -32,7 +33,8 @@ export default function StatsTab({ id }: { id: string }) {
     queryKey: ['competition', id, 'stats'],
     queryFn: () => call(api.GET('/api/competitions/{id}/stats', { params: { path: { id } } })),
   })
-  if (stats.isPending || !stats.data) return <Loader />
+  if (stats.isPending) return <Loader />
+  if (stats.isError) return <Text>{t(`errors.${errorCode(stats.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
   const s = stats.data
   return (
     <SimpleGrid cols={{ base: 1, sm: 3 }}>

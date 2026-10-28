@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams } from 'react-router'
 import { api, call, type Competition } from '../../api/client'
 import { errorCode } from '../../api/errors'
+import BracketTab from './BracketTab'
 import FixturesTab from './FixturesTab'
 import ManageTab from './ManageTab'
 import StatsTab from './StatsTab'
@@ -33,7 +34,11 @@ export default function CompetitionPage() {
       <Tabs value={tab} onChange={(v) => setParams(v ? { tab: v } : {}, { replace: true })}>
         <Tabs.List>
           <Tabs.Tab value="fixtures">{t('competition.fixtures')}</Tabs.Tab>
-          <Tabs.Tab value="table">{t('competition.table')}</Tabs.Tab>
+          {c.type === 'CUP' ? (
+            <Tabs.Tab value="bracket">{t('competition.bracket')}</Tabs.Tab>
+          ) : (
+            <Tabs.Tab value="table">{t('competition.table')}</Tabs.Tab>
+          )}
           <Tabs.Tab value="stats">{t('competition.stats')}</Tabs.Tab>
           {c.canAdmin && <Tabs.Tab value="manage">{t('competition.manage')}</Tabs.Tab>}
         </Tabs.List>
@@ -41,7 +46,10 @@ export default function CompetitionPage() {
           <FixturesTab id={id} />
         </Tabs.Panel>
         <Tabs.Panel value="table" pt="md">
-          {tab === 'table' && <TableTab id={id} />}
+          {tab === 'table' && c.type === 'LEAGUE' && <TableTab id={id} />}
+        </Tabs.Panel>
+        <Tabs.Panel value="bracket" pt="md">
+          {tab === 'bracket' && c.type === 'CUP' && <BracketTab id={id} />}
         </Tabs.Panel>
         <Tabs.Panel value="stats" pt="md">
           {tab === 'stats' && <StatsTab id={id} />}

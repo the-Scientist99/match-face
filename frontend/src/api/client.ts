@@ -26,6 +26,9 @@ export type Competition = Omit<Schema<'CompetitionResponse'>, 'teams'> & { teams
 export type CompetitionSummary = Schema<'CompetitionSummary'>
 export type StandingRow = Schema<'StandingRow'>
 export type CompetitionStats = Schema<'CompetitionStatsResponse'>
+export type TeamRef = Schema<'TeamRef'>
+export type BracketMatch = WithNull<Omit<Schema<'BracketMatch'>, 'match'>, 'penaltyWinner'> & { match: MatchSummary }
+export type Bracket = { rounds: number; matches: BracketMatch[]; winner: TeamRef | null }
 export type PlayerMatchRow = Omit<Schema<'PlayerMatchRow'>, 'match'> & { match: MatchSummary }
 export type PlayerProfile = Omit<Schema<'PlayerProfileResponse'>, 'matches'> & { matches: PlayerMatchRow[] }
 

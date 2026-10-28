@@ -484,6 +484,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/competitions/{id}/bracket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["bracket"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/competitions/mine": {
         parameters: {
             query?: never;
@@ -599,6 +615,7 @@ export interface components {
             lineup?: components["schemas"]["LineupView"][];
             events?: components["schemas"]["EventView"][];
             canAdmin?: boolean;
+            knockout?: boolean;
         };
         Score: {
             /** Format: int32 */
@@ -870,6 +887,26 @@ export interface components {
             goalDifference?: number;
             /** Format: int32 */
             points?: number;
+        };
+        BracketMatch: {
+            match?: components["schemas"]["MatchSummary"];
+            /** Format: int32 */
+            round?: number;
+            /** Format: int32 */
+            position?: number;
+            /** @enum {string} */
+            penaltyWinner?: "HOME" | "AWAY";
+        };
+        BracketResponse: {
+            /** Format: int32 */
+            rounds?: number;
+            matches?: components["schemas"]["BracketMatch"][];
+            winner?: components["schemas"]["TeamRef"];
+        };
+        TeamRef: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
         };
         CompetitionSummary: {
             /** Format: uuid */
@@ -1753,6 +1790,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MatchSummary"][];
+                };
+            };
+        };
+    };
+    bracket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BracketResponse"];
                 };
             };
         };

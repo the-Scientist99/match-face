@@ -46,7 +46,13 @@
     "TEAM_ALREADY_ADDED": "That team is already in the league.",
     "DUPLICATE_SEED": "Another team already has that seed.",
     "COMPETITION_STARTED": "This can't change once fixtures exist.",
-    "NOT_A_LEAGUE": "This only applies to leagues."
+    "NOT_A_LEAGUE": "This only applies to leagues.",
+    "CUP_DRAW_NEEDS_PENALTIES": "A cup match can't end level. Pick the penalty winner.",
+    "LATER_ROUND_FINISHED": "The next round has already started, so this match can't be reopened.",
+    "TEAMS_NOT_SET": "Both teams aren't known yet.",
+    "CUP_MATCH_CANNOT_CANCEL": "Cup matches can't be cancelled.",
+    "TOO_MANY_TEAMS": "A cup can have at most 64 teams.",
+    "NOT_A_CUP": "This only applies to cups."
   },
   "auth": {
     "login": "Log in",
@@ -125,7 +131,9 @@
     "keeper": "keeper",
     "finish": "Finish",
     "cancel": "Cancel match",
-    "reopen": "Reopen"
+    "reopen": "Reopen",
+    "whoWonPenalties": "It's level. Who won on penalties?",
+    "finishConfirm": "Finish the match at {{home}} – {{away}}?"
   },
   "event": {
     "type": {
@@ -173,9 +181,9 @@
     "done": "Added to your profile."
   },
   "competition": {
-    "new": "New league",
-    "create": "Create league",
-    "name": "League name",
+    "new": "New competition",
+    "create": "Create",
+    "name": "Name",
     "doubleRoundRobin": "Home and away (play each team twice)",
     "round": "Round {{round}}",
     "unscheduled": "Other",
@@ -195,6 +203,13 @@
     "status": {
       "DRAFT": "Draft",
       "ACTIVE": "Active"
+    },
+    "bracket": "Bracket",
+    "seed": "Seed",
+    "seedHint": "Leave empty for a random draw. To change a seed, remove the team and add it again.",
+    "type": {
+      "LEAGUE": "League",
+      "CUP": "Cup"
     }
   },
   "table": {
@@ -213,5 +228,14 @@
     "topAssists": "Top assists",
     "cards": "Cards",
     "none": "Nothing yet."
+  },
+  "bracket": {
+    "final": "Final",
+    "semifinal": "Semi-finals",
+    "quarterfinal": "Quarter-finals",
+    "round": "Round {{round}}",
+    "tbd": "TBD",
+    "pens": "pens",
+    "winner": "Winner"
   }
 }

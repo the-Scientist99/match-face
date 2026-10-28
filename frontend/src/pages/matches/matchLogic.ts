@@ -48,3 +48,17 @@ export function groupByRound<T extends { round: number | null }>(matches: T[]): 
   for (const m of matches) groups.set(m.round, [...(groups.get(m.round) ?? []), m])
   return [...groups.entries()].sort(([a], [b]) => (a ?? Infinity) - (b ?? Infinity))
 }
+
+/** i18n key and values for a bracket round's label: the last three rounds by name, earlier ones by number. */
+export function roundLabel(round: number, rounds: number): [string, Record<string, number>] {
+  const fromEnd = rounds - round
+  if (fromEnd === 0) return ['bracket.final', {}]
+  if (fromEnd === 1) return ['bracket.semifinal', {}]
+  if (fromEnd === 2) return ['bracket.quarterfinal', {}]
+  return ['bracket.round', { round }]
+}
+
+/** A cup match can't end level: finishing it needs the penalty-shootout winner. */
+export function needsPenalties(m: { knockout: boolean; score: { home: number; away: number } }): boolean {
+  return m.knockout && m.score.home === m.score.away
+}
