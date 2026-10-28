@@ -107,6 +107,31 @@ public abstract class IntegrationTest {
         .andExpect(status().isOk());
   }
 
+  /** A league named "League" with the given teams, fixtures generated. */
+  protected UUID createLeague(TestUser owner, Visibility visibility, UUID... teamIds) throws Exception {
+    String body = mvc.perform(post("/api/competitions").with(as(owner)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("name", "League", "type", "LEAGUE", "visibility", visibility, "doubleRoundRobin", false))))
+        .andExpect(status().isCreated())
+        .andReturn().getResponse().getContentAsString();
+    UUID id = UUID.fromString(json.readTree(body).get("id").asString());
+    for (UUID team : teamIds) {
+      mvc.perform(post("/api/competitions/{id}/teams", id).with(as(owner)).contentType(APPLICATION_JSON)
+              .content(toJson(Map.of("teamId", team))))
+          .andExpect(status().isOk());
+    }
+    mvc.perform(post("/api/competitions/{id}/generate", id).with(as(owner))).andExpect(status().isOk());
+    return id;
+  }
+
+  /** The competition's match ids by round, then creation. */
+  protected List<UUID> competitionMatches(UUID competitionId) {
+    return jdbc.sql("""
+            SELECT BIN_TO_UUID(m.id) FROM sport_match m JOIN stage s ON s.id = m.stage_id
+            WHERE s.competition_id = UUID_TO_BIN(:c) ORDER BY m.round, m.created_at, m.id
+            """)
+        .param("c", competitionId.toString()).query(UUID.class).list();
+  }
+
   protected long version(UUID matchId) {
     return jdbc.sql("SELECT version FROM sport_match WHERE id = UUID_TO_BIN(:id)").param("id", matchId.toString())
         .query(Long.class).single();

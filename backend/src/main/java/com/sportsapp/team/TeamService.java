@@ -74,14 +74,17 @@ public class TeamService {
   @Transactional(readOnly = true)
   public List<TeamSummary> mine(UUID userId) {
     return jdbc.sql("""
-            SELECT BIN_TO_UUID(t.id) id, t.name FROM team t
+            SELECT BIN_TO_UUID(t.id) id, t.name,
+                   EXISTS (SELECT 1 FROM admin_grant g
+                           WHERE g.resource_type = 'TEAM' AND g.resource_id = t.id AND g.user_id = UUID_TO_BIN(:u)) can_admin
+            FROM team t
             WHERE EXISTS (SELECT 1 FROM admin_grant g
                           WHERE g.resource_type = 'TEAM' AND g.resource_id = t.id AND g.user_id = UUID_TO_BIN(:u))
                OR EXISTS (SELECT 1 FROM team_player tp JOIN player p ON p.id = tp.player_id
                           WHERE tp.team_id = t.id AND p.user_id = UUID_TO_BIN(:u))
             """)
         .param("u", userId.toString())
-        .query((rs, i) -> new TeamSummary(UUID.fromString(rs.getString("id")), rs.getString("name")))
+        .query((rs, i) -> new TeamSummary(UUID.fromString(rs.getString("id")), rs.getString("name"), rs.getBoolean("can_admin")))
         .list().stream()
         .sorted(Comparator.comparing(TeamSummary::name, Names.ORDER))
         .toList();

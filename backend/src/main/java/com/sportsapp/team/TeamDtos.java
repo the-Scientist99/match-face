@@ -34,5 +34,6 @@ public final class TeamDtos {
   /** {@code players} sorted by name. */
   public record TeamResponse(UUID id, String name, Sport sport, List<RosterPlayer> players, boolean canAdmin) {}
 
-  public record TeamSummary(UUID id, String name) {}
+  /** {@code canAdmin}: the user may manage it (and use it in new matches and competitions). */
+  public record TeamSummary(UUID id, String name, boolean canAdmin) {}
 }

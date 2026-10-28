@@ -10,6 +10,7 @@ import com.sportsapp.match.MatchDtos.LineupEntry;
 import com.sportsapp.match.MatchDtos.MatchSummary;
 import com.sportsapp.match.MatchDtos.PatchMatchRequest;
 import com.sportsapp.player.PlayerService;
+import com.sportsapp.team.TeamService;
 import com.sportsapp.sport.Sport;
 import com.sportsapp.sport.SportRules;
 import java.util.HashSet;
@@ -31,16 +32,18 @@ public class MatchService {
   private final MatchEventRepository events;
   private final AccessService access;
   private final PlayerService players;
+  private final TeamService teams;
   private final MatchViews views;
   private final JdbcClient jdbc;
 
   public MatchService(MatchRepository matches, MatchLineupRepository lineups, MatchEventRepository events, AccessService access,
-      PlayerService players, MatchViews views, JdbcClient jdbc) {
+      PlayerService players, TeamService teams, MatchViews views, JdbcClient jdbc) {
     this.matches = matches;
     this.lineups = lineups;
     this.events = events;
     this.access = access;
     this.players = players;
+    this.teams = teams;
     this.views = views;
     this.jdbc = jdbc;
   }
@@ -84,7 +87,8 @@ public class MatchService {
 
   /**
    * Replaces the lineup. Players must be the admin's players, or already in this lineup (they may have left
-   * the roster that made them available since).
+   * the roster that made them available since). In a competition match a side may also use its team's
+   * roster, and a player picked for a side who isn't on that team's roster is added to it.
    */
   @Transactional
   public void setLineup(UUID userId, UUID matchId, List<LineupEntry> entries) {
@@ -95,7 +99,17 @@ public class MatchService {
     List<MatchLineup> current = lineups.findByMatchId(matchId);
     Set<UUID> allowed = new HashSet<>(players.myPlayerIds(userId));
     current.forEach(l -> allowed.add(l.getPlayerId()));
-    if (!allowed.containsAll(ids)) throw ApiException.badRequest("PLAYER_NOT_AVAILABLE");
+    Map<Side, UUID> sideTeams = new java.util.EnumMap<>(Side.class);
+    if (m.getStageId() != null) {
+      if (m.getHomeTeamId() != null) sideTeams.put(Side.HOME, m.getHomeTeamId());
+      if (m.getAwayTeamId() != null) sideTeams.put(Side.AWAY, m.getAwayTeamId());
+    }
+    Map<Side, Set<UUID>> rosters = new java.util.EnumMap<>(Side.class);
+    sideTeams.forEach((side, team) -> rosters.put(side, teams.rosterIds(team)));
+    for (LineupEntry e : entries) {
+      boolean onRoster = rosters.getOrDefault(e.side(), Set.of()).contains(e.playerId());
+      if (!onRoster && !allowed.contains(e.playerId())) throw ApiException.badRequest("PLAYER_NOT_AVAILABLE");
+    }
     // a player an event names (as player or assister) must stay in the lineup, on that event's side
     Map<UUID, Side> newSides = entries.stream().collect(Collectors.toMap(LineupEntry::playerId, LineupEntry::side));
     for (MatchEvent e : events.findByMatchId(matchId)) {
@@ -105,7 +119,22 @@ public class MatchService {
     }
     lineups.deleteByMatchId(matchId);
     lineups.saveAll(entries.stream().map(e -> new MatchLineup(matchId, e.playerId(), e.side(), e.inGoal())).toList());
+    for (LineupEntry e : entries) {
+      UUID team = sideTeams.get(e.side());
+      if (team != null && !rosters.get(e.side()).contains(e.playerId())) teams.addToRoster(team, e.playerId());
+    }
     matches.bumpVersion(matchId);
+  }
+
+  /** A SCHEDULED competition match; the competition's admins administer it, so it gets no grant of its own. */
+  @Transactional
+  public UUID createFixture(UUID stageId, int round, Sport sport, UUID homeTeamId, UUID awayTeamId) {
+    Match m = new Match(sport, MatchStatus.SCHEDULED);
+    m.setStageId(stageId);
+    m.setRound(round);
+    m.setHomeTeamId(homeTeamId);
+    m.setAwayTeamId(awayTeamId);
+    return matches.save(m).getId();
   }
 
   @Transactional
@@ -192,7 +221,10 @@ public class MatchService {
     return events.findById(eventId).filter(e -> e.getMatchId().equals(matchId)).orElseThrow(ApiException::notFound);
   }
 
-  /** Matches I hold a grant for or play in: unscheduled first, then newest kickoff, then newest created. */
+  /**
+   * Matches I hold a grant for or play in, plus competition matches of competitions I admin or of teams I
+   * play for: unscheduled first, then newest kickoff, then newest created.
+   */
   @Transactional(readOnly = true)
   public List<MatchSummary> mine(UUID userId) {
     List<UUID> ids = jdbc.sql("""
@@ -201,6 +233,10 @@ public class MatchService {
                           WHERE g.resource_type = 'MATCH' AND g.resource_id = m.id AND g.user_id = UUID_TO_BIN(:u))
                OR EXISTS (SELECT 1 FROM match_lineup l JOIN player p ON p.id = l.player_id
                           WHERE l.match_id = m.id AND p.user_id = UUID_TO_BIN(:u))
+               OR EXISTS (SELECT 1 FROM stage s JOIN admin_grant g ON g.resource_type = 'COMPETITION' AND g.resource_id = s.competition_id
+                          WHERE s.id = m.stage_id AND g.user_id = UUID_TO_BIN(:u))
+               OR (m.stage_id IS NOT NULL AND EXISTS (SELECT 1 FROM team_player tp JOIN player p ON p.id = tp.player_id
+                          WHERE tp.team_id IN (m.home_team_id, m.away_team_id) AND p.user_id = UUID_TO_BIN(:u)))
             ORDER BY m.kickoff_at IS NULL DESC, m.kickoff_at DESC, m.created_at DESC
             """)
         .param("u", userId.toString())

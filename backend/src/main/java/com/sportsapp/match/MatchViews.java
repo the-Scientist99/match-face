@@ -44,18 +44,22 @@ public class MatchViews {
   }
 
   private record MatchRow(long version, Sport sport, MatchStatus status, Instant kickoffAt, String venue,
-      Visibility visibility, Integer round, Side penaltyWinner, SideView home, SideView away) {}
+      Visibility visibility, Integer round, Side penaltyWinner, SideView home, SideView away, UUID competitionId,
+      String competitionName) {}
 
   @Transactional(readOnly = true)
   public MatchResponse view(UUID matchId, @Nullable UUID viewerId) {
     String id = matchId.toString();
     var row = jdbc.sql("""
-            SELECT m.version, m.sport, m.status, m.kickoff_at, m.venue, m.visibility, m.round, m.penalty_winner_side,
+            SELECT m.version, m.sport, m.status, m.kickoff_at, m.venue, COALESCE(c.visibility, m.visibility) visibility,
+                   m.round, m.penalty_winner_side, BIN_TO_UUID(c.id) competition_id, c.name competition_name,
                    BIN_TO_UUID(m.home_team_id) home_team_id, BIN_TO_UUID(m.away_team_id) away_team_id,
                    COALESCE(ht.name, m.home_label) home_name, COALESCE(at.name, m.away_label) away_name
             FROM sport_match m
             LEFT JOIN team ht ON ht.id = m.home_team_id
             LEFT JOIN team at ON at.id = m.away_team_id
+            LEFT JOIN stage s ON s.id = m.stage_id
+            LEFT JOIN competition c ON c.id = s.competition_id
             WHERE m.id = UUID_TO_BIN(:id)
             """)
         .param("id", id)
@@ -65,7 +69,8 @@ public class MatchViews {
             rs.getObject("round", Integer.class),
             rs.getString("penalty_winner_side") == null ? null : Side.valueOf(rs.getString("penalty_winner_side")),
             new SideView(uuid(rs, "home_team_id"), rs.getString("home_name")),
-            new SideView(uuid(rs, "away_team_id"), rs.getString("away_name"))))
+            new SideView(uuid(rs, "away_team_id"), rs.getString("away_name")),
+            uuid(rs, "competition_id"), rs.getString("competition_name")))
         .optional().orElseThrow(ApiException::notFound);
 
     List<LineupView> lineup = jdbc.sql("""
@@ -97,7 +102,7 @@ public class MatchViews {
 
     Score score = SportRules.of(row.sport()).score(events.stream().map(e -> new ScoreEvent(e.type(), e.side())).toList());
     return new MatchResponse(matchId, row.version(), row.sport(), row.status(), row.kickoffAt(), row.venue(), row.visibility(),
-        null, null, row.round(), row.home(), row.away(), score, row.penaltyWinner(), lineup, events,
+        row.competitionId(), row.competitionName(), row.round(), row.home(), row.away(), score, row.penaltyWinner(), lineup, events,
         access.canAdmin(viewerId, ResourceType.MATCH, matchId));
   }
 
@@ -107,11 +112,14 @@ public class MatchViews {
     if (matchIds.isEmpty()) return List.of();
     Map<UUID, MatchSummary> byId = jdbc.sql("""
             SELECT BIN_TO_UUID(m.id) id, m.status, m.kickoff_at, m.round,
+                   BIN_TO_UUID(MAX(c.id)) competition_id, MAX(c.name) competition_name,
                    COALESCE(ht.name, m.home_label) home_name, COALESCE(at.name, m.away_label) away_name,
                    %s home_goals, %s away_goals
             FROM sport_match m
             LEFT JOIN team ht ON ht.id = m.home_team_id
             LEFT JOIN team at ON at.id = m.away_team_id
+            LEFT JOIN stage s ON s.id = m.stage_id
+            LEFT JOIN competition c ON c.id = s.competition_id
             LEFT JOIN match_event e ON e.match_id = m.id
             WHERE m.id IN (:ids)
             GROUP BY m.id
@@ -119,7 +127,7 @@ public class MatchViews {
         .param("ids", matchIds.stream().map(MatchViews::bytes).toList())
         .query((rs, i) -> new MatchSummary(uuid(rs, "id"), MatchStatus.valueOf(rs.getString("status")), instant(rs, "kickoff_at"),
             rs.getString("home_name"), rs.getString("away_name"), new Score(rs.getInt("home_goals"), rs.getInt("away_goals")),
-            null, null, rs.getObject("round", Integer.class)))
+            uuid(rs, "competition_id"), rs.getString("competition_name"), rs.getObject("round", Integer.class)))
         .list().stream()
         .collect(Collectors.toMap(MatchSummary::id, Function.identity()));
     return matchIds.stream().map(byId::get).filter(s -> s != null).toList();
