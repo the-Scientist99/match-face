@@ -44,6 +44,9 @@ class ApiExceptionHandlerTest {
 
     @GetMapping("/probe/page")
     void page(@RequestParam @Min(1) int page) {}
+
+    @PostMapping("/probe/body-and-param")
+    void bodyAndParam(@Valid @RequestBody Body body, @RequestParam @Min(1) int page) {}
   }
 
   private final MockMvc mvc = MockMvcBuilders.standaloneSetup(new ProbeController())
@@ -113,6 +116,15 @@ class ApiExceptionHandlerTest {
     mvc.perform(get("/probe/page").param("page", "0"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION"))
+        .andExpect(jsonPath("$.errors.page").value("Min"));
+  }
+
+  @Test
+  void bodyAndParamValidatedTogetherMapsBodyFieldsPerField() throws Exception {
+    mvc.perform(post("/probe/body-and-param").param("page", "0").contentType(APPLICATION_JSON).content("{\"name\":\"\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION"))
+        .andExpect(jsonPath("$.errors.name").value("NotBlank"))
         .andExpect(jsonPath("$.errors.page").value("Min"));
   }
 

@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.validation.method.ParameterErrors;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,8 +50,14 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
   protected ResponseEntity<Object> handleHandlerMethodValidationException(
       HandlerMethodValidationException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
     Map<String, String> errors = new LinkedHashMap<>();
-    ex.getParameterValidationResults().forEach(r -> r.getResolvableErrors().stream().findFirst()
-        .ifPresent(err -> errors.putIfAbsent(r.getMethodParameter().getParameterName(), constraintName(err))));
+    ex.getParameterValidationResults().forEach(r -> {
+      if (r instanceof ParameterErrors body) { // a validated @RequestBody: key its errors by field, as for a body alone
+        body.getFieldErrors().forEach(f -> errors.putIfAbsent(f.getField(), constraintName(f)));
+      } else {
+        r.getResolvableErrors().stream().findFirst()
+            .ifPresent(err -> errors.putIfAbsent(r.getMethodParameter().getParameterName(), constraintName(err)));
+      }
+    });
     return validation(errors);
   }
 
