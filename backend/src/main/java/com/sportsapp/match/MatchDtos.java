@@ -64,10 +64,13 @@ public final class MatchDtos {
   public record EventView(UUID id, EventType type, Side side, UUID playerId, String playerName,
       UUID assistPlayerId, String assistPlayerName, Integer minute) {}
 
-  /** {@code lineup}: HOME first, then by name. {@code events}: by minute (unknown last), then entry order. */
+  /**
+   * {@code lineup}: HOME first, then by name. {@code events}: by minute (unknown last), then entry order.
+   * {@code knockout}: a cup match, which can't end level (penalties) and can't be cancelled.
+   */
   public record MatchResponse(UUID id, long version, Sport sport, MatchStatus status, Instant kickoffAt, String venue,
       Visibility visibility, UUID competitionId, String competitionName, Integer round, SideView home, SideView away,
-      Score score, Side penaltyWinner, List<LineupView> lineup, List<EventView> events, boolean canAdmin) {}
+      Score score, Side penaltyWinner, List<LineupView> lineup, List<EventView> events, boolean canAdmin, boolean knockout) {}
 
   public record MatchSummary(UUID id, MatchStatus status, Instant kickoffAt, String homeName, String awayName, Score score,
       UUID competitionId, String competitionName, Integer round) {}

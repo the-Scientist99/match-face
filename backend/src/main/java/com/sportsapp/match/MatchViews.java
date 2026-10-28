@@ -45,7 +45,7 @@ public class MatchViews {
 
   private record MatchRow(long version, Sport sport, MatchStatus status, Instant kickoffAt, String venue,
       Visibility visibility, Integer round, Side penaltyWinner, SideView home, SideView away, UUID competitionId,
-      String competitionName) {}
+      String competitionName, boolean knockout) {}
 
   @Transactional(readOnly = true)
   public MatchResponse view(UUID matchId, @Nullable UUID viewerId) {
@@ -53,6 +53,7 @@ public class MatchViews {
     var row = jdbc.sql("""
             SELECT m.version, m.sport, m.status, m.kickoff_at, m.venue, COALESCE(c.visibility, m.visibility) visibility,
                    m.round, m.penalty_winner_side, BIN_TO_UUID(c.id) competition_id, c.name competition_name,
+                   m.bracket_position IS NOT NULL knockout,
                    BIN_TO_UUID(m.home_team_id) home_team_id, BIN_TO_UUID(m.away_team_id) away_team_id,
                    COALESCE(ht.name, m.home_label) home_name, COALESCE(at.name, m.away_label) away_name
             FROM sport_match m
@@ -70,7 +71,7 @@ public class MatchViews {
             rs.getString("penalty_winner_side") == null ? null : Side.valueOf(rs.getString("penalty_winner_side")),
             new SideView(uuid(rs, "home_team_id"), rs.getString("home_name")),
             new SideView(uuid(rs, "away_team_id"), rs.getString("away_name")),
-            uuid(rs, "competition_id"), rs.getString("competition_name")))
+            uuid(rs, "competition_id"), rs.getString("competition_name"), rs.getBoolean("knockout")))
         .optional().orElseThrow(ApiException::notFound);
 
     List<LineupView> lineup = jdbc.sql("""
@@ -103,7 +104,7 @@ public class MatchViews {
     Score score = SportRules.of(row.sport()).score(events.stream().map(e -> new ScoreEvent(e.type(), e.side())).toList());
     return new MatchResponse(matchId, row.version(), row.sport(), row.status(), row.kickoffAt(), row.venue(), row.visibility(),
         row.competitionId(), row.competitionName(), row.round(), row.home(), row.away(), score, row.penaltyWinner(), lineup, events,
-        access.canAdmin(viewerId, ResourceType.MATCH, matchId));
+        access.canAdmin(viewerId, ResourceType.MATCH, matchId), row.knockout());
   }
 
   /** In the order of {@code matchIds}; ids that don't exist are skipped. */

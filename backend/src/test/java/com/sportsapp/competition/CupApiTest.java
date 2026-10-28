@@ -191,6 +191,7 @@ class CupApiTest extends IntegrationTest {
     UUID cup = createCup(ana, PRIVATE, t.get(0), t.get(1));
     UUID fin = matchAt(cup, 1, 0);
     goals(fin, 1, 1);
+    mvc.perform(get("/api/matches/{id}", fin).with(as(ana))).andExpect(jsonPath("$.knockout").value(true));
     finish(fin, "AWAY").andExpect(status().isOk());
     bracket(cup).andExpect(jsonPath("$.winner.id").value(t.get(1).toString()))
         .andExpect(jsonPath("$.matches[0].penaltyWinner").value("AWAY"));
@@ -255,7 +256,8 @@ class CupApiTest extends IntegrationTest {
   @Test
   void oneOffFinishIgnoresPenaltyWinner() throws Exception {
     UUID m = createPickup(ana, PRIVATE);
-    finish(m, "HOME").andExpect(status().isOk()).andExpect(jsonPath("$.penaltyWinner").doesNotExist());
+    finish(m, "HOME").andExpect(status().isOk()).andExpect(jsonPath("$.penaltyWinner").doesNotExist())
+        .andExpect(jsonPath("$.knockout").value(false));
     lifecycle(m, "reopen").andExpect(status().isOk());
     lifecycle(m, "cancel").andExpect(status().isOk());
   }
