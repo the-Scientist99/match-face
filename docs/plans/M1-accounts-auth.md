@@ -91,7 +91,7 @@ CREATE TABLE player (
 - Produces DTOs (`AccountDtos`):
   - `RegisterRequest(email, password, displayName, locale)`: `@Email @Size(max=254)`, `@Size(min=8,max=128)`, `@NotBlank @Size(max=50)`, `@Pattern("me|en")`
   - `LoginRequest(email, password)`
-  - `PatchMeRequest(@Pattern("me|en") locale)`
+  - `PatchMeRequest(@Size(min=1,max=50) displayName, @Pattern("me|en") locale)`: both optional; null leaves the value unchanged. A non-null `displayName` is trimmed, must not be blank (`400 VALIDATION`, `errors.displayName`), and renames the user's own player (spec 7: `PATCH me` changes display name and locale)
   - `MeResponse(UUID id, String email, String locale, UUID playerId, String displayName)`
   - `AuthResponse(String accessToken, MeResponse user)`
 - Produces endpoints:
@@ -104,6 +104,7 @@ CREATE TABLE player (
 - Produces services:
   - `PlayerService.createOwn(UUID userId, String name): Player` (M2 adds more methods)
   - `PlayerService.ownPlayer(UUID userId): Player`
+  - `PlayerService.renameOwn(UUID userId, String name): Player`
   - `common.Auth`, `common.RateLimiter`, `common.Tokens` (as in the main plan)
 - Produces `IntegrationTest` helpers:
   - `record TestUser(UUID id, UUID playerId, String token)`
@@ -140,6 +141,7 @@ CREATE TABLE player (
 @Test void refreshRotatesAndReuseRevokesAll()       // refresh with cookie A → 200 + cookie B (B ≠ A); refresh with A → 401; then refresh with B → 401
 @Test void logoutRevokesRefreshToken()              // logout with cookie → 204 and Set-Cookie Max-Age=0; refresh with same cookie → 401
 @Test void patchMeLocale()                          // PATCH {"locale":"me"} → 200 $.locale "me"; {"locale":"de"} → 400 VALIDATION
+@Test void patchMeDisplayNameRenamesOwnPlayer()     // PATCH {"displayName":" Bob "} → 200 $.displayName "Bob", locale unchanged; player row name "Bob"; {"displayName":"  "} → 400 VALIDATION $.errors.displayName
 @Test void loginIsRateLimited()                     // 10 failed logins → 401 each; 11th → 429 $.code "RATE_LIMITED"
 ```
 
@@ -232,3 +234,17 @@ test('safeNext keeps "/claim/abc", rejects "//evil.com", "https://evil.com" and 
   3. Switch to EN, log out, log back in; the UI is in EN.
   4. Log in with a wrong password; a translated error appears.
 - [ ] **Step 6:** Commit: `feat: frontend auth with transparent token refresh`.
+
+### Task 4: Carry-overs from the M0 review
+
+**Files:**
+- Modify: `backend/src/main/java/com/sportsapp/common/ApiExceptionHandler.java`, `.github/workflows/ci.yml`
+- Test: `backend/src/test/java/com/sportsapp/common/ApiExceptionHandlerTest.java`
+
+- [ ] **Step 1: Write the failing probe test.** Add a probe endpoint taking `@Valid @RequestBody Body body` together with `@RequestParam @Min(1) int page`; this combination makes Spring raise `HandlerMethodValidationException` instead of `MethodArgumentNotValidException`.
+  - `bodyAndParamValidatedTogetherMapsBodyFieldsPerField`: `POST ?page=0` with `{"name":""}` → 400 `VALIDATION`, `$.errors.name` = `NotBlank`, `$.errors.page` = `Min`.
+- [ ] **Step 2:** Run `./mvnw -q test -Dtest=ApiExceptionHandlerTest`. Expected: FAIL (errors keyed `body`, not `name`).
+- [ ] **Step 3:** In `handleHandlerMethodValidationException`, map a `ParameterErrors` result's field errors per field (`getFieldErrors()`), and keep the parameter-name key for other results.
+- [ ] **Step 4:** Run the same test. Expected: PASS.
+- [ ] **Step 5:** Restrict CI's `push` trigger to `main`, so pull requests don't run twice.
+- [ ] **Step 6:** Commit: `fix: per-field errors for bodies validated with constrained params; CI push on main only`.
