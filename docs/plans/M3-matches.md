@@ -107,17 +107,19 @@ CREATE TABLE match_event (
 - Test: `backend/src/test/java/com/sportsapp/match/{MatchApiTest,LineupApiTest}.java`
 
 **Interfaces:**
-- Consumes: `AccessService`, `PlayerService.myPlayerIds/namesById`, `TeamService.name`, `SportRules.of`.
+- Consumes (from M2): `AccessService.grantOwner/canAdmin/requireRead/requireAdmin`, `ResourceType`, `PlayerService.myPlayerIds/namesById`, `TeamService.name`, `common.Names.ORDER` (sort every list of names with it, never SQL `ORDER BY name`), `common.Visibility`, `SportRules.of`, and the `IntegrationTest` helpers `register/createGuest/createTeam/as/toJson`.
+- `AccessService.canAdmin/canRead` become exhaustive `switch (type)` expressions (`TEAM`, `MATCH`; `COMPETITION` still throws `IllegalArgumentException` until M5), so M5 can't forget a branch.
 - Produces entities:
   - `Match`: every column; `@Version long version`; `UUID stageId`, `Integer round`, `Integer bracketPosition`, `Side penaltyWinnerSide`, `UUID nextMatchId`, `Side nextSlot`
   - `MatchLineup(matchId, playerId, side, inGoal)`
+  - `MatchRepository.lockForUpdate(UUID id)` (`@Lock(PESSIMISTIC_FORCE_INCREMENT)`): every match write (patch, lineup, events, finish/reopen/cancel) loads the match through it first. Concurrent writes to one match then run one at a time, and each bumps `version`. Without the lock, two lineup PUTs deadlock on the delete/insert gap locks (seen with rosters in M2), and a double-tapped MOTM could insert two.
   - `MatchEvent(matchId, type, side, playerId, assistPlayerId, minute)`
 - Produces DTOs:
   - `CreateMatchRequest(UUID homeTeamId, UUID awayTeamId, @Size(max=30) String homeLabel, @Size(max=30) String awayLabel, Instant kickoffAt, @Size(max=100) String venue, @NotNull Visibility visibility)`
   - `PatchMatchRequest(@NotNull Long version, Instant kickoffAt, String venue, Visibility visibility)`: null means unchanged; venue `""` clears it
   - `LineupEntry(@NotNull UUID playerId, @NotNull Side side, boolean inGoal)`, `SetLineupRequest(@NotNull @Valid List<LineupEntry> entries)`
   - `SideView(UUID teamId, String name)`: name = team name or label
-  - `LineupView(UUID playerId, String name, Side side, boolean inGoal)`
+  - `LineupView(UUID playerId, String name, Side side, boolean inGoal)`: HOME first, then by name
   - `EventView(UUID id, EventType type, Side side, UUID playerId, String playerName, UUID assistPlayerId, String assistPlayerName, Integer minute)`
   - `MatchResponse(UUID id, long version, Sport sport, MatchStatus status, Instant kickoffAt, String venue, Visibility visibility, UUID competitionId, String competitionName, Integer round, SideView home, SideView away, Score score, Side penaltyWinner, List<LineupView> lineup, List<EventView> events, boolean canAdmin)`
     - For competition matches, `visibility` is the competition's (M5).
@@ -295,6 +297,9 @@ WHERE m.stage_id IS NULL AND (
   - Goal opens a `Modal` with an optional assist `Select` (same-side lineup, scorer excluded), an optional minute `NumberInput` (0–150), and Save and Skip buttons. Both buttons post the goal; Skip sends no assist or minute.
   - A per-side "Goal (unknown scorer)" button posts a `GOAL` with no player.
   - All controls are **disabled while a mutation is pending**, so a double tap can't create duplicate events.
+- [ ] **Step 5b: `PlayerPicker` fixes (deferred from M2).**
+  - After creating a guest, write it into `['players','mine']` with `setQueryData` before calling `onChange`, so the new pill shows the name, not the id.
+  - Hide "+ Add guest" when the search exactly matches an existing player's name, ignoring case.
 - [ ] **Step 6: `HomePage`.**
   - "New match" button.
   - `MatchList` of `['matches','mine']` split into Upcoming (`SCHEDULED`) and Recent (`FINISHED`), with `CANCELLED` shown in Recent with a badge.
