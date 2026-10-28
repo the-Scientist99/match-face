@@ -71,7 +71,10 @@
 - Test: `backend/src/test/java/com/sportsapp/competition/CupApiTest.java`
 
 **Interfaces:**
-- Consumes: `Bracket.plan`, `FixtureService.generate` (M5), `MatchService.finish/reopen/cancel` (M3), `ScoreSql`.
+- Consumes: `Bracket.plan`, `FixtureService.generate` (M5; its `CUP` branch currently throws `NOT_A_LEAGUE`), `MatchService.finish/reopen/cancel/setLineup/addEvent/updateEvent/deleteEvent` (M3; all start with `lockAsAdmin`, which locks the match row before any read), `MatchService.createFixture` (M5), `ScoreSql`, `competition.TeamRef`, and the `IntegrationTest` helpers (`createTeam/createGuest/setLineup/addEvent/finish/version/competitionMatches`).
+- **Locking.** Advancement writes a second match row. The lock order is always the current match, then its next match (via `MatchRepository.lockForUpdate`). No path locks a later-round match before an earlier one, so this can't deadlock. After the first lock the transaction's snapshot is fixed, so the reopen check reads the next match's status through its row lock and counts its events with a `FOR UPDATE` read. A plain read could miss an event added while we waited.
+- **`bumpVersion`:** never call it on a match that is also dirtied in the same transaction. Advancement and reopen dirty the next match entity, which bumps its version on flush.
+- `BracketResponse.winner` is a `TeamRef(id, name)`, not `TeamSummary`: since M5 `TeamSummary` carries the viewer's `canAdmin`.
 - Produces in `FixtureService.generate`, `CUP` branch:
   - one `Stage(KNOCKOUT, "Cup", 1)`;
   - matches with `round` and `bracket_position`, plus pre-placed bye teams;
@@ -91,9 +94,8 @@
   - **Cancel** → `409 CUP_MATCH_CANNOT_CANCEL`.
 - Produces DTOs:
   - `BracketMatch(MatchSummary match, int round, int position, Side penaltyWinner)`
-  - `BracketResponse(int rounds, List<BracketMatch> matches, TeamSummary winner)`
+  - `BracketResponse(int rounds, List<BracketMatch> matches, TeamRef winner)`
     - `winner` is null until the final is `FINISHED`.
-    - `TeamSummary` is from M2.
 - Produces endpoint: `GET /api/competitions/{id}/bracket` → `BracketResponse`. A league → `400 NOT_A_CUP`.
 - Produces helper `IntegrationTest.createCup(TestUser owner, Visibility v, UUID... teamIdsInSeedOrder): UUID`. It seeds teams 1..n in argument order, then generates.
 
@@ -140,6 +142,7 @@
   - When the match is in a cup and the score is level, it asks "Who won on penalties?" with the two side names as buttons before calling finish.
   - Otherwise it's a plain confirm.
 - [ ] **Step 4: Manage tab.** For cups, an optional seed `NumberInput` (1–64) appears next to each team, with hint `competition.seedHint`: "Leave empty for a random draw." Changing a seed means removing and re-adding the team.
+- [ ] **Step 4b:** `NewCompetitionPage` enables Cup. The home-and-away checkbox shows for leagues only. `competition.new` becomes "New competition". `StatsTab` shows the translated error instead of spinning forever when its request fails (a deferred M5 minor).
 - [ ] **Step 5:** Add locale keys `bracket.*`, `errors.CUP_DRAW_NEEDS_PENALTIES`, `LATER_ROUND_FINISHED`, `TEAMS_NOT_SET`, `CUP_MATCH_CANNOT_CANCEL`, `TOO_MANY_TEAMS`, `NOT_A_CUP`. Then run `npm test && npm run build`. Expected: PASS.
 - [ ] **Step 6: Verify manually.**
   1. Create a 6-team cup with seeds for 2 teams and generate it.
