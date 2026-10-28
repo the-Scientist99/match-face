@@ -8,6 +8,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
 import { router } from './App'
+import { AuthProvider } from './auth/AuthProvider'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1 } } })
 
@@ -16,7 +17,9 @@ createRoot(document.getElementById('root')!).render(
     <MantineProvider>
       <Notifications />
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
       </QueryClientProvider>
     </MantineProvider>
   </StrictMode>,

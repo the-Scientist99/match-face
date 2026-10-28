@@ -1,8 +1,17 @@
 {
-  "app": { "name": "Sportska liga" },
-  "nav": { "home": "Početna" },
-  "language": { "me": "ME", "en": "EN" },
-  "home": { "title": "Moje utakmice" },
+  "app": {
+    "name": "Sportska liga"
+  },
+  "nav": {
+    "home": "Početna"
+  },
+  "language": {
+    "me": "ME",
+    "en": "EN"
+  },
+  "home": {
+    "title": "Moje utakmice"
+  },
   "errors": {
     "UNKNOWN": "Nešto nije u redu. Pokušajte ponovo.",
     "NOT_FOUND": "Nije pronađeno.",
@@ -10,6 +19,29 @@
     "UNAUTHORIZED": "Prijavite se da biste nastavili.",
     "VALIDATION": "Provjerite označena polja.",
     "STALE": "Podaci su u međuvremenu promijenjeni. Osvježili smo ih, pokušajte ponovo.",
-    "RATE_LIMITED": "Previše pokušaja. Sačekajte minut."
+    "RATE_LIMITED": "Previše pokušaja. Sačekajte minut.",
+    "EMAIL_TAKEN": "Nalog sa ovim emailom već postoji.",
+    "BAD_CREDENTIALS": "Pogrešan email ili lozinka.",
+    "PASSWORD_TOO_LONG": "Lozinka je predugačka."
+  },
+  "auth": {
+    "login": "Prijava",
+    "register": "Registracija",
+    "logout": "Odjava",
+    "loginTitle": "Prijava",
+    "registerTitle": "Napravite nalog",
+    "email": "Email",
+    "password": "Lozinka",
+    "passwordHint": "Najmanje 8 karaktera",
+    "displayName": "Vaše ime",
+    "noAccount": "Nemate nalog?",
+    "haveAccount": "Već imate nalog?"
+  },
+  "validation": {
+    "NotBlank": "Obavezno polje.",
+    "NotNull": "Obavezno polje.",
+    "Email": "Unesite ispravnu email adresu.",
+    "Size": "Prekratko ili predugačko.",
+    "Pattern": "Neispravna vrijednost."
   }
 }
