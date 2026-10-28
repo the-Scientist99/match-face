@@ -58,10 +58,10 @@ Mutable aggregates (`sport_match`, `competition`) have a `version` column for op
 The match table is named `sport_match`, because `MATCH` is a reserved word in MySQL. The rest of this document says "match" for the concept.
 
 ### People
-- **`user_account`**: `email` (unique), `password_hash`, `display_name`, `locale` (`me`/`en`).
+- **`user_account`**: `email` (unique), `password_hash`, `locale` (`me`/`en`). The user's display name is their player's name.
 - **`player`**: `name`, `user_id` (nullable, unique), `created_by_user_id`.
   - A guest player has `user_id = null`. Every user has exactly one player, created at registration with the user's display name.
-- **`player_claim`**: `player_id`, `token_hash` (unique), `expires_at`, `used_at` (nullable).
+- **`player_claim`**: `player_id`, `token_hash` (unique), `expires_at`.
   - Token: 32 random bytes, stored hashed (SHA-256), single use, 14-day expiry.
   - Creating a new claim for a player invalidates any earlier unused one.
 - **`refresh_token`**: `user_id`, `token_hash` (unique), `expires_at`, `revoked_at` (nullable).
@@ -115,8 +115,9 @@ A `SportRules` contract implemented by `FootballRules`. It supplies:
 - allowed event types;
 - points for win, draw and loss;
 - the tiebreaker order;
-- clean-sheet logic;
 - the score derived from events.
+
+Clean sheets are computed in the stats SQL. A SQL twin of the score rule (`ScoreSql`) serves lists, standings and brackets.
 
 `sport` columns are an enum with one value, `FOOTBALL`.
 
@@ -177,7 +178,7 @@ The picker suggests the team roster. The organizer may also add any of "my playe
 3. In one transaction:
    - The guest's `match_lineup`, `match_event` (both player and assist references) and `team_player` rows are moved to the user's player.
    - Duplicate roster rows are dropped, and the guest is deleted.
-   - The claim is marked used.
+   - Deleting the guest cascades to its claims, so the token can't be reused.
 4. If the guest and the user's existing player are both in the same match's lineup, the merge is rejected with `MERGE_CONFLICT`.
 5. Expired or used tokens return `CLAIM_INVALID`.
 
@@ -218,7 +219,7 @@ For deployment, the built SPA is copied into the Spring Boot jar's static resour
   - `POST {id}/claims` (create invite)
   - `GET claims/{token}` (preview), `POST claims/{token}` (claim)
   - `GET {id}` (profile with visibility-filtered stats and match list)
-- **`teams`**: `POST`, `GET {id}`, `PATCH {id}`, `PUT {id}/players`
+- **`teams`**: `POST`, `GET mine`, `GET {id}`, `PATCH {id}`, `PUT {id}/players`
 - **`competitions`**:
   - `POST`, `GET mine`, `GET {id}`, `PATCH {id}`
   - `POST {id}/teams`, `DELETE {id}/teams/{teamId}`
@@ -228,7 +229,7 @@ For deployment, the built SPA is copied into the Spring Boot jar's static resour
   - `POST` (one-off), `GET mine`, `GET {id}`, `PATCH {id}` (details/visibility)
   - `PUT {id}/lineup`
   - `POST {id}/events`, `PATCH {id}/events/{eventId}`, `DELETE {id}/events/{eventId}`
-  - `POST {id}/finish`, `POST {id}/reopen`
+  - `POST {id}/finish` (with an optional penalty winner), `POST {id}/reopen`, `POST {id}/cancel` (not allowed for cup matches)
 
 ### Frontend
 React + Vite + TypeScript + Mantine, React Router, TanStack Query, i18next (`me.json`, `en.json`), mobile-first.
@@ -271,6 +272,9 @@ Domain codes:
 - `PLAYER_HAS_EVENTS` (removing a lineup player who has events)
 - `MATCH_FINISHED` (editing a finished match without reopening)
 - `SAME_TEAM` (a team on both sides)
+- `INVALID_SIDES`, `INVALID_EVENT`, `INVALID_FIELD`, `DUPLICATE_PLAYER`, `PLAYER_NOT_AVAILABLE`
+- `TEAM_ALREADY_ADDED`, `DUPLICATE_SEED`, `COMPETITION_STARTED`, `TOO_MANY_TEAMS` (cups: max 64)
+- `NOT_A_LEAGUE`, `NOT_A_CUP`, `TEAMS_NOT_SET`, `CUP_MATCH_CANNOT_CANCEL`
 - `EMAIL_TAKEN`
 - `BAD_CREDENTIALS`
 - `RATE_LIMITED` (`429`)
