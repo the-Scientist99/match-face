@@ -115,7 +115,7 @@ double: append the same rounds again with home/away swapped
   1. Accumulate each team's row from the results.
   2. Sort by the tiebreakers in `rules.tiebreakers()` order until `HEAD_TO_HEAD`.
   3. Split the list into groups that are equal on every criterion before `HEAD_TO_HEAD`. Within each group of 2 or more, compute points using only results between members of that group.
-  4. Order each group by those points, then `NAME` (`String.CASE_INSENSITIVE_ORDER`).
+  4. Order each group by those points, then `NAME` (`common.Names.ORDER`, the Montenegrin alphabet used for every list of names since M2).
 - [ ] **Step 4:** Run `./mvnw -q test`. Expected: all PASS.
 - [ ] **Step 5:** Commit: `feat: standings with head-to-head tiebreak`.
 
@@ -128,7 +128,10 @@ double: append the same rounds again with home/away swapped
 - Test: `backend/src/test/java/com/sportsapp/competition/{CompetitionApiTest,CompetitionAccessTest}.java`
 
 **Interfaces:**
-- Consumes: `RoundRobin`, `TeamService.addToRoster/rosterIds/name`, `AccessService`.
+- Consumes: `RoundRobin`, `TeamService.addToRoster/rosterIds/name`, `AccessService` (exhaustive `switch`; `COMPETITION` currently throws, so this task fills it in), `MatchService.lockAsAdmin` (lock first, then `requireAdmin(MATCH)`), `MatchRepository.lockForUpdate`, `common.Names.ORDER`, and the `IntegrationTest` helpers `register/createGuest/createTeam/createPickup/setLineup/putOnRoster/addEvent/finish/version`.
+- **Locking (M3 lesson):** every competition write (patch, add/remove team, generate) starts with `CompetitionRepository.lockForUpdate(id)` (`PESSIMISTIC_WRITE`), **before any other read in the transaction**, and only then checks access. At REPEATABLE READ the first plain read fixes the snapshot, so a write that waited on the lock would otherwise validate against stale rows.
+- **`MatchRepository.bumpVersion`** (a bulk JPQL update) must never run in the same transaction as a dirtied `Match` entity, or the flush checks a stale `@Version` and throws a spurious `STALE`.
+- `TeamSummary` gains `boolean canAdmin`, so pickers that add a team (new match, Manage tab) list only teams the user admins. This is a deferred M3 minor: listing teams you only play on led to a 403 on submit.
 - Produces enums:
   - `CompetitionType { LEAGUE, CUP }`
   - `CompetitionStatus { DRAFT, ACTIVE }`
@@ -273,6 +276,7 @@ SELECT c.id FROM competition c WHERE c.visibility = 'PUBLIC'
 - [ ] **Step 1:** Run `npm run gen:api`.
 - [ ] **Step 2: `NewCompetitionPage`.**
   - Fields: name, type (League; Cup is enabled in M6), visibility, and a "home and away" checkbox (`doubleRoundRobin`).
+  - `NewMatchPage`'s team selects and the Manage tab's "Add team" select show only `canAdmin` teams.
   - After creating, it navigates to the Manage tab.
 - [ ] **Step 3: `CompetitionPage` tabs.**
   - **Fixtures:** `MatchList` grouped by round.
