@@ -1,0 +1,302 @@
+# Sports League App — Design Spec
+
+Date: 2026-10-28
+Status: Approved in brainstorming, pending written-spec review
+Working title: none yet (referred to as "the app")
+
+## 1. Purpose
+
+A web app where people organize football matches, track player stats, and run leagues and cups.
+
+- **Primary audience:** casual / amateur football groups (friends, local pickup games, small leagues). Players track stats for fun and bragging rights.
+- **Growth path:** business leagues and local leagues, which need public standings pages and more structured competitions.
+- **Success criteria for v1:**
+  - An organizer can set up a league and enter a match result with scorers in under 2 minutes on a phone.
+  - Players immediately see updated standings and their personal stats.
+  - A guest player can claim their profile and keep their history.
+
+## 2. Scope
+
+### In v1
+- Sport: **football only**. The design supports adding up to 3–4 more sports later, each with built-in stats and rules.
+- Platform: **responsive web app**, mobile-first layouts. Native mobile app later, reusing the same API.
+- Languages: **Montenegrin (`me`) and English (`en`)**.
+- Formats: one-off matches (pickup or team vs team), round-robin leagues (single or double), single-elimination cups.
+- Stats per match: appearances, goals, assists, own goals, yellow cards, red cards, clean sheets, man of the match. Goals and cards have an optional minute.
+- Organizer-only data entry. The permission model allows adding co-admins/scorekeepers later without schema changes.
+- Guest players (name only) that can be claimed by a registered user via invite link.
+- Per-competition / per-match visibility: public (shareable link, no login) or private (admins + members).
+
+### Explicitly out of v1
+Notifications, chat, payments, availability polls, venue booking, email sending, social login, automatic suspensions, custom points/tiebreakers, third-place playoffs, two-legged ties, group stage → knockout format, bulk scheduling, public browse/search, offline mode, sports other than football.
+
+### Designed-for extensions (must not require schema rewrites)
+- **Co-admins / scorekeepers:** new role value in `admin_grant`.
+- **Group stage → knockout:** multiple `ROUND_ROBIN` stages sharing a sequence number, followed by a `KNOCKOUT` stage.
+- **Other sports:** new sport value + new rules class + new event types.
+
+## 3. Domain rules
+
+- Points: win 3, draw 1, loss 0.
+- League tiebreakers, in order: points → goal difference → goals scored → head-to-head points among the tied teams → team name.
+- Score is always derived from `match_event`. `GOAL` counts for the event's side; `OWN_GOAL` counts for the opposite side.
+- Appearance = player is in the match lineup.
+- Clean sheet = player is flagged as in goal for their side, and that side conceded 0 in a finished match.
+- A cup match that ends level cannot be finished until the organizer records the penalty-shootout winner. Extra-time goals are entered as ordinary goals.
+- Cards are recorded only; no suspension logic.
+
+## 4. Data model
+
+All tables have `id` (bigint, auto-increment) and `created_at`. Mutable aggregates (`match`, `competition`) have a `version` column for optimistic locking.
+
+### People
+- **`user_account`**: `email` (unique), `password_hash`, `display_name`, `locale` (`me`/`en`).
+- **`player`**: `name`, `user_id` (nullable, unique), `created_by_user_id`.
+  - A guest player has `user_id = null`. A user has at most one player.
+- **`player_claim`**: `player_id`, `token_hash` (unique), `expires_at`, `used_at` (nullable).
+  - Token: 32 random bytes, stored hashed (SHA-256), single use, 14-day expiry.
+  - Creating a new claim for a player invalidates any earlier unused one.
+- **`refresh_token`**: `user_id`, `token_hash` (unique), `expires_at`, `revoked_at` (nullable).
+
+### Teams
+- **`team`**: `name`, `sport`.
+- **`team_player`**: `team_id`, `player_id`; unique on the pair.
+
+### Competitions
+- **`competition`**:
+  - Identity: `name`, `sport`, `type` (`LEAGUE`/`CUP`).
+  - Sharing: `visibility` (`PUBLIC`/`PRIVATE`), `public_slug` (unique, random).
+  - State: `status` (`DRAFT`/`ACTIVE`).
+  - League setting: `double_round_robin` (boolean, used by leagues).
+- **`competition_team`**: `competition_id`, `team_id`, `seed` (nullable); unique on the pair.
+- **`stage`**: `competition_id`, `type` (`ROUND_ROBIN`/`KNOCKOUT`), `name`, `sequence`.
+  - In v1, a league has exactly one `ROUND_ROBIN` stage and a cup has exactly one `KNOCKOUT` stage.
+
+### Matches
+- **`match`**:
+  - Context: `sport`, `stage_id` (nullable; null = one-off match), `round` (nullable), `bracket_position` (nullable).
+  - Sides: `home_team_id`, `away_team_id` (nullable), `home_label`, `away_label` (nullable).
+    - Team matches set the team ids.
+    - Pickup matches leave the team ids null and set the labels (e.g. "Bibs" / "Non-bibs").
+    - Cup matches have null team ids until the slot is filled.
+  - Schedule and state: `kickoff_at` (nullable), `venue` (nullable text), `status` (`SCHEDULED`/`FINISHED`/`CANCELLED`).
+  - Sharing: `visibility` (nullable), `public_slug` (nullable, unique).
+    - Set only for one-off matches.
+    - Competition matches inherit visibility from the competition.
+  - Cup fields: `penalty_winner_side` (nullable, `HOME`/`AWAY`), `next_match_id` (nullable), `next_slot` (nullable, `HOME`/`AWAY`).
+- **`match_lineup`**: `match_id`, `player_id`, `side` (`HOME`/`AWAY`), `in_goal` (boolean).
+  - Unique on (`match_id`, `player_id`).
+- **`match_event`**: `match_id`, `type`, `side`, `player_id` (nullable), `assist_player_id` (nullable), `minute` (nullable, 0–150).
+  - `type` is one of `GOAL`/`OWN_GOAL`/`YELLOW`/`RED`/`MOTM`.
+  - `player_id` is nullable so a goal can be recorded without a known scorer (not allowed for cards/MOTM).
+  - Validation:
+    - If `player_id` is set, the player must be in the lineup. For `GOAL`/`YELLOW`/`RED`/`MOTM`, their lineup side must equal `side`.
+    - For `OWN_GOAL`, `side` is the side the player belongs to.
+    - The assister must be in the lineup on the same side and must differ from the scorer.
+    - Assists are allowed only on `GOAL`.
+    - At most one `MOTM` per match.
+  - Lineup and events can be edited while the match is `SCHEDULED`. This allows live entry during the game.
+  - A `FINISHED` match is read-only until it is reopened (`POST {id}/reopen`). This rule applies to every match type. Standings and stats count `FINISHED` matches only.
+
+### Permissions
+- **`admin_grant`**: `user_id`, `resource_type` (`COMPETITION`/`MATCH`/`TEAM`), `resource_id`, `role` (`OWNER` in v1).
+  - Unique on (`user_id`, `resource_type`, `resource_id`).
+
+### Sport rules (code, not tables)
+A `SportRules` contract implemented by `FootballRules`. It supplies:
+- allowed event types;
+- points for win, draw and loss;
+- the tiebreaker order;
+- clean-sheet logic;
+- the score derived from events.
+
+`sport` columns are an enum with one value, `FOOTBALL`.
+
+## 5. Competitions
+
+### Lifecycle
+1. A competition is created as `DRAFT`. The organizer adds teams (existing teams they admin, or new teams created inline) and optional seeds.
+2. **Generate fixtures** creates the stage and its matches in one transaction, and sets `ACTIVE`. Leagues need ≥ 2 teams; cups need ≥ 2 teams.
+3. Teams can be added/removed while `ACTIVE` only if no match in the competition is `FINISHED`.
+   - Doing so deletes the existing fixtures and regenerates them.
+   - Once any result exists, the team list is locked.
+4. "Completed" is derived: every match is `FINISHED` or `CANCELLED`.
+
+### Leagues
+- Fixtures use the circle method; single or double round-robin. With an odd team count, one team rests each round.
+- Matches are created `SCHEDULED` with a `round` number and no date; the organizer edits date/time/venue per match.
+- Standings are computed from `FINISHED` matches in the stage. Columns: P, W, D, L, GF, GA, GD, Pts. Order per section 3.
+- Competition stats: top scorers, top assists and cards, aggregated from events in the competition's matches.
+
+### Cups
+- Bracket size = the smallest power of two ≥ the team count. Byes = bracket size − team count.
+- Seeded teams are placed using standard bracket positions (seed 1 and seed 2 can only meet in the final). Byes go to the top seeds.
+- If no seeds are set, a random draw assigns them at generation.
+- All bracket matches are created up front and linked by `next_match_id`/`next_slot`. A team with a bye is written directly into its round-2 slot (no match row, no appearance).
+- **Finishing a cup match:**
+  - The winner is the higher score, or `penalty_winner_side` if level.
+  - The winner is written into the next match's slot in the same transaction.
+  - The winner of the final is the cup winner.
+- **Editing a finished cup match:** the organizer reopens it, edits it and finishes it again.
+  - Reopen is allowed only while the next match has no events and is not `FINISHED`; otherwise it fails with `LATER_ROUND_FINISHED`.
+  - Reopening clears the winner from the next match's slot, along with that side's lineup in the next match.
+
+### Lineups in competition matches
+The picker suggests the team roster. The organizer may also add any of "my players" or a new guest; such a player is added to that team's roster automatically.
+
+## 6. Permissions and visibility
+
+### Actions
+- Any authenticated user can create a match, team or competition. The creator gets an `OWNER` grant.
+- Competition admins can manage everything inside the competition: matches, lineups, events and fixtures.
+- Team admins can manage the team's name and roster.
+- A guest player can be renamed by its creator until it is claimed; after that only the claiming user can rename it.
+- **"My players"** (lineup picker source): players I created, plus players on rosters of teams I admin. There is no global user search.
+- All admin checks go through one function, `canAdmin(user, resourceType, resourceId)`. For a competition match it also checks the parent competition.
+
+### Visibility
+- **Public:** readable by anyone via `/c/{slug}` or `/m/{slug}`, with no login. Public items are not listed or searchable in v1.
+- **Private:** readable by admins and members.
+  - Competition members: users whose player is on the roster of a team in the competition.
+  - One-off match members: users whose player is in the match's lineup.
+- **Team:** readable by its admins, its roster members, and anyone who can read a competition it plays in.
+- **Player profile:** stats are always computed **only from matches the viewer can see**. This applies to both the totals and the match list. A user viewing their own profile sees everything.
+  - The same visibility filter is used by every stats query.
+
+### Claiming a guest profile
+1. A user who can admin the guest (its creator) creates an invite, `POST /api/players/{id}/claims`. They get a `/claim/{token}` link to share manually.
+2. The recipient opens the link and logs in or registers. They see a preview ("N matches, M goals") and confirm.
+3. In one transaction:
+   - If the user has no player, the guest's `user_id` is set.
+   - Otherwise the guest's `match_lineup`, `match_event` (both player and assist references) and `team_player` rows are moved to the user's player.
+   - Duplicate roster rows are dropped, and the guest is deleted.
+   - The claim is marked used.
+4. If the guest and the user's existing player are both in the same match's lineup, the merge is rejected with `MERGE_CONFLICT`.
+5. Expired or used tokens return `CLAIM_INVALID`.
+
+## 7. Architecture
+
+### Repository layout
+```
+backend/   Spring Boot 4, Java 25, Maven
+frontend/  React + Vite + TypeScript
+docs/      specs and plans
+docker-compose.yml  (MySQL 8 for local dev)
+```
+For deployment, the built SPA is copied into the Spring Boot jar's static resources. That gives one deployable, same-origin, and no CORS setup. The future mobile app calls the same `/api`.
+
+### Backend
+- Packages by module: `account`, `player`, `team`, `competition`, `match`, `stats`, `sport`, `common`.
+  - Each module has its own controllers, services and repositories.
+  - Modules call each other's services, never each other's repositories.
+- Persistence:
+  - Spring Data JPA for basic CRUD.
+  - Plain SQL (`JdbcClient`) for standings, stats and the visibility filter.
+  - Flyway migrations.
+- Auth:
+  - Passwords hashed with BCrypt.
+  - Login returns a 15-minute access JWT (validated with Spring Security's resource-server JWT support, HMAC-signed with a secret from configuration).
+  - A 30-day refresh token is stored hashed and rotated on every use. On web it's an httpOnly, Secure, SameSite=Strict cookie scoped to `/api/auth`; mobile will keep it in secure storage.
+  - Logout revokes the refresh token.
+- Errors: Spring `ProblemDetail` with a `code` property. The frontend translates codes; the backend never produces user-facing text.
+- API docs: springdoc OpenAPI. The frontend generates TypeScript types with `openapi-typescript`.
+
+### API (all under `/api`)
+- **`auth`**: `POST register`, `POST login`, `POST refresh`, `POST logout`
+- **`players`**:
+  - `GET mine` ("my players")
+  - `POST` (create guest), `PATCH {id}` (rename)
+  - `POST {id}/claims` (create invite)
+  - `GET claims/{token}` (preview), `POST claims/{token}` (claim)
+  - `GET {id}` (profile with visibility-filtered stats and match list)
+- **`teams`**: `POST`, `GET {id}`, `PATCH {id}`, `PUT {id}/players`
+- **`competitions`**:
+  - `POST`, `GET mine`, `GET {id}`, `PATCH {id}`
+  - `POST {id}/teams`, `DELETE {id}/teams/{teamId}`
+  - `POST {id}/generate`
+  - `GET {id}/standings`, `GET {id}/bracket`, `GET {id}/stats`, `GET {id}/matches`
+- **`matches`**:
+  - `POST` (one-off), `GET mine`, `GET {id}`, `PATCH {id}` (details/visibility)
+  - `PUT {id}/lineup`
+  - `POST {id}/events`, `PATCH {id}/events/{eventId}`, `DELETE {id}/events/{eventId}`
+  - `POST {id}/finish`, `POST {id}/reopen`
+- **`public`**: `GET c/{slug}` (+ standings/bracket/stats/matches), `GET m/{slug}`
+
+### Frontend
+React + Vite + TypeScript + Mantine, React Router, TanStack Query, i18next (`me.json`, `en.json`), mobile-first.
+
+Screens:
+- **Home:** my upcoming and recent matches, my competitions, "New match" / "New competition".
+- **Auth:** register, login.
+- **New match:** choose pickup (side labels) or team vs team; set date/venue/visibility.
+- **Match result screen:**
+  - Both lineups shown as player chips. Tapping a chip opens a sheet: Goal / Own goal / Yellow / Red / MOTM.
+  - After Goal, an optional assist picker and minute field, both skippable.
+  - The score updates live, and each event can be undone.
+  - **Finish** asks for the penalty winner on a level cup match.
+- **Lineup editor:** pick from roster / my players, add a guest inline, mark who is in goal.
+- **Competition:** tabs for Fixtures, Table (league) or Bracket (cup), and Stats. There is also an admin area for teams, seeds and generation.
+- **Team:** roster and results.
+- **Player profile:** totals and match list; Invite button on guest players I created.
+- **Claim:** `/claim/{token}` with preview and confirm.
+- **Public read-only** competition and match pages.
+
+## 8. Error handling
+
+| Situation | Response |
+|---|---|
+| Invalid input (bean validation) | `400`, `code: VALIDATION`, field errors |
+| Private resource the user cannot read | `404` (existence is not revealed) |
+| Readable but not admin | `403`, `code: FORBIDDEN` |
+| Not authenticated on a protected endpoint | `401` |
+| Stale `version` on update | `409`, `code: STALE` |
+| Domain rule violation | `409` with a specific code |
+
+Domain codes:
+- `CUP_DRAW_NEEDS_PENALTIES`
+- `LATER_ROUND_FINISHED`
+- `TEAMS_LOCKED`
+- `MERGE_CONFLICT`
+- `CLAIM_INVALID`
+- `NOT_ENOUGH_TEAMS`
+- `PLAYER_NOT_IN_LINEUP`
+- `EMAIL_TAKEN`
+- `BAD_CREDENTIALS`
+- `RATE_LIMITED` (`429`)
+
+Additional rules:
+- **Transactions:** fixture generation, finish + cup advancement, and claim/merge each run in a single transaction.
+- **Rate limiting:** login, register and claim are limited per IP with an in-memory counter. This works with a single instance only, which is acceptable for v1.
+- **Frontend:**
+  - Errors show as translated toasts.
+  - A failed event save stays on screen with a retry button.
+  - On `STALE`, the data is reloaded and the user is told to retry.
+
+## 9. Testing
+
+- **Unit tests (pure logic):**
+  - round-robin generation (odd/even, single/double);
+  - bracket generation, seeding and bye placement;
+  - standings ordering including every tiebreaker;
+  - `FootballRules`: score from events, own goals, clean sheets.
+- **Integration tests (Testcontainers MySQL):**
+  - standings and stats SQL;
+  - the visibility filter;
+  - claim link and merge, including `MERGE_CONFLICT`;
+  - cup finish/advancement/edit rules;
+  - the auth flow including refresh-token rotation.
+- **Permission tests:** owner / member / stranger / anonymous × private / public, across the main endpoints.
+- **Frontend:** Vitest for small client logic. One Playwright end-to-end test: register → create league → generate fixtures → enter a result with a scorer → standings update.
+
+## 10. Milestones
+
+| # | Milestone | Outcome |
+|---|---|---|
+| M0 | Repo, Spring Boot + Vite skeletons, Flyway, Docker Compose MySQL, i18n setup, CI (build + test) | Builds and runs |
+| M1 | Accounts and auth (register, login, refresh, logout) | Users can sign in |
+| M2 | Guest players, teams, rosters, `admin_grant` + `canAdmin` | Organizers manage people |
+| M3 | One-off matches (pickup + team), lineups, events, result screen, visibility | First real use: log a kickabout |
+| M4 | Player profiles with visibility-filtered stats; claim and merge | Players join and see their stats |
+| M5 | Leagues: fixtures, standings, competition stats | Run a league |
+| M6 | Cups: bracket, byes, advancement, penalty winner | Run a cup |
+| M7 | Public share pages, polish, deployment | Share publicly |
