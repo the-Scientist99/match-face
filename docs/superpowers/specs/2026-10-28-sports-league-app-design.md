@@ -53,12 +53,14 @@ All tables have `id` and `created_at`.
 - **Why UUIDs:** ids are opaque (no counts or neighbours to guess), double as public share links, and let a future offline mobile client create records locally without id clashes.
 - **Not secrets:** ids are not secrets. Access is always enforced by the visibility rules, and claim and refresh tokens stay separate random secrets.
 
-Mutable aggregates (`match`, `competition`) have a `version` column for optimistic locking.
+Mutable aggregates (`sport_match`, `competition`) have a `version` column for optimistic locking.
+
+The match table is named `sport_match`, because `MATCH` is a reserved word in MySQL. The rest of this document says "match" for the concept.
 
 ### People
 - **`user_account`**: `email` (unique), `password_hash`, `display_name`, `locale` (`me`/`en`).
 - **`player`**: `name`, `user_id` (nullable, unique), `created_by_user_id`.
-  - A guest player has `user_id = null`. A user has at most one player.
+  - A guest player has `user_id = null`. Every user has exactly one player, created at registration with the user's display name.
 - **`player_claim`**: `player_id`, `token_hash` (unique), `expires_at`, `used_at` (nullable).
   - Token: 32 random bytes, stored hashed (SHA-256), single use, 14-day expiry.
   - Creating a new claim for a player invalidates any earlier unused one.
@@ -75,11 +77,11 @@ Mutable aggregates (`match`, `competition`) have a `version` column for optimist
   - State: `status` (`DRAFT`/`ACTIVE`).
   - League setting: `double_round_robin` (boolean, used by leagues).
 - **`competition_team`**: `competition_id`, `team_id`, `seed` (nullable); unique on the pair.
-- **`stage`**: `competition_id`, `type` (`ROUND_ROBIN`/`KNOCKOUT`), `name`, `sequence`.
+- **`stage`**: `competition_id`, `type` (`ROUND_ROBIN`/`KNOCKOUT`), `name`, `sequence_no`.
   - In v1, a league has exactly one `ROUND_ROBIN` stage and a cup has exactly one `KNOCKOUT` stage.
 
 ### Matches
-- **`match`**:
+- **`sport_match`** ("match"):
   - Context: `sport`, `stage_id` (nullable; null = one-off match), `round` (nullable), `bracket_position` (nullable).
   - Sides: `home_team_id`, `away_team_id` (nullable), `home_label`, `away_label` (nullable).
     - Team matches set the team ids.
@@ -157,11 +159,11 @@ The picker suggests the team roster. The organizer may also add any of "my playe
 - Competition admins can manage everything inside the competition: matches, lineups, events and fixtures.
 - Team admins can manage the team's name and roster.
 - A guest player can be renamed by its creator until it is claimed; after that only the claiming user can rename it.
-- **"My players"** (lineup picker source): players I created, plus players on rosters of teams I admin. There is no global user search.
+- **"My players"** (lineup picker source): my own player, players I created, plus players on rosters of teams I admin. There is no global user search.
 - All admin checks go through one function, `canAdmin(user, resourceType, resourceId)`. For a competition match it also checks the parent competition.
 
 ### Visibility
-- **Public:** readable by anyone via `/c/{id}` or `/m/{id}`, with no login. Public items are not listed or searchable in v1.
+- **Public:** readable by anyone via `/c/{id}` or `/m/{id}`, with no login. All `GET` API endpoints accept anonymous requests and apply the same visibility rules (anonymous sees public only), so no separate public API exists. Public items are not listed or searchable in v1.
 - **Private:** readable by admins and members.
   - Competition members: users whose player is on the roster of a team in the competition.
   - One-off match members: users whose player is in the match's lineup.
@@ -173,8 +175,7 @@ The picker suggests the team roster. The organizer may also add any of "my playe
 1. A user who can admin the guest (its creator) creates an invite, `POST /api/players/{id}/claims`. They get a `/claim/{token}` link to share manually.
 2. The recipient opens the link and logs in or registers. They see a preview ("N matches, M goals") and confirm.
 3. In one transaction:
-   - If the user has no player, the guest's `user_id` is set.
-   - Otherwise the guest's `match_lineup`, `match_event` (both player and assist references) and `team_player` rows are moved to the user's player.
+   - The guest's `match_lineup`, `match_event` (both player and assist references) and `team_player` rows are moved to the user's player.
    - Duplicate roster rows are dropped, and the guest is deleted.
    - The claim is marked used.
 4. If the guest and the user's existing player are both in the same match's lineup, the merge is rejected with `MERGE_CONFLICT`.
@@ -187,16 +188,17 @@ The picker suggests the team roster. The organizer may also add any of "my playe
 backend/   Spring Boot 4, Java 25, Maven
 frontend/  React + Vite + TypeScript
 docs/      specs and plans
-docker-compose.yml  (MySQL 8 for local dev)
+docs/dev/mysql-setup.sql  (creates dev + test databases on the locally installed MySQL)
 ```
+No Docker: development uses the natively installed MySQL server, and CI uses a MySQL service container.
 For deployment, the built SPA is copied into the Spring Boot jar's static resources. That gives one deployable, same-origin, and no CORS setup. The future mobile app calls the same `/api`.
 
 ### Backend
-- Packages by module: `account`, `player`, `team`, `competition`, `match`, `stats`, `sport`, `common`.
+- Packages by module: `account`, `access` (grants and visibility), `player`, `team`, `competition`, `match`, `stats`, `sport`, `common`.
   - Each module has its own controllers, services and repositories.
   - Modules call each other's services, never each other's repositories.
 - Persistence:
-  - Spring Data JPA for basic CRUD.
+  - Spring Data JPA for basic CRUD. Entities hold foreign keys as plain `UUID` fields, with no JPA associations. This keeps modules decoupled and avoids lazy-loading surprises.
   - Plain SQL (`JdbcClient`) for standings, stats and the visibility filter.
   - Flyway migrations.
 - Auth:
@@ -209,6 +211,7 @@ For deployment, the built SPA is copied into the Spring Boot jar's static resour
 
 ### API (all under `/api`)
 - **`auth`**: `POST register`, `POST login`, `POST refresh`, `POST logout`
+- **`me`**: `GET` (current user), `PATCH` (display name, locale)
 - **`players`**:
   - `GET mine` ("my players")
   - `POST` (create guest), `PATCH {id}` (rename)
@@ -226,7 +229,6 @@ For deployment, the built SPA is copied into the Spring Boot jar's static resour
   - `PUT {id}/lineup`
   - `POST {id}/events`, `PATCH {id}/events/{eventId}`, `DELETE {id}/events/{eventId}`
   - `POST {id}/finish`, `POST {id}/reopen`
-- **`public`**: `GET c/{id}` (+ standings/bracket/stats/matches), `GET m/{id}`
 
 ### Frontend
 React + Vite + TypeScript + Mantine, React Router, TanStack Query, i18next (`me.json`, `en.json`), mobile-first.
@@ -266,13 +268,16 @@ Domain codes:
 - `CLAIM_INVALID`
 - `NOT_ENOUGH_TEAMS`
 - `PLAYER_NOT_IN_LINEUP`
+- `PLAYER_HAS_EVENTS` (removing a lineup player who has events)
+- `MATCH_FINISHED` (editing a finished match without reopening)
+- `SAME_TEAM` (a team on both sides)
 - `EMAIL_TAKEN`
 - `BAD_CREDENTIALS`
 - `RATE_LIMITED` (`429`)
 
 Additional rules:
 - **Transactions:** fixture generation, finish + cup advancement, and claim/merge each run in a single transaction.
-- **Rate limiting:** login, register and claim are limited per IP with an in-memory counter. This works with a single instance only, which is acceptable for v1.
+- **Rate limiting:** login, register and claim are limited to 10 requests per minute per IP and action, with an in-memory counter. This works with a single instance only, which is acceptable for v1.
 - **Frontend:**
   - Errors show as translated toasts.
   - A failed event save stays on screen with a retry button.
@@ -285,7 +290,7 @@ Additional rules:
   - bracket generation, seeding and bye placement;
   - standings ordering including every tiebreaker;
   - `FootballRules`: score from events, own goals, clean sheets.
-- **Integration tests (Testcontainers MySQL):**
+- **Integration tests (real MySQL: the local `sportsapp_test` database, a service container in CI; tables are truncated before each test):**
   - standings and stats SQL;
   - the visibility filter;
   - claim link and merge, including `MERGE_CONFLICT`;
@@ -298,7 +303,7 @@ Additional rules:
 
 | # | Milestone | Outcome |
 |---|---|---|
-| M0 | Repo, Spring Boot + Vite skeletons, Flyway, Docker Compose MySQL, i18n setup, CI (build + test) | Builds and runs |
+| M0 | Repo, Spring Boot + Vite skeletons, Flyway, local MySQL setup, i18n setup, CI (build + test) | Builds and runs |
 | M1 | Accounts and auth (register, login, refresh, logout) | Users can sign in |
 | M2 | Guest players, teams, rosters, `admin_grant` + `canAdmin` | Organizers manage people |
 | M3 | One-off matches (pickup + team), lineups, events, result screen, visibility | First real use: log a kickabout |
