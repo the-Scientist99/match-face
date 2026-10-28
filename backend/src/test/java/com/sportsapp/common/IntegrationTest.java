@@ -2,8 +2,10 @@ package com.sportsapp.common;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.sql.DataSource;
@@ -54,6 +56,20 @@ public abstract class IntegrationTest {
         .andExpect(status().isCreated())
         .andReturn().getResponse().getContentAsString();
     return UUID.fromString(json.readTree(body).get("id").asString());
+  }
+
+  /** Creates a team owned by {@code owner}, with the given roster when any ids are passed. */
+  protected UUID createTeam(TestUser owner, String name, UUID... playerIds) throws Exception {
+    String body = mvc.perform(post("/api/teams").with(as(owner)).contentType(APPLICATION_JSON).content(toJson(Map.of("name", name))))
+        .andExpect(status().isCreated())
+        .andReturn().getResponse().getContentAsString();
+    UUID id = UUID.fromString(json.readTree(body).get("id").asString());
+    if (playerIds.length > 0) {
+      mvc.perform(put("/api/teams/{id}/players", id).with(as(owner)).contentType(APPLICATION_JSON)
+              .content(toJson(Map.of("playerIds", List.of(playerIds)))))
+          .andExpect(status().isOk());
+    }
+    return id;
   }
 
   protected RequestPostProcessor as(TestUser u) {

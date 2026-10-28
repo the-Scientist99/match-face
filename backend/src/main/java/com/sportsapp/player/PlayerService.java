@@ -93,6 +93,11 @@ public class PlayerService {
   }
 
   @Transactional(readOnly = true)
+  public List<Player> getAll(Collection<UUID> ids) {
+    return players.findAllById(ids);
+  }
+
+  @Transactional(readOnly = true)
   public Map<UUID, String> namesById(Collection<UUID> ids) {
     return players.findAllById(ids).stream().collect(Collectors.toMap(Player::getId, Player::getName));
   }
