@@ -25,11 +25,6 @@ class TeamApiTest extends IntegrationTest {
         .content(toJson(Map.of("playerIds", List.of(playerIds)))));
   }
 
-  private void putOnRoster(UUID teamId, UUID playerId) {
-    jdbc.sql("INSERT INTO team_player (id, created_at, team_id, player_id) VALUES (UUID_TO_BIN(UUID()), NOW(6), UUID_TO_BIN(:t), UUID_TO_BIN(:p))")
-        .param("t", teamId.toString()).param("p", playerId.toString()).update();
-  }
-
   private List<String> rosterNames(UUID teamId) {
     return jdbc.sql("SELECT p.name FROM team_player tp JOIN player p ON p.id = tp.player_id WHERE tp.team_id = UUID_TO_BIN(:t) ORDER BY p.name")
         .param("t", teamId.toString()).query(String.class).list();

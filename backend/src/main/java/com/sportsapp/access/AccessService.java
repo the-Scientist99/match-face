@@ -27,23 +27,33 @@ public class AccessService {
     grants.save(new AdminGrant(userId, type, resourceId, AdminGrant.OWNER));
   }
 
+  /** TEAM and MATCH: an admin grant. M5 adds "or admin of its competition" for competition matches. */
   @Transactional(readOnly = true)
   public boolean canAdmin(@Nullable UUID userId, ResourceType type, UUID resourceId) {
-    supported(type);
-    return userId != null && grants.existsByUserIdAndResourceTypeAndResourceId(userId, type, resourceId);
+    return switch (type) {
+      case TEAM, MATCH -> userId != null && grants.existsByUserIdAndResourceTypeAndResourceId(userId, type, resourceId);
+      case COMPETITION -> throw notYet(type);
+    };
   }
 
-  /** TEAM: its admins and users whose player is on the roster. M5 adds readers of a competition it plays in. */
+  /**
+   * TEAM: its admins and users whose player is on the roster (M5 adds readers of a competition it plays in).
+   * MATCH: whatever {@link VisibilitySql#VISIBLE_MATCH_IDS} lets the viewer see.
+   */
   @Transactional(readOnly = true)
   public boolean canRead(@Nullable UUID viewerId, ResourceType type, UUID resourceId) {
-    if (canAdmin(viewerId, type, resourceId)) return true;
-    if (viewerId == null) return false;
-    return jdbc.sql("""
-            SELECT EXISTS (SELECT 1 FROM team_player tp JOIN player p ON p.id = tp.player_id
-                           WHERE tp.team_id = UUID_TO_BIN(:t) AND p.user_id = UUID_TO_BIN(:u))
-            """)
-        .param("t", resourceId.toString()).param("u", viewerId.toString())
-        .query(Boolean.class).single();
+    return switch (type) {
+      case TEAM -> canAdmin(viewerId, type, resourceId) || (viewerId != null && jdbc.sql("""
+              SELECT EXISTS (SELECT 1 FROM team_player tp JOIN player p ON p.id = tp.player_id
+                             WHERE tp.team_id = UUID_TO_BIN(:t) AND p.user_id = UUID_TO_BIN(:u))
+              """)
+          .param("t", resourceId.toString()).param("u", viewerId.toString())
+          .query(Boolean.class).single());
+      case MATCH -> jdbc.sql("SELECT EXISTS (SELECT 1 FROM (" + VisibilitySql.VISIBLE_MATCH_IDS + ") v WHERE v.id = UUID_TO_BIN(:id))")
+          .param("viewerId", viewerId == null ? null : viewerId.toString()).param("id", resourceId.toString())
+          .query(Boolean.class).single();
+      case COMPETITION -> throw notYet(type);
+    };
   }
 
   public void requireAdmin(@Nullable UUID userId, ResourceType type, UUID resourceId) {
@@ -55,8 +65,8 @@ public class AccessService {
     if (!canRead(viewerId, type, resourceId)) throw ApiException.notFound();
   }
 
-  /** MATCH arrives in M3 and COMPETITION in M5; until then a call with them is a programming error. */
-  private static void supported(ResourceType type) {
-    if (type != ResourceType.TEAM) throw new IllegalArgumentException("Access rules for " + type + " are not implemented yet");
+  /** COMPETITION arrives in M5; until then a call with it is a programming error. */
+  private static IllegalArgumentException notYet(ResourceType type) {
+    return new IllegalArgumentException("Access rules for " + type + " are not implemented yet");
   }
 }

@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -70,6 +71,37 @@ public abstract class IntegrationTest {
           .andExpect(status().isOk());
     }
     return id;
+  }
+
+  /** A pickup match "Bibs" vs "Non-bibs". */
+  protected UUID createPickup(TestUser owner, Visibility visibility) throws Exception {
+    String body = mvc.perform(post("/api/matches").with(as(owner)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("homeLabel", "Bibs", "awayLabel", "Non-bibs", "visibility", visibility))))
+        .andExpect(status().isCreated())
+        .andReturn().getResponse().getContentAsString();
+    return UUID.fromString(json.readTree(body).get("id").asString());
+  }
+
+  /** {@code playerIdSidePairs}: alternating player UUID and {@code Side}; nobody in goal. */
+  protected void setLineup(TestUser owner, UUID matchId, Object... playerIdSidePairs) throws Exception {
+    List<Map<String, Object>> entries = new ArrayList<>();
+    for (int i = 0; i < playerIdSidePairs.length; i += 2) {
+      entries.add(Map.of("playerId", playerIdSidePairs[i], "side", playerIdSidePairs[i + 1], "inGoal", false));
+    }
+    mvc.perform(put("/api/matches/{id}/lineup", matchId).with(as(owner)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("entries", entries))))
+        .andExpect(status().isOk());
+  }
+
+  protected long version(UUID matchId) {
+    return jdbc.sql("SELECT version FROM sport_match WHERE id = UUID_TO_BIN(:id)").param("id", matchId.toString())
+        .query(Long.class).single();
+  }
+
+  /** Puts a player on a roster directly, e.g. a registered user's own player, which only a claim (M4) does. */
+  protected void putOnRoster(UUID teamId, UUID playerId) {
+    jdbc.sql("INSERT INTO team_player (id, created_at, team_id, player_id) VALUES (UUID_TO_BIN(UUID()), NOW(6), UUID_TO_BIN(:t), UUID_TO_BIN(:p))")
+        .param("t", teamId.toString()).param("p", playerId.toString()).update();
   }
 
   protected RequestPostProcessor as(TestUser u) {
