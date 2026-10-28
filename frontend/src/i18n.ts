@@ -1,13 +1,12 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
+import { htmlLang, type Lang, pickInitialLang, readStoredLang, storeLang } from './lang'
 import en from './locales/en.json'
 import me from './locales/me.json'
 
-export type Lang = 'me' | 'en'
+export type { Lang }
 
-const stored = localStorage.getItem('lang')
-const initial: Lang =
-  stored === 'me' || stored === 'en' ? stored : navigator.language.toLowerCase().startsWith('en') ? 'en' : 'me'
+const initial = pickInitialLang(readStoredLang(), navigator.language)
 
 i18n.use(initReactI18next).init({
   resources: { en: { translation: en }, me: { translation: me } },
@@ -17,9 +16,9 @@ i18n.use(initReactI18next).init({
 })
 
 i18n.on('languageChanged', (lng) => {
-  localStorage.setItem('lang', lng)
-  document.documentElement.lang = lng
+  storeLang(lng as Lang)
+  document.documentElement.lang = htmlLang(lng as Lang)
 })
-document.documentElement.lang = initial
+document.documentElement.lang = htmlLang(initial)
 
 export default i18n
