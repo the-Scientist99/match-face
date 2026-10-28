@@ -11,6 +11,17 @@ export type Player = Schema<'PlayerResponse'>
 export type Team = Schema<'TeamResponse'>
 export type TeamSummary = Schema<'TeamSummary'>
 
+/** `K` may be null in responses (the backend sends null for "none"). */
+type WithNull<T, K extends keyof T> = Omit<T, K> & { [P in K]: T[P] | null }
+
+export type SideView = WithNull<Schema<'SideView'>, 'teamId'>
+export type MatchEvent = WithNull<Schema<'EventView'>, 'playerId' | 'playerName' | 'assistPlayerId' | 'assistPlayerName' | 'minute'>
+export type Match = WithNull<
+  Omit<Schema<'MatchResponse'>, 'home' | 'away' | 'events'>,
+  'kickoffAt' | 'venue' | 'visibility' | 'competitionId' | 'competitionName' | 'round' | 'penaltyWinner'
+> & { home: SideView; away: SideView; events: MatchEvent[] }
+export type MatchSummary = WithNull<Schema<'MatchSummary'>, 'kickoffAt' | 'competitionId' | 'competitionName' | 'round'>
+
 /** Unwraps an openapi-fetch result: the data, or the error body thrown (for errors.ts to read). */
 export async function call<T>(result: Promise<{ data?: T; error?: unknown }>): Promise<Sent<T>> {
   const { data, error } = await result

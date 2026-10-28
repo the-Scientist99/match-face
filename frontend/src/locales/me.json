@@ -12,7 +12,11 @@
     "en": "EN"
   },
   "home": {
-    "title": "Moje utakmice"
+    "title": "Moje utakmice",
+    "upcoming": "Predstojeće",
+    "recent": "Odigrane",
+    "noUpcoming": "Ništa nije zakazano.",
+    "noRecent": "Još nema odigranih utakmica."
   },
   "errors": {
     "UNKNOWN": "Nešto nije u redu. Pokušajte ponovo.",
@@ -25,7 +29,15 @@
     "EMAIL_TAKEN": "Nalog sa ovim emailom već postoji.",
     "BAD_CREDENTIALS": "Pogrešan email ili lozinka.",
     "PASSWORD_TOO_LONG": "Lozinka je predugačka.",
-    "PLAYER_NOT_AVAILABLE": "Neki od igrača ne može biti dodat ovdje."
+    "PLAYER_NOT_AVAILABLE": "Neki od igrača ne može biti dodat ovdje.",
+    "SAME_TEAM": "Tim ne može igrati sam protiv sebe.",
+    "INVALID_SIDES": "Izaberite dva tima ili imenujte obje strane.",
+    "DUPLICATE_PLAYER": "Igrač može biti u sastavu samo jednom.",
+    "PLAYER_NOT_IN_LINEUP": "Taj igrač nije u sastavu na toj strani.",
+    "PLAYER_HAS_EVENTS": "Ovaj igrač ima golove ili kartone na ovoj utakmici. Prvo ih uklonite.",
+    "MATCH_FINISHED": "Utakmica je završena. Ponovo je otvorite da biste mijenjali.",
+    "INVALID_EVENT": "Taj događaj ovdje nije ispravan.",
+    "INVALID_FIELD": "To se ovdje ne može mijenjati."
   },
   "auth": {
     "login": "Prijava",
@@ -45,7 +57,9 @@
     "NotNull": "Obavezno polje.",
     "Email": "Unesite ispravnu email adresu.",
     "Size": "Prekratko ili predugačko.",
-    "Pattern": "Neispravna vrijednost."
+    "Pattern": "Neispravna vrijednost.",
+    "Min": "Premalo.",
+    "Max": "Previše."
   },
   "common": {
     "save": "Sačuvaj",
@@ -73,5 +87,52 @@
     "placeholder": "Izaberite igrače",
     "addGuest": "+ Dodaj gosta „{{name}}”",
     "nothingFound": "Nema pronađenih igrača"
+  },
+  "match": {
+    "new": "Nova utakmica",
+    "create": "Napravi utakmicu",
+    "pickup": "Na brzinu",
+    "teams": "Timovi",
+    "home": "Domaćin",
+    "away": "Gost",
+    "defaultHome": "Sa markerima",
+    "defaultAway": "Bez markera",
+    "kickoff": "Početak",
+    "venue": "Teren",
+    "noKickoff": "Bez termina",
+    "vs": "–",
+    "visibility": {
+      "PRIVATE": "Privatna",
+      "PUBLIC": "Javna"
+    },
+    "status": {
+      "SCHEDULED": "Zakazana",
+      "FINISHED": "Završena",
+      "CANCELLED": "Otkazana"
+    },
+    "lineup": "Sastavi",
+    "saveLineup": "Sačuvaj sastave",
+    "inGoal": "{{name}} na golu",
+    "keeper": "golman",
+    "finish": "Završi",
+    "cancel": "Otkaži utakmicu",
+    "reopen": "Ponovo otvori"
+  },
+  "event": {
+    "type": {
+      "GOAL": "Gol",
+      "OWN_GOAL": "Autogol",
+      "YELLOW": "Žuti karton",
+      "RED": "Crveni karton",
+      "MOTM": "Igrač utakmice"
+    },
+    "unknownGoal": "Gol (nepoznat strijelac)",
+    "unknownScorer": "Nepoznat strijelac",
+    "assist": "Asistencija",
+    "assistBy": "asistencija {{name}}",
+    "minute": "Minut",
+    "skip": "Preskoči",
+    "undo": "Poništi",
+    "none": "Još nema događaja."
   }
 }

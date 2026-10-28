@@ -12,7 +12,11 @@
     "en": "EN"
   },
   "home": {
-    "title": "My matches"
+    "title": "My matches",
+    "upcoming": "Upcoming",
+    "recent": "Recent",
+    "noUpcoming": "Nothing scheduled.",
+    "noRecent": "No matches played yet."
   },
   "errors": {
     "UNKNOWN": "Something went wrong. Please try again.",
@@ -25,7 +29,15 @@
     "EMAIL_TAKEN": "An account with this email already exists.",
     "BAD_CREDENTIALS": "Wrong email or password.",
     "PASSWORD_TOO_LONG": "This password is too long.",
-    "PLAYER_NOT_AVAILABLE": "One of the players can't be added here."
+    "PLAYER_NOT_AVAILABLE": "One of the players can't be added here.",
+    "SAME_TEAM": "A team can't play itself.",
+    "INVALID_SIDES": "Choose two teams, or name both sides.",
+    "DUPLICATE_PLAYER": "A player can only be in the lineup once.",
+    "PLAYER_NOT_IN_LINEUP": "That player isn't in the lineup on that side.",
+    "PLAYER_HAS_EVENTS": "This player has goals or cards in this match. Remove those first.",
+    "MATCH_FINISHED": "This match is finished. Reopen it to make changes.",
+    "INVALID_EVENT": "That event isn't valid here.",
+    "INVALID_FIELD": "That can't be changed here."
   },
   "auth": {
     "login": "Log in",
@@ -45,7 +57,9 @@
     "NotNull": "Required.",
     "Email": "Enter a valid email address.",
     "Size": "Too short or too long.",
-    "Pattern": "Invalid value."
+    "Pattern": "Invalid value.",
+    "Min": "Too small.",
+    "Max": "Too large."
   },
   "common": {
     "save": "Save",
@@ -73,5 +87,52 @@
     "placeholder": "Pick players",
     "addGuest": "+ Add guest “{{name}}”",
     "nothingFound": "No players found"
+  },
+  "match": {
+    "new": "New match",
+    "create": "Create match",
+    "pickup": "Pickup",
+    "teams": "Teams",
+    "home": "Home",
+    "away": "Away",
+    "defaultHome": "Bibs",
+    "defaultAway": "Non-bibs",
+    "kickoff": "Kickoff",
+    "venue": "Venue",
+    "noKickoff": "No kickoff time",
+    "vs": "vs",
+    "visibility": {
+      "PRIVATE": "Private",
+      "PUBLIC": "Public"
+    },
+    "status": {
+      "SCHEDULED": "Scheduled",
+      "FINISHED": "Finished",
+      "CANCELLED": "Cancelled"
+    },
+    "lineup": "Lineup",
+    "saveLineup": "Save lineup",
+    "inGoal": "{{name}} in goal",
+    "keeper": "keeper",
+    "finish": "Finish",
+    "cancel": "Cancel match",
+    "reopen": "Reopen"
+  },
+  "event": {
+    "type": {
+      "GOAL": "Goal",
+      "OWN_GOAL": "Own goal",
+      "YELLOW": "Yellow card",
+      "RED": "Red card",
+      "MOTM": "Man of the match"
+    },
+    "unknownGoal": "Goal (unknown scorer)",
+    "unknownScorer": "Unknown scorer",
+    "assist": "Assist",
+    "assistBy": "assist {{name}}",
+    "minute": "Minute",
+    "skip": "Skip",
+    "undo": "Undo",
+    "none": "No events yet."
   }
 }

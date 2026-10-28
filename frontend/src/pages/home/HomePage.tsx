@@ -1,7 +1,33 @@
-import { Title } from '@mantine/core'
+import { Button, Group, Loader, Stack, Text, Title } from '@mantine/core'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router'
+import { api, call, type MatchSummary } from '../../api/client'
+import MatchList from '../../components/MatchList'
+import { splitMatches } from '../matches/matchLogic'
 
 export default function HomePage() {
   const { t } = useTranslation()
-  return <Title order={2}>{t('home.title')}</Title>
+  const mine = useQuery<MatchSummary[]>({ queryKey: ['matches', 'mine'], queryFn: () => call(api.GET('/api/matches/mine')) })
+  const { upcoming, recent } = splitMatches(mine.data ?? [])
+  return (
+    <Stack maw={600}>
+      <Group justify="space-between">
+        <Title order={2}>{t('home.title')}</Title>
+        <Button component={Link} to="/matches/new">
+          {t('match.new')}
+        </Button>
+      </Group>
+      {mine.isPending ? (
+        <Loader />
+      ) : (
+        <>
+          <Title order={4}>{t('home.upcoming')}</Title>
+          {upcoming.length ? <MatchList matches={upcoming} /> : <Text c="dimmed">{t('home.noUpcoming')}</Text>}
+          <Title order={4}>{t('home.recent')}</Title>
+          {recent.length ? <MatchList matches={recent} /> : <Text c="dimmed">{t('home.noRecent')}</Text>}
+        </>
+      )}
+    </Stack>
+  )
 }
