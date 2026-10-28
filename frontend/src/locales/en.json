@@ -16,7 +16,8 @@
     "upcoming": "Upcoming",
     "recent": "Recent",
     "noUpcoming": "Nothing scheduled.",
-    "noRecent": "No matches played yet."
+    "noRecent": "No matches played yet.",
+    "competitions": "My competitions"
   },
   "errors": {
     "UNKNOWN": "Something went wrong. Please try again.",
@@ -39,7 +40,13 @@
     "INVALID_EVENT": "That event isn't valid here.",
     "INVALID_FIELD": "That can't be changed here.",
     "CLAIM_INVALID": "This invite link is no longer valid. Ask for a new one.",
-    "MERGE_CONFLICT": "You and this player played in the same match, so the profiles can't be merged."
+    "MERGE_CONFLICT": "You and this player played in the same match, so the profiles can't be merged.",
+    "NOT_ENOUGH_TEAMS": "Add at least two teams first.",
+    "TEAMS_LOCKED": "Teams can't change once a match has a result.",
+    "TEAM_ALREADY_ADDED": "That team is already in the league.",
+    "DUPLICATE_SEED": "Another team already has that seed.",
+    "COMPETITION_STARTED": "This can't change once fixtures exist.",
+    "NOT_A_LEAGUE": "This only applies to leagues."
   },
   "auth": {
     "login": "Log in",
@@ -164,5 +171,47 @@
     "confirm": "Confirm",
     "loginFirst": "Log in or register to add this history to your profile.",
     "done": "Added to your profile."
+  },
+  "competition": {
+    "new": "New league",
+    "create": "Create league",
+    "name": "League name",
+    "doubleRoundRobin": "Home and away (play each team twice)",
+    "round": "Round {{round}}",
+    "unscheduled": "Other",
+    "noFixtures": "No fixtures yet. Add teams and generate them in Manage.",
+    "fixtures": "Fixtures",
+    "table": "Table",
+    "stats": "Stats",
+    "manage": "Manage",
+    "teams": "Teams",
+    "noTeams": "No teams yet.",
+    "addTeam": "Add one of my teams",
+    "createTeam": "Or create a new team",
+    "removeTeam": "Remove team",
+    "generate": "Generate fixtures",
+    "regenerate": "Regenerate fixtures",
+    "regenerateWarning": "This replaces all fixtures and their dates.",
+    "status": {
+      "DRAFT": "Draft",
+      "ACTIVE": "Active"
+    }
+  },
+  "table": {
+    "team": "Team",
+    "played": "P",
+    "won": "W",
+    "drawn": "D",
+    "lost": "L",
+    "goalsFor": "GF",
+    "goalsAgainst": "GA",
+    "goalDifference": "GD",
+    "points": "Pts"
+  },
+  "stats": {
+    "topScorers": "Top scorers",
+    "topAssists": "Top assists",
+    "cards": "Cards",
+    "none": "Nothing yet."
   }
 }

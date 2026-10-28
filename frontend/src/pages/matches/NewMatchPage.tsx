@@ -24,7 +24,7 @@ export default function NewMatchPage() {
   const [venue, setVenue] = useState('')
   const [visibility, setVisibility] = useState<Visibility>('PRIVATE')
   const teams = useQuery({ queryKey: ['teams', 'mine'], queryFn: () => call(api.GET('/api/teams/mine')), enabled: kind === 'teams' })
-  const teamOptions = (teams.data ?? []).map((team) => ({ value: team.id, label: team.name }))
+  const teamOptions = (teams.data ?? []).filter((team) => team.canAdmin).map((team) => ({ value: team.id, label: team.name }))
 
   const create = useMutation({
     mutationFn: () =>

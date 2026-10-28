@@ -30,6 +30,7 @@ export default function MatchPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['match', id], updated)
       void queryClient.invalidateQueries({ queryKey: ['matches', 'mine'] })
+      if (updated.competitionId) void queryClient.invalidateQueries({ queryKey: ['competition', updated.competitionId] })
     },
     onError: (err) => {
       if (errorCode(err) === 'STALE') {
@@ -58,6 +59,12 @@ export default function MatchPage() {
 
   return (
     <Stack maw={700}>
+      {m.competitionId && (
+        <Anchor component={Link} to={`/competitions/${m.competitionId}`} size="sm">
+          {m.competitionName}
+          {m.round !== null && ` · ${t('competition.round', { round: m.round })}`}
+        </Anchor>
+      )}
       <ScoreHeader match={m} />
       {failedEvent && m.status === 'SCHEDULED' && (
         <Alert color="red" title={t('event.notSaved')}>

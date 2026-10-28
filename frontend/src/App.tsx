@@ -4,6 +4,8 @@ import Layout from './components/Layout'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import ClaimPage from './pages/claim/ClaimPage'
+import CompetitionPage from './pages/competitions/CompetitionPage'
+import NewCompetitionPage from './pages/competitions/NewCompetitionPage'
 import HomePage from './pages/home/HomePage'
 import MatchPage from './pages/matches/MatchPage'
 import NewMatchPage from './pages/matches/NewMatchPage'
@@ -29,6 +31,8 @@ export const router = createBrowserRouter([
           { path: 'teams', element: <TeamsPage /> },
           { path: 'teams/:id', element: <TeamPage /> },
           { path: 'matches/new', element: <NewMatchPage /> },
+          { path: 'competitions/new', element: <NewCompetitionPage /> },
+          { path: 'competitions/:id', element: <CompetitionPage /> },
           { path: 'matches/:id', element: <MatchPage /> },
         ],
       },

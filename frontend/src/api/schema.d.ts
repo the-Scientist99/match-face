@@ -180,6 +180,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/competitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/competitions/{id}/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addTeam"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/competitions/{id}/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/register": {
         parameters: {
             query?: never;
@@ -324,6 +372,22 @@ export interface paths {
         patch: operations["updateEvent"];
         trace?: never;
     };
+    "/api/competitions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["patch_2"];
+        trace?: never;
+    };
     "/api/teams/mine": {
         parameters: {
             query?: never;
@@ -367,6 +431,86 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/competitions/{id}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/competitions/{id}/standings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["standings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/competitions/{id}/matches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["matches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/competitions/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mine_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/competitions/{id}/teams/{teamId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeTeam"];
         options?: never;
         head?: never;
         patch?: never;
@@ -524,6 +668,46 @@ export interface components {
             /** Format: int32 */
             minute?: number;
         };
+        CreateCompetitionRequest: {
+            name: string;
+            /** @enum {string} */
+            type: "LEAGUE" | "CUP";
+            /** @enum {string} */
+            visibility: "PUBLIC" | "PRIVATE";
+            doubleRoundRobin?: boolean;
+        };
+        CompetitionResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: int64 */
+            version?: number;
+            name?: string;
+            /** @enum {string} */
+            sport?: "FOOTBALL";
+            /** @enum {string} */
+            type?: "LEAGUE" | "CUP";
+            /** @enum {string} */
+            visibility?: "PUBLIC" | "PRIVATE";
+            /** @enum {string} */
+            status?: "DRAFT" | "ACTIVE";
+            doubleRoundRobin?: boolean;
+            teams?: components["schemas"]["CompetitionTeamView"][];
+            canAdmin?: boolean;
+            completed?: boolean;
+        };
+        CompetitionTeamView: {
+            /** Format: uuid */
+            teamId?: string;
+            name?: string;
+            /** Format: int32 */
+            seed?: number;
+        };
+        AddTeamRequest: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: int32 */
+            seed?: number;
+        };
         RegisterRequest: {
             /** Format: email */
             email: string;
@@ -567,10 +751,19 @@ export interface components {
             /** @enum {string} */
             visibility?: "PUBLIC" | "PRIVATE";
         };
+        PatchCompetitionRequest: {
+            /** Format: int64 */
+            version: number;
+            name?: string;
+            /** @enum {string} */
+            visibility?: "PUBLIC" | "PRIVATE";
+            doubleRoundRobin?: boolean;
+        };
         TeamSummary: {
             /** Format: uuid */
             id?: string;
             name?: string;
+            canAdmin?: boolean;
         };
         MatchSummary: {
             /** Format: uuid */
@@ -633,6 +826,59 @@ export interface components {
             appearances?: number;
             /** Format: int32 */
             goals?: number;
+        };
+        CardRow: {
+            /** Format: uuid */
+            playerId?: string;
+            name?: string;
+            /** Format: int32 */
+            yellow?: number;
+            /** Format: int32 */
+            red?: number;
+        };
+        CompetitionStatsResponse: {
+            topScorers?: components["schemas"]["StatLeader"][];
+            topAssists?: components["schemas"]["StatLeader"][];
+            cards?: components["schemas"]["CardRow"][];
+        };
+        StatLeader: {
+            /** Format: uuid */
+            playerId?: string;
+            name?: string;
+            /** Format: int32 */
+            value?: number;
+        };
+        StandingRow: {
+            /** Format: int32 */
+            position?: number;
+            /** Format: uuid */
+            teamId?: string;
+            name?: string;
+            /** Format: int32 */
+            played?: number;
+            /** Format: int32 */
+            won?: number;
+            /** Format: int32 */
+            drawn?: number;
+            /** Format: int32 */
+            lost?: number;
+            /** Format: int32 */
+            goalsFor?: number;
+            /** Format: int32 */
+            goalsAgainst?: number;
+            /** Format: int32 */
+            goalDifference?: number;
+            /** Format: int32 */
+            points?: number;
+        };
+        CompetitionSummary: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            /** @enum {string} */
+            type?: "LEAGUE" | "CUP";
+            /** @enum {string} */
+            status?: "DRAFT" | "ACTIVE";
         };
     };
     responses: never;
@@ -933,6 +1179,78 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MatchResponse"];
+                };
+            };
+        };
+    };
+    create_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCompetitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionResponse"];
+                };
+            };
+        };
+    };
+    addTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddTeamRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionResponse"];
+                };
+            };
+        };
+    };
+    generate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionResponse"];
                 };
             };
         };
@@ -1265,6 +1583,54 @@ export interface operations {
             };
         };
     };
+    get_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionResponse"];
+                };
+            };
+        };
+    };
+    patch_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchCompetitionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionResponse"];
+                };
+            };
+        };
+    };
     mine: {
         parameters: {
             query?: never;
@@ -1321,6 +1687,115 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MatchSummary"][];
+                };
+            };
+        };
+    };
+    stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionStatsResponse"];
+                };
+            };
+        };
+    };
+    standings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StandingRow"][];
+                };
+            };
+        };
+    };
+    matches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchSummary"][];
+                };
+            };
+        };
+    };
+    mine_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionSummary"][];
+                };
+            };
+        };
+    };
+    removeTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                teamId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionResponse"];
                 };
             };
         };

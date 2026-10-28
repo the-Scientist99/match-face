@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, call, type Player } from '../api/client'
-import { showAddGuest } from '../pages/matches/matchLogic'
+import { pickerOptions, showAddGuest } from '../pages/matches/matchLogic'
 import { useNotifyError } from '../api/errors'
 
 const NEW = '__new__'
@@ -13,10 +13,12 @@ type Props = {
   onChange: (ids: string[]) => void
   excludeIds?: string[]
   label?: string
+  /** Listed before my players, and pickable even if not mine (e.g. a side's roster, players already chosen). */
+  first?: { id: string; name: string }[]
 }
 
 /** Picks from "my players"; the last option creates a guest named after the search text and selects it. */
-export default function PlayerPicker({ value, onChange, excludeIds = [], label }: Props) {
+export default function PlayerPicker({ value, onChange, excludeIds = [], label, first = [] }: Props) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const notifyError = useNotifyError()
@@ -35,10 +37,8 @@ export default function PlayerPicker({ value, onChange, excludeIds = [], label }
   })
 
   const name = search.trim()
-  const data = (mine.data ?? [])
-    .filter((p) => !excludeIds.includes(p.id) || value.includes(p.id))
-    .map((p) => ({ value: p.id, label: p.name }))
-  if (showAddGuest(name, (mine.data ?? []).map((p) => p.name))) data.push({ value: NEW, label: t('picker.addGuest', { name }) })
+  const data = pickerOptions({ first, mine: mine.data ?? [], excludeIds, value })
+  if (showAddGuest(name, data.map((o) => o.label))) data.push({ value: NEW, label: t('picker.addGuest', { name }) })
 
   return (
     <MultiSelect

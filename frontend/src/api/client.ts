@@ -21,6 +21,11 @@ export type Match = WithNull<
   'kickoffAt' | 'venue' | 'visibility' | 'competitionId' | 'competitionName' | 'round' | 'penaltyWinner'
 > & { home: SideView; away: SideView; events: MatchEvent[] }
 export type MatchSummary = WithNull<Schema<'MatchSummary'>, 'kickoffAt' | 'competitionId' | 'competitionName' | 'round'>
+export type CompetitionTeamView = WithNull<Schema<'CompetitionTeamView'>, 'seed'>
+export type Competition = Omit<Schema<'CompetitionResponse'>, 'teams'> & { teams: CompetitionTeamView[] }
+export type CompetitionSummary = Schema<'CompetitionSummary'>
+export type StandingRow = Schema<'StandingRow'>
+export type CompetitionStats = Schema<'CompetitionStatsResponse'>
 export type PlayerMatchRow = Omit<Schema<'PlayerMatchRow'>, 'match'> & { match: MatchSummary }
 export type PlayerProfile = Omit<Schema<'PlayerProfileResponse'>, 'matches'> & { matches: PlayerMatchRow[] }
 

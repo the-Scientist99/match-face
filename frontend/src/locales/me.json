@@ -16,7 +16,8 @@
     "upcoming": "Predstojeće",
     "recent": "Odigrane",
     "noUpcoming": "Ništa nije zakazano.",
-    "noRecent": "Još nema odigranih utakmica."
+    "noRecent": "Još nema odigranih utakmica.",
+    "competitions": "Moja takmičenja"
   },
   "errors": {
     "UNKNOWN": "Nešto nije u redu. Pokušajte ponovo.",
@@ -39,7 +40,13 @@
     "INVALID_EVENT": "Taj događaj ovdje nije ispravan.",
     "INVALID_FIELD": "To se ovdje ne može mijenjati.",
     "CLAIM_INVALID": "Ovaj link za poziv više ne važi. Zatražite novi.",
-    "MERGE_CONFLICT": "Vi i ovaj igrač ste igrali na istoj utakmici, pa se profili ne mogu spojiti."
+    "MERGE_CONFLICT": "Vi i ovaj igrač ste igrali na istoj utakmici, pa se profili ne mogu spojiti.",
+    "NOT_ENOUGH_TEAMS": "Prvo dodajte bar dva tima.",
+    "TEAMS_LOCKED": "Timovi se ne mogu mijenjati kad neka utakmica ima rezultat.",
+    "TEAM_ALREADY_ADDED": "Taj tim je već u ligi.",
+    "DUPLICATE_SEED": "Drugi tim već ima taj nosilački broj.",
+    "COMPETITION_STARTED": "Ovo se ne može mijenjati kad raspored postoji.",
+    "NOT_A_LEAGUE": "Ovo važi samo za lige."
   },
   "auth": {
     "login": "Prijava",
@@ -164,5 +171,47 @@
     "confirm": "Potvrdi",
     "loginFirst": "Prijavite se ili registrujte da biste dodali ovu istoriju na svoj profil.",
     "done": "Dodato na vaš profil."
+  },
+  "competition": {
+    "new": "Nova liga",
+    "create": "Napravi ligu",
+    "name": "Naziv lige",
+    "doubleRoundRobin": "Domaćin i gost (svako sa svakim dva puta)",
+    "round": "{{round}}. kolo",
+    "unscheduled": "Ostalo",
+    "noFixtures": "Još nema rasporeda. Dodajte timove i napravite ga u Upravljanju.",
+    "fixtures": "Raspored",
+    "table": "Tabela",
+    "stats": "Statistika",
+    "manage": "Upravljanje",
+    "teams": "Timovi",
+    "noTeams": "Još nema timova.",
+    "addTeam": "Dodaj jedan od mojih timova",
+    "createTeam": "Ili napravi novi tim",
+    "removeTeam": "Ukloni tim",
+    "generate": "Napravi raspored",
+    "regenerate": "Ponovo napravi raspored",
+    "regenerateWarning": "Ovo zamjenjuje cijeli raspored i termine.",
+    "status": {
+      "DRAFT": "U pripremi",
+      "ACTIVE": "Aktivna"
+    }
+  },
+  "table": {
+    "team": "Tim",
+    "played": "U",
+    "won": "P",
+    "drawn": "N",
+    "lost": "I",
+    "goalsFor": "DG",
+    "goalsAgainst": "PG",
+    "goalDifference": "GR",
+    "points": "Bod"
+  },
+  "stats": {
+    "topScorers": "Strijelci",
+    "topAssists": "Asistenti",
+    "cards": "Kartoni",
+    "none": "Još ništa."
   }
 }

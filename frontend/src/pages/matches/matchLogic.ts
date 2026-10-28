@@ -28,3 +28,23 @@ export function showAddGuest(search: string, names: string[]): boolean {
   const s = search.trim().toLowerCase()
   return s !== '' && !names.some((n) => n.toLowerCase() === s)
 }
+
+type Named = { id: string; name: string }
+
+/**
+ * Picker options: {@code first} (e.g. a side's roster, or players already in the lineup) before my players,
+ * each player once. Excluded players (e.g. on the other side) are left out unless already selected.
+ */
+export function pickerOptions({ first, mine, excludeIds, value }: { first: Named[]; mine: Named[]; excludeIds: string[]; value: string[] }) {
+  const seen = new Set<string>()
+  return [...first, ...mine]
+    .filter((p) => !seen.has(p.id) && seen.add(p.id) && (!excludeIds.includes(p.id) || value.includes(p.id)))
+    .map((p) => ({ value: p.id, label: p.name }))
+}
+
+/** Fixtures by round, rounds ascending (no round last), API order kept inside each. */
+export function groupByRound<T extends { round: number | null }>(matches: T[]): [number | null, T[]][] {
+  const groups = new Map<number | null, T[]>()
+  for (const m of matches) groups.set(m.round, [...(groups.get(m.round) ?? []), m])
+  return [...groups.entries()].sort(([a], [b]) => (a ?? Infinity) - (b ?? Infinity))
+}
