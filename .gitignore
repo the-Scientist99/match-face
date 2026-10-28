@@ -5,3 +5,5 @@ backend/target/
 backend/src/main/resources/static/
 .idea/
 .superpowers/
+*.swp
+*.swo
