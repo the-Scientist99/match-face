@@ -10,7 +10,11 @@ import com.sportsapp.competition.CompetitionDtos.CompetitionSummary;
 import com.sportsapp.competition.CompetitionDtos.CompetitionTeamView;
 import com.sportsapp.competition.CompetitionDtos.CreateCompetitionRequest;
 import com.sportsapp.competition.CompetitionDtos.PatchCompetitionRequest;
+import com.sportsapp.match.MatchDtos.MatchSummary;
+import com.sportsapp.match.MatchViews;
+import com.sportsapp.match.ScoreSql;
 import com.sportsapp.sport.Sport;
+import com.sportsapp.sport.SportRules;
 import com.sportsapp.team.TeamService;
 import java.util.Comparator;
 import java.util.List;
@@ -32,10 +36,12 @@ public class CompetitionService {
   private final FixtureService fixtures;
   private final AccessService access;
   private final TeamService teams;
+  private final MatchViews matchViews;
   private final JdbcClient jdbc;
 
   public CompetitionService(CompetitionRepository competitions, CompetitionTeamRepository competitionTeams, FixtureService fixtures,
-      AccessService access, TeamService teams, JdbcClient jdbc) {
+      AccessService access, TeamService teams, MatchViews matchViews, JdbcClient jdbc) {
+    this.matchViews = matchViews;
     this.competitions = competitions;
     this.competitionTeams = competitionTeams;
     this.fixtures = fixtures;
@@ -114,6 +120,41 @@ public class CompetitionService {
     requireTeamsChangeable(c);
     fixtures.generate(c);
     c.setStatus(CompetitionStatus.ACTIVE);
+  }
+
+  /** By round, then kickoff (none last), then creation. */
+  @Transactional(readOnly = true)
+  public List<MatchSummary> matches(@Nullable UUID viewerId, UUID competitionId) {
+    access.requireRead(viewerId, ResourceType.COMPETITION, competitionId);
+    List<UUID> ids = jdbc.sql("""
+            SELECT BIN_TO_UUID(m.id) FROM sport_match m JOIN stage s ON s.id = m.stage_id
+            WHERE s.competition_id = UUID_TO_BIN(:c)
+            ORDER BY m.round, m.kickoff_at IS NULL, m.kickoff_at, m.created_at, m.id
+            """)
+        .param("c", competitionId.toString()).query(UUID.class).list();
+    return matchViews.summaries(ids);
+  }
+
+  /** The league table from finished round-robin matches. A cup has none: 400 NOT_A_LEAGUE. */
+  @Transactional(readOnly = true)
+  public List<StandingRow> standings(@Nullable UUID viewerId, UUID competitionId) {
+    access.requireRead(viewerId, ResourceType.COMPETITION, competitionId);
+    Competition c = getRequired(competitionId);
+    if (c.getType() != CompetitionType.LEAGUE) throw ApiException.badRequest("NOT_A_LEAGUE");
+    List<TeamRef> teamRefs = competitionTeams.findByCompetitionId(competitionId).stream()
+        .map(ct -> new TeamRef(ct.getTeamId(), teams.name(ct.getTeamId()))).toList();
+    List<Result> results = jdbc.sql("""
+            SELECT BIN_TO_UUID(m.home_team_id) home, BIN_TO_UUID(m.away_team_id) away, %s home_goals, %s away_goals
+            FROM sport_match m JOIN stage s ON s.id = m.stage_id
+            LEFT JOIN match_event e ON e.match_id = m.id
+            WHERE s.competition_id = UUID_TO_BIN(:c) AND s.type = 'ROUND_ROBIN' AND m.status = 'FINISHED'
+            GROUP BY m.id
+            """.formatted(ScoreSql.HOME_GOALS, ScoreSql.AWAY_GOALS))
+        .param("c", competitionId.toString())
+        .query((rs, i) -> new Result(UUID.fromString(rs.getString("home")), UUID.fromString(rs.getString("away")),
+            rs.getInt("home_goals"), rs.getInt("away_goals")))
+        .list();
+    return Standings.compute(teamRefs, results, SportRules.of(c.getSport()));
   }
 
   /** Competitions I admin or play in (my player on a team's roster), by name. */

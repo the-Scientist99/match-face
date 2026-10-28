@@ -1,6 +1,11 @@
 package com.sportsapp.competition;
 
+import com.sportsapp.access.AccessService;
+import com.sportsapp.access.ResourceType;
 import com.sportsapp.common.Auth;
+import com.sportsapp.match.MatchDtos.MatchSummary;
+import com.sportsapp.stats.CompetitionStatsQuery;
+import com.sportsapp.stats.StatsDtos.CompetitionStatsResponse;
 import com.sportsapp.competition.CompetitionDtos.AddTeamRequest;
 import com.sportsapp.competition.CompetitionDtos.CompetitionResponse;
 import com.sportsapp.competition.CompetitionDtos.CompetitionSummary;
@@ -28,9 +33,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class CompetitionController {
 
   private final CompetitionService service;
+  private final CompetitionStatsQuery stats;
+  private final AccessService access;
 
-  public CompetitionController(CompetitionService service) {
+  public CompetitionController(CompetitionService service, CompetitionStatsQuery stats, AccessService access) {
     this.service = service;
+    this.stats = stats;
+    this.access = access;
   }
 
   @PostMapping
@@ -48,6 +57,22 @@ public class CompetitionController {
   @GetMapping("/{id}")
   CompetitionResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
     return service.get(Auth.userIdOrNull(jwt), id);
+  }
+
+  @GetMapping("/{id}/matches")
+  List<MatchSummary> matches(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+    return service.matches(Auth.userIdOrNull(jwt), id);
+  }
+
+  @GetMapping("/{id}/standings")
+  List<StandingRow> standings(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+    return service.standings(Auth.userIdOrNull(jwt), id);
+  }
+
+  @GetMapping("/{id}/stats")
+  CompetitionStatsResponse stats(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+    access.requireRead(Auth.userIdOrNull(jwt), ResourceType.COMPETITION, id);
+    return stats.stats(id);
   }
 
   @PatchMapping("/{id}")
