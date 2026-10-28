@@ -3,7 +3,9 @@
     "name": "Sports League"
   },
   "nav": {
-    "home": "Home"
+    "home": "Home",
+    "players": "Players",
+    "teams": "Teams"
   },
   "language": {
     "me": "ME",
@@ -22,7 +24,8 @@
     "RATE_LIMITED": "Too many attempts. Please wait a minute.",
     "EMAIL_TAKEN": "An account with this email already exists.",
     "BAD_CREDENTIALS": "Wrong email or password.",
-    "PASSWORD_TOO_LONG": "This password is too long."
+    "PASSWORD_TOO_LONG": "This password is too long.",
+    "PLAYER_NOT_AVAILABLE": "One of the players can't be added here."
   },
   "auth": {
     "login": "Log in",
@@ -43,5 +46,32 @@
     "Email": "Enter a valid email address.",
     "Size": "Too short or too long.",
     "Pattern": "Invalid value."
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "add": "Add"
+  },
+  "players": {
+    "title": "My players",
+    "addGuest": "Add a guest player",
+    "name": "Name",
+    "guest": "guest",
+    "rename": "Rename"
+  },
+  "teams": {
+    "title": "My teams",
+    "create": "New team",
+    "name": "Team name",
+    "none": "No teams yet.",
+    "roster": "Roster",
+    "saveRoster": "Save roster",
+    "emptyRoster": "No players yet.",
+    "rename": "Rename"
+  },
+  "picker": {
+    "placeholder": "Pick players",
+    "addGuest": "+ Add guest “{{name}}”",
+    "nothingFound": "No players found"
   }
 }

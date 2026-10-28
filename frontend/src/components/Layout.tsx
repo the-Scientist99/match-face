@@ -5,6 +5,12 @@ import { useNotifyError } from '../api/errors'
 import { useAuth } from '../auth/AuthProvider'
 import type { Lang } from '../lang'
 
+/** On small screens these move into the user menu. */
+const NAV = [
+  ['/players', 'nav.players'],
+  ['/teams', 'nav.teams'],
+] as const
+
 export default function Layout() {
   const { t, i18n } = useTranslation()
   const { user, ready, logout, setLocale } = useAuth()
@@ -18,6 +24,12 @@ export default function Layout() {
             {t('app.name')}
           </Title>
           <Group gap="xs" wrap="nowrap">
+            {user &&
+              NAV.map(([to, key]) => (
+                <Button key={to} component={Link} to={to} variant="subtle" size="xs" visibleFrom="sm">
+                  {t(key)}
+                </Button>
+              ))}
             <SegmentedControl
               size="xs"
               value={i18n.language}
@@ -35,6 +47,11 @@ export default function Layout() {
                   </Button>
                 </Menu.Target>
                 <Menu.Dropdown>
+                  {NAV.map(([to, key]) => (
+                    <Menu.Item key={to} component={Link} to={to} hiddenFrom="sm">
+                      {t(key)}
+                    </Menu.Item>
+                  ))}
                   <Menu.Item onClick={() => logout().then(() => navigate('/login'))}>{t('auth.logout')}</Menu.Item>
                 </Menu.Dropdown>
               </Menu>

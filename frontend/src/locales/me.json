@@ -3,7 +3,9 @@
     "name": "Sportska liga"
   },
   "nav": {
-    "home": "Početna"
+    "home": "Početna",
+    "players": "Igrači",
+    "teams": "Timovi"
   },
   "language": {
     "me": "ME",
@@ -22,7 +24,8 @@
     "RATE_LIMITED": "Previše pokušaja. Sačekajte minut.",
     "EMAIL_TAKEN": "Nalog sa ovim emailom već postoji.",
     "BAD_CREDENTIALS": "Pogrešan email ili lozinka.",
-    "PASSWORD_TOO_LONG": "Lozinka je predugačka."
+    "PASSWORD_TOO_LONG": "Lozinka je predugačka.",
+    "PLAYER_NOT_AVAILABLE": "Neki od igrača ne može biti dodat ovdje."
   },
   "auth": {
     "login": "Prijava",
@@ -43,5 +46,32 @@
     "Email": "Unesite ispravnu email adresu.",
     "Size": "Prekratko ili predugačko.",
     "Pattern": "Neispravna vrijednost."
+  },
+  "common": {
+    "save": "Sačuvaj",
+    "cancel": "Otkaži",
+    "add": "Dodaj"
+  },
+  "players": {
+    "title": "Moji igrači",
+    "addGuest": "Dodaj gostujućeg igrača",
+    "name": "Ime",
+    "guest": "gost",
+    "rename": "Preimenuj"
+  },
+  "teams": {
+    "title": "Moji timovi",
+    "create": "Novi tim",
+    "name": "Naziv tima",
+    "none": "Još nema timova.",
+    "roster": "Sastav",
+    "saveRoster": "Sačuvaj sastav",
+    "emptyRoster": "Još nema igrača.",
+    "rename": "Preimenuj"
+  },
+  "picker": {
+    "placeholder": "Izaberite igrače",
+    "addGuest": "+ Dodaj gosta „{{name}}”",
+    "nothingFound": "Nema pronađenih igrača"
   }
 }

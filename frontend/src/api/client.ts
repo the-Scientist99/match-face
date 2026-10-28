@@ -1,9 +1,22 @@
 import createClient from 'openapi-fetch'
 import type { components, paths } from './schema'
 
-// springdoc marks no response field as required, but the backend always sends them all.
-export type Me = Required<components['schemas']['MeResponse']>
-export type AuthResponse = { accessToken: string; user: Me }
+/** springdoc marks no response field as required, but the backend always sends them all. */
+export type Sent<T> = T extends (infer U)[] ? Sent<U>[] : T extends object ? { [K in keyof T]-?: Sent<T[K]> } : T
+type Schema<K extends keyof components['schemas']> = Sent<components['schemas'][K]>
+
+export type Me = Schema<'MeResponse'>
+export type AuthResponse = Schema<'AuthResponse'>
+export type Player = Schema<'PlayerResponse'>
+export type Team = Schema<'TeamResponse'>
+export type TeamSummary = Schema<'TeamSummary'>
+
+/** Unwraps an openapi-fetch result: the data, or the error body thrown (for errors.ts to read). */
+export async function call<T>(result: Promise<{ data?: T; error?: unknown }>): Promise<Sent<T>> {
+  const { data, error } = await result
+  if (error !== undefined) throw error
+  return data as Sent<T>
+}
 
 let accessToken: string | null = null
 /** `offline` = the refresh request itself failed; the session may still be valid. */

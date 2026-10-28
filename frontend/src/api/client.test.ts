@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { safeNext } from '../auth/RequireAuth'
-import { authFetch, onSessionExpired, setAccessToken } from './client'
+import { authFetch, call, onSessionExpired, setAccessToken } from './client'
 
 const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>()
 const me = { id: 'u1', email: 'a@test.dev', locale: 'en', playerId: 'p1', displayName: 'Ana' }
@@ -103,4 +103,9 @@ test('safeNext keeps "/claim/abc", rejects "//evil.com", "https://evil.com" and 
   expect(safeNext(null)).toBe('/')
   expect(safeNext('/\t/evil.com')).toBe('/') // URL parsing drops tabs and newlines: "/\t/x" becomes "//x"
   expect(safeNext('/\n/evil.com')).toBe('/')
+})
+
+test('call returns data, and throws the error body so errorCode can read it', async () => {
+  await expect(call(Promise.resolve({ data: { id: 'x' } }))).resolves.toEqual({ id: 'x' })
+  await expect(call(Promise.resolve({ error: { code: 'FORBIDDEN' } }))).rejects.toEqual({ code: 'FORBIDDEN' })
 })
