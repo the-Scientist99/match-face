@@ -1,0 +1,12 @@
+spring:
+  application.name: sportsapp
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/sportsapp}
+    username: ${DB_USER:sportsapp}
+    password: ${DB_PASSWORD:sportsapp}
+  jpa:
+    open-in-view: false
+    hibernate.ddl-auto: none
+    properties:
+      hibernate.type.preferred_uuid_jdbc_type: BINARY
+      hibernate.jdbc.time_zone: UTC
