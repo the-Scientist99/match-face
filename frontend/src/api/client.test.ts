@@ -101,4 +101,6 @@ test('safeNext keeps "/claim/abc", rejects "//evil.com", "https://evil.com" and 
   expect(safeNext('/\\evil.com')).toBe('/')
   expect(safeNext('https://evil.com')).toBe('/')
   expect(safeNext(null)).toBe('/')
+  expect(safeNext('/\t/evil.com')).toBe('/') // URL parsing drops tabs and newlines: "/\t/x" becomes "//x"
+  expect(safeNext('/\n/evil.com')).toBe('/')
 })

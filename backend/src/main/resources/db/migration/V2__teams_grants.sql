@@ -14,3 +14,6 @@ CREATE TABLE team_player (
   FOREIGN KEY (team_id) REFERENCES team(id) ON DELETE CASCADE,
   FOREIGN KEY (player_id) REFERENCES player(id) ON DELETE CASCADE
 );
+-- Emails are stored lowercased, so compare them byte for byte: the default collation also ignores
+-- accents and would treat ana@ and ána@ as one address.
+ALTER TABLE user_account MODIFY email VARCHAR(254) NOT NULL COLLATE utf8mb4_bin;

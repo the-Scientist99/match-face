@@ -100,6 +100,14 @@ class AuthApiTest extends IntegrationTest {
   }
 
   @Test
+  void emailMatchingIsAccentSensitive() throws Exception {
+    registerRaw("ana@mail.com", "password123", "Ana", "en").andExpect(status().isCreated());
+    registerRaw("ána@mail.com", "password456", "Ána", "en").andExpect(status().isCreated());
+    login("ána@mail.com", "password123").andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("BAD_CREDENTIALS"));
+  }
+
+  @Test
   void loginWrongPasswordOrUnknownEmail() throws Exception {
     registerRaw("ana@mail.com", "password123", "Ana", "en").andExpect(status().isCreated());
     login("ana@mail.com", "wrong-password").andExpect(status().isUnauthorized())
