@@ -24,7 +24,7 @@
 - Test: `backend/src/test/java/com/sportsapp/player/PlayerApiTest.java`
 
 **Interfaces:**
-- Consumes (from M1): `Player`, `PlayerRepository`, `PlayerService.createOwn`, `Auth`.
+- Consumes (from M1): `Player`, `PlayerRepository`, `PlayerService.createOwn/ownPlayer/renameOwn` (`ownPlayer` throws 404), `Auth`, `IntegrationTest.register/as/toJson` and `TestUser(id, playerId, token)`.
 - Produces DTOs:
   - `CreatePlayerRequest(@NotBlank @Size(max=50) name)`
   - `RenamePlayerRequest(@NotBlank @Size(max=50) name)`
@@ -71,7 +71,8 @@ CREATE TABLE team_player (
 @Test void blankName()                            // {"name":"  "} → 400 VALIDATION, $.errors.name "NotBlank"
 @Test void creatorRenamesGuest()                  // PATCH → 200 $.name "Marko P"
 @Test void othersCannotRenameGuest()              // other user PATCH → 403 FORBIDDEN (players are readable by anyone)
-@Test void userRenamesOwnPlayerButCreatorCannot() // ana PATCH own player → 200
+@Test void userRenamesOwnPlayerButCreatorCannot() // ana PATCH own player → 200; a player with user_id = ivan and created_by_user_id = ana
+                                                  // (inserted with jdbc, as a claim in M4 would leave it) → ana PATCH 403, ivan PATCH 200
 @Test void mineListsOwnFirstThenCreatedByName()   // ana creates "Zed", "Bo" → names ["Ana", "Bo", "Zed"]; ivan's guests absent
 @Test void unknownPlayer()                        // GET /api/players/{random v7} → 404
 ```
@@ -173,3 +174,17 @@ JOIN admin_grant g ON g.resource_type = 'TEAM' AND g.resource_id = tp.team_id AN
   2. Save the roster.
   3. Log in as a second user who isn't on the roster and open the team URL; it shows not found.
 - [ ] **Step 7:** Commit: `feat: players and teams screens`.
+
+### Task 4: Deferred M1 minors
+
+**Files:**
+- Modify: `backend/src/main/resources/db/migration/V2__teams_grants.sql`, `frontend/src/auth/RequireAuth.tsx`
+- Test: `backend/src/test/java/com/sportsapp/account/AuthApiTest.java`, `frontend/src/api/client.test.ts`
+
+- [ ] **Step 1: Write the failing tests.**
+  - `AuthApiTest.emailMatchingIsAccentSensitive`: register `ana@mail.com`, then `ána@mail.com` → 201; login as `ána@mail.com` with ana's password → 401 `BAD_CREDENTIALS`.
+  - `client.test.ts`: `safeNext('/\t/evil.com')` and `safeNext('/\n/evil.com')` → `/`.
+- [ ] **Step 2:** Run both. Expected: FAIL.
+- [ ] **Step 3:** Append `ALTER TABLE user_account MODIFY email VARCHAR(254) NOT NULL COLLATE utf8mb4_bin;` to V2 (emails are already lowercased). The unique index stays. Make `safeNext` reject any control character.
+- [ ] **Step 4:** Run `./mvnw -q test` and `npm test`. Expected: PASS.
+- [ ] **Step 5:** Commit: `fix: accent-sensitive email matching, safeNext rejects control characters`.
