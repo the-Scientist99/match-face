@@ -133,7 +133,8 @@
     "cancel": "Otkaži utakmicu",
     "reopen": "Ponovo otvori",
     "whoWonPenalties": "Rezultat je neriješen. Ko je pobijedio na penale?",
-    "finishConfirm": "Završiti utakmicu rezultatom {{home}} – {{away}}?"
+    "finishConfirm": "Završiti utakmicu rezultatom {{home}} – {{away}}?",
+    "waitingForTeams": "Čeka se da prethodno kolo odluči oba tima."
   },
   "event": {
     "type": {

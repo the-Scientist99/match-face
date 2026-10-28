@@ -9,13 +9,13 @@ export default function ScoreHeader({ match }: { match: Match }) {
     <Stack gap={4} align="center">
       <Group wrap="nowrap" justify="center" gap="md" w="100%">
         <Text fw={600} ta="right" flex={1} truncate>
-          {match.home.name}
+          {match.home.name ?? t('bracket.tbd')}
         </Text>
         <Title order={1}>
           {match.score.home} – {match.score.away}
         </Title>
         <Text fw={600} flex={1} truncate>
-          {match.away.name}
+          {match.away.name ?? t('bracket.tbd')}
         </Text>
       </Group>
       <Group gap="xs">

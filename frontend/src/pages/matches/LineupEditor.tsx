@@ -57,9 +57,9 @@ export default function LineupEditor({ match, onSave, disabled }: { match: Match
   return (
     <Stack>
       <Text fw={600}>{t('match.lineup')}</Text>
-      <PlayerPicker label={match.home.name} value={home} onChange={setHome} excludeIds={away} first={first('HOME', homeRoster)} />
+      <PlayerPicker label={match.home.name ?? undefined} value={home} onChange={setHome} excludeIds={away} first={first('HOME', homeRoster)} />
       {keeperBoxes(home)}
-      <PlayerPicker label={match.away.name} value={away} onChange={setAway} excludeIds={home} first={first('AWAY', awayRoster)} />
+      <PlayerPicker label={match.away.name ?? undefined} value={away} onChange={setAway} excludeIds={home} first={first('AWAY', awayRoster)} />
       {keeperBoxes(away)}
       <Group>
         <Button

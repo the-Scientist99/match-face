@@ -18,7 +18,7 @@ export default function MatchList({ matches, extra }: { matches: MatchSummary[];
         <Card key={m.id} withBorder padding="sm" component={Link} to={`/matches/${m.id}`}>
           <Group justify="space-between" wrap="nowrap">
             <Text fw={500} truncate>
-              {m.homeName} {m.status === 'SCHEDULED' ? t('match.vs') : `${m.score.home} – ${m.score.away}`} {m.awayName}
+              {m.homeName ?? t('bracket.tbd')} {m.status === 'SCHEDULED' ? t('match.vs') : `${m.score.home} – ${m.score.away}`} {m.awayName ?? t('bracket.tbd')}
             </Text>
             {m.status !== 'SCHEDULED' && (
               <Badge size="sm" variant="light" color={m.status === 'CANCELLED' ? 'gray' : 'green'}>

@@ -133,7 +133,8 @@
     "cancel": "Cancel match",
     "reopen": "Reopen",
     "whoWonPenalties": "It's level. Who won on penalties?",
-    "finishConfirm": "Finish the match at {{home}} – {{away}}?"
+    "finishConfirm": "Finish the match at {{home}} – {{away}}?",
+    "waitingForTeams": "Waiting for the earlier round to decide both teams."
   },
   "event": {
     "type": {

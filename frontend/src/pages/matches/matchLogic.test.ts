@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { groupByRound, isoToLocal, localToIso, needsPenalties, pickerOptions, roundLabel, showAddGuest, splitMatches } from './matchLogic'
+import { groupByRound, isoToLocal, localToIso, needsPenalties, pickerOptions, roundLabel, showAddGuest, splitMatches, teamsUndecided } from './matchLogic'
 
 const m = (id: string, status: 'SCHEDULED' | 'FINISHED' | 'CANCELLED', kickoffAt: string | null) =>
   ({ id, status, kickoffAt }) as Parameters<typeof splitMatches>[0][number]
@@ -70,4 +70,11 @@ test('needsPenalties only for a level knockout match', () => {
   expect(needsPenalties({ knockout: true, score: { home: 1, away: 1 } })).toBe(true)
   expect(needsPenalties({ knockout: true, score: { home: 2, away: 1 } })).toBe(false)
   expect(needsPenalties({ knockout: false, score: { home: 0, away: 0 } })).toBe(false)
+})
+
+test('teamsUndecided: a knockout match waiting for an earlier round', () => {
+  const side = (teamId: string | null) => ({ teamId })
+  expect(teamsUndecided({ knockout: true, home: side('a'), away: side(null) })).toBe(true)
+  expect(teamsUndecided({ knockout: true, home: side('a'), away: side('b') })).toBe(false)
+  expect(teamsUndecided({ knockout: false, home: side(null), away: side(null) })).toBe(false) // a pickup has labels, no teams
 })

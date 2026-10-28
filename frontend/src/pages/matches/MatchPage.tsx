@@ -9,6 +9,7 @@ import { errorCode, useNotifyError } from '../../api/errors'
 import EventEntry, { type NewEvent } from './EventEntry'
 import EventList from './EventList'
 import FinishDialog from './FinishDialog'
+import { teamsUndecided } from './matchLogic'
 import LineupEditor from './LineupEditor'
 import ScoreHeader from './ScoreHeader'
 
@@ -47,6 +48,8 @@ export default function MatchPage() {
   if (match.isPending) return <Loader />
   if (match.isError) return <Text>{t(`errors.${errorCode(match.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
   const m = match.data
+  // a cup match waiting for an earlier round: nothing can be entered or finished yet
+  const editable = m.canAdmin && m.status === 'SCHEDULED' && !teamsUndecided(m)
   const version = { version: m.version }
   const run = (fn: () => Promise<unknown>) => action.mutate(fn as () => Promise<Match>)
   // A failed event save stays on screen with a retry, so nothing typed at the pitch is lost (spec 8).
@@ -86,15 +89,16 @@ export default function MatchPage() {
           </Group>
         </Alert>
       )}
-      {m.canAdmin && m.status === 'SCHEDULED' && (
+      {editable && (
         <>
           <EventEntry match={m} onAdd={addEvent} disabled={busy} />
           <Divider />
         </>
       )}
-      <EventList match={m} onDelete={m.canAdmin && m.status === 'SCHEDULED' ? deleteEvent : undefined} disabled={busy} />
+      {teamsUndecided(m) && <Text c="dimmed">{t('match.waitingForTeams')}</Text>}
+      <EventList match={m} onDelete={editable ? deleteEvent : undefined} disabled={busy} />
       <Divider />
-      {m.canAdmin && m.status === 'SCHEDULED' ? (
+      {editable ? (
         <LineupEditor
           key={m.lineup.map((l) => `${l.playerId}${l.side}${l.inGoal}`).join()}
           match={m}
@@ -104,7 +108,7 @@ export default function MatchPage() {
       ) : (
         <SimpleLineup match={m} />
       )}
-      {m.canAdmin && (
+      {m.canAdmin && !teamsUndecided(m) && (
         <Group>
           {m.status === 'SCHEDULED' ? (
             <>

@@ -62,3 +62,8 @@ export function roundLabel(round: number, rounds: number): [string, Record<strin
 export function needsPenalties(m: { knockout: boolean; score: { home: number; away: number } }): boolean {
   return m.knockout && m.score.home === m.score.away
 }
+
+/** A knockout match waiting for an earlier round to fill a side: nothing can be entered yet. */
+export function teamsUndecided(m: { knockout: boolean; home: { teamId: string | null }; away: { teamId: string | null } }): boolean {
+  return m.knockout && (m.home.teamId === null || m.away.teamId === null)
+}
