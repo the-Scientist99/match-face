@@ -1,6 +1,8 @@
 package com.sportsapp.competition;
 
 import com.sportsapp.common.Visibility;
+import com.sportsapp.match.MatchDtos.MatchSummary;
+import com.sportsapp.match.Side;
 import com.sportsapp.sport.Sport;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -44,6 +46,11 @@ public final class CompetitionDtos {
    */
   public record CompetitionResponse(UUID id, long version, String name, Sport sport, CompetitionType type, Visibility visibility,
       CompetitionStatus status, boolean doubleRoundRobin, List<CompetitionTeamView> teams, boolean canAdmin, boolean completed) {}
+
+  public record BracketMatch(MatchSummary match, int round, int position, Side penaltyWinner) {}
+
+  /** {@code matches} by round, then position; {@code winner} is null until the final is FINISHED. */
+  public record BracketResponse(int rounds, List<BracketMatch> matches, TeamRef winner) {}
 
   public record CompetitionSummary(UUID id, String name, CompetitionType type, CompetitionStatus status) {}
 }

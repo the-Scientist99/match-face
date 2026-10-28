@@ -2,7 +2,10 @@ package com.sportsapp.competition;
 
 import com.sportsapp.common.ApiException;
 import com.sportsapp.match.MatchService;
+import java.security.SecureRandom;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -38,7 +41,24 @@ public class FixtureService {
           for (Pairing p : rounds.get(r)) matches.createFixture(stage.getId(), r + 1, c.getSport(), p.home(), p.away());
         }
       }
-      case CUP -> throw ApiException.badRequest("NOT_A_LEAGUE"); // the knockout draw arrives in M6
+      case CUP -> {
+        if (teams.size() > Bracket.MAX_TEAMS) throw ApiException.conflict("TOO_MANY_TEAMS");
+        List<SeededTeam> seeded = competitionTeams.findByCompetitionId(c.getId()).stream()
+            .map(ct -> new SeededTeam(ct.getTeamId(), ct.getSeed())).toList();
+        BracketPlan plan = Bracket.plan(seeded, new SecureRandom());
+        Stage stage = stages.save(new Stage(c.getId(), StageType.KNOCKOUT, "Cup", 1));
+        Map<String, UUID> ids = new HashMap<>();
+        for (PlannedMatch pm : plan.matches()) {
+          ids.put(pm.round() + ":" + pm.position(),
+              matches.createFixture(stage.getId(), pm.round(), pm.position(), c.getSport(), pm.home(), pm.away()));
+        }
+        for (PlannedMatch pm : plan.matches()) { // links once every row exists
+          if (pm.round() < plan.rounds()) {
+            matches.linkNext(ids.get(pm.round() + ":" + pm.position()), ids.get((pm.round() + 1) + ":" + (pm.position() / 2)),
+                Bracket.nextSlot(pm.position()));
+          }
+        }
+      }
     }
   }
 

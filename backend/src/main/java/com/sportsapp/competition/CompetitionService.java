@@ -11,13 +11,21 @@ import com.sportsapp.competition.CompetitionDtos.CompetitionTeamView;
 import com.sportsapp.competition.CompetitionDtos.CreateCompetitionRequest;
 import com.sportsapp.competition.CompetitionDtos.PatchCompetitionRequest;
 import com.sportsapp.match.MatchDtos.MatchSummary;
+import com.sportsapp.competition.CompetitionDtos.BracketMatch;
+import com.sportsapp.competition.CompetitionDtos.BracketResponse;
+import com.sportsapp.match.MatchService;
+import com.sportsapp.match.MatchStatus;
 import com.sportsapp.match.MatchViews;
+import com.sportsapp.match.Side;
 import com.sportsapp.match.ScoreSql;
 import com.sportsapp.sport.Sport;
 import com.sportsapp.sport.SportRules;
 import com.sportsapp.team.TeamService;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.lang.Nullable;
@@ -133,6 +141,41 @@ public class CompetitionService {
             """)
         .param("c", competitionId.toString()).query(UUID.class).list();
     return matchViews.summaries(ids);
+  }
+
+  private record BracketRow(UUID id, int round, int position, Side penaltyWinner, UUID home, UUID away) {}
+
+  /** A cup's bracket, with its winner once the final is finished. A league has none: 400 NOT_A_CUP. */
+  @Transactional(readOnly = true)
+  public BracketResponse bracket(@Nullable UUID viewerId, UUID competitionId) {
+    access.requireRead(viewerId, ResourceType.COMPETITION, competitionId);
+    if (getRequired(competitionId).getType() != CompetitionType.CUP) throw ApiException.badRequest("NOT_A_CUP");
+    List<BracketRow> rows = jdbc.sql("""
+            SELECT BIN_TO_UUID(m.id) id, m.round, m.bracket_position, m.penalty_winner_side,
+                   BIN_TO_UUID(m.home_team_id) home, BIN_TO_UUID(m.away_team_id) away
+            FROM sport_match m JOIN stage s ON s.id = m.stage_id
+            WHERE s.competition_id = UUID_TO_BIN(:c) AND s.type = 'KNOCKOUT'
+            ORDER BY m.round, m.bracket_position
+            """)
+        .param("c", competitionId.toString())
+        .query((rs, i) -> new BracketRow(UUID.fromString(rs.getString("id")), rs.getInt("round"), rs.getInt("bracket_position"),
+            rs.getString("penalty_winner_side") == null ? null : Side.valueOf(rs.getString("penalty_winner_side")),
+            rs.getString("home") == null ? null : UUID.fromString(rs.getString("home")),
+            rs.getString("away") == null ? null : UUID.fromString(rs.getString("away"))))
+        .list();
+    Map<UUID, MatchSummary> summaries = matchViews.summaries(rows.stream().map(BracketRow::id).toList()).stream()
+        .collect(Collectors.toMap(MatchSummary::id, Function.identity()));
+    List<BracketMatch> matches = rows.stream()
+        .map(r -> new BracketMatch(summaries.get(r.id()), r.round(), r.position(), r.penaltyWinner())).toList();
+    int rounds = rows.stream().mapToInt(BracketRow::round).max().orElse(0);
+    TeamRef winner = null;
+    BracketRow fin = rows.isEmpty() ? null : rows.getLast();
+    if (fin != null && summaries.get(fin.id()).status() == MatchStatus.FINISHED) {
+      Side side = MatchService.winnerSide(summaries.get(fin.id()).score(), fin.penaltyWinner());
+      UUID team = side == Side.HOME ? fin.home() : fin.away();
+      winner = new TeamRef(team, teams.name(team));
+    }
+    return new BracketResponse(rounds, matches, winner);
   }
 
   /** The league table from finished round-robin matches. A cup has none: 400 NOT_A_LEAGUE. */

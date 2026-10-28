@@ -12,6 +12,8 @@ import com.sportsapp.match.MatchDtos.PatchMatchRequest;
 import com.sportsapp.player.PlayerService;
 import com.sportsapp.team.TeamService;
 import com.sportsapp.sport.Sport;
+import com.sportsapp.sport.Score;
+import com.sportsapp.sport.ScoreEvent;
 import com.sportsapp.sport.SportRules;
 import java.util.HashSet;
 import java.util.List;
@@ -94,6 +96,7 @@ public class MatchService {
   public void setLineup(UUID userId, UUID matchId, List<LineupEntry> entries) {
     Match m = lockAsAdmin(userId, matchId);
     requireScheduled(m);
+    requireTeamsSet(m);
     Set<UUID> ids = entries.stream().map(LineupEntry::playerId).collect(Collectors.toSet());
     if (ids.size() != entries.size()) throw ApiException.badRequest("DUPLICATE_PLAYER");
     List<MatchLineup> current = lineups.findByMatchId(matchId);
@@ -129,12 +132,32 @@ public class MatchService {
   /** A SCHEDULED competition match; the competition's admins administer it, so it gets no grant of its own. */
   @Transactional
   public UUID createFixture(UUID stageId, int round, Sport sport, UUID homeTeamId, UUID awayTeamId) {
+    return createFixture(stageId, round, null, sport, homeTeamId, awayTeamId);
+  }
+
+  /** A knockout match: {@code bracketPosition} set; sides may be null until earlier rounds decide them. */
+  @Transactional
+  public UUID createFixture(UUID stageId, int round, Integer bracketPosition, Sport sport, UUID homeTeamId, UUID awayTeamId) {
     Match m = new Match(sport, MatchStatus.SCHEDULED);
     m.setStageId(stageId);
     m.setRound(round);
+    m.setBracketPosition(bracketPosition);
     m.setHomeTeamId(homeTeamId);
     m.setAwayTeamId(awayTeamId);
     return matches.save(m).getId();
+  }
+
+  /** The winner of {@code matchId} goes into {@code slot} of {@code nextMatchId}. */
+  @Transactional
+  public void linkNext(UUID matchId, UUID nextMatchId, Side slot) {
+    Match m = matches.findById(matchId).orElseThrow(ApiException::notFound);
+    m.setNextMatchId(nextMatchId);
+    m.setNextSlot(slot);
+  }
+
+  /** The higher score, else the penalty winner (null if level without one). */
+  public static Side winnerSide(Score score, Side penaltyWinner) {
+    return score.home() > score.away() ? Side.HOME : score.away() > score.home() ? Side.AWAY : penaltyWinner;
   }
 
   @Transactional
@@ -162,31 +185,66 @@ public class MatchService {
   public void deleteEvent(UUID userId, UUID matchId, UUID eventId) {
     Match m = lockAsAdmin(userId, matchId);
     requireScheduled(m);
+    requireTeamsSet(m);
     events.delete(eventOf(matchId, eventId));
     matches.bumpVersion(matchId);
   }
 
-  /** SCHEDULED → FINISHED. M6 adds the cup rules (penalty winner, advancement) here. */
+  /**
+   * SCHEDULED → FINISHED. A knockout match needs a winner: the higher score, or on a level score the
+   * {@code penaltyWinner} (stored only then). The winner goes into the next match's slot right away.
+   */
   @Transactional
   public void finish(UUID userId, UUID matchId, FinishRequest r) {
     Match m = lockAsAdmin(userId, matchId);
     requireVersion(m, r.version());
     requireScheduled(m);
+    if (isKnockout(m)) {
+      requireTeamsSet(m);
+      Score score = SportRules.of(m.getSport()).score(events.findByMatchId(matchId).stream()
+          .map(e -> new ScoreEvent(e.getType(), e.getSide())).toList());
+      boolean level = score.home() == score.away();
+      if (level && r.penaltyWinner() == null) throw ApiException.conflict("CUP_DRAW_NEEDS_PENALTIES");
+      m.setPenaltyWinnerSide(level ? r.penaltyWinner() : null);
+      Side winner = winnerSide(score, m.getPenaltyWinnerSide());
+      if (m.getNextMatchId() != null) {
+        Match next = lockNext(m);
+        UUID team = winner == Side.HOME ? m.getHomeTeamId() : m.getAwayTeamId();
+        if (m.getNextSlot() == Side.HOME) next.setHomeTeamId(team);
+        else next.setAwayTeamId(team);
+      }
+    }
     m.setStatus(MatchStatus.FINISHED);
   }
 
-  /** FINISHED or CANCELLED → SCHEDULED; a scheduled match stays as it is. M6 adds the cup rules here. */
+  /**
+   * FINISHED or CANCELLED → SCHEDULED; a scheduled match stays as it is. A finished knockout match can only
+   * be reopened while its next match is SCHEDULED with no events; its winner then leaves that match, along
+   * with that side's lineup there.
+   */
   @Transactional
   public void reopen(UUID userId, UUID matchId, long version) {
     Match m = lockAsAdmin(userId, matchId);
     requireVersion(m, version);
-    if (m.getStatus() != MatchStatus.SCHEDULED) m.setStatus(MatchStatus.SCHEDULED);
+    if (m.getStatus() == MatchStatus.SCHEDULED) return;
+    if (isKnockout(m) && m.getNextMatchId() != null) {
+      Match next = lockNext(m);
+      boolean nextHasEvents = !jdbc.sql("SELECT BIN_TO_UUID(id) FROM match_event WHERE match_id = UUID_TO_BIN(:m) FOR UPDATE")
+          .param("m", next.getId().toString()).query(String.class).list().isEmpty(); // locking read: sees events added while we waited
+      if (next.getStatus() != MatchStatus.SCHEDULED || nextHasEvents) throw ApiException.conflict("LATER_ROUND_FINISHED");
+      if (m.getNextSlot() == Side.HOME) next.setHomeTeamId(null);
+      else next.setAwayTeamId(null);
+      lineups.deleteByMatchIdAndSide(next.getId(), m.getNextSlot());
+    }
+    m.setPenaltyWinnerSide(null);
+    m.setStatus(MatchStatus.SCHEDULED);
   }
 
-  /** SCHEDULED → CANCELLED. M6 forbids it for cup matches. */
+  /** SCHEDULED → CANCELLED. Not for knockout matches: the bracket needs a winner. */
   @Transactional
   public void cancel(UUID userId, UUID matchId, long version) {
     Match m = lockAsAdmin(userId, matchId);
+    if (isKnockout(m)) throw ApiException.conflict("CUP_MATCH_CANNOT_CANCEL");
     requireVersion(m, version);
     requireScheduled(m);
     m.setStatus(MatchStatus.CANCELLED);
@@ -199,6 +257,7 @@ public class MatchService {
    */
   private void validateEvent(Match m, EventRequest req, UUID editing) {
     requireScheduled(m);
+    requireTeamsSet(m);
     if (!SportRules.of(m.getSport()).allowedEventTypes().contains(req.type())) throw ApiException.badRequest("INVALID_EVENT");
     boolean needsPlayer = req.type() == EventType.YELLOW || req.type() == EventType.RED || req.type() == EventType.MOTM;
     if (needsPlayer && req.playerId() == null) throw ApiException.badRequest("INVALID_EVENT");
@@ -252,6 +311,21 @@ public class MatchService {
     Match m = matches.lockForUpdate(matchId).orElseThrow(ApiException::notFound);
     access.requireAdmin(userId, ResourceType.MATCH, matchId);
     return m;
+  }
+
+  /** Cup matches are the ones with a bracket position. */
+  private static boolean isKnockout(Match m) {
+    return m.getBracketPosition() != null;
+  }
+
+  /** A knockout match waits for earlier rounds to fill both sides. */
+  private static void requireTeamsSet(Match m) {
+    if (isKnockout(m) && (m.getHomeTeamId() == null || m.getAwayTeamId() == null)) throw ApiException.conflict("TEAMS_NOT_SET");
+  }
+
+  /** Lock order is always this match, then its next one; nothing locks a later round first, so no deadlock. */
+  private Match lockNext(Match m) {
+    return matches.lockForUpdate(m.getNextMatchId()).orElseThrow(ApiException::notFound);
   }
 
   private static void requireVersion(Match m, long version) {

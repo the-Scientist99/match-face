@@ -7,6 +7,7 @@ import com.sportsapp.match.MatchDtos.MatchSummary;
 import com.sportsapp.stats.CompetitionStatsQuery;
 import com.sportsapp.stats.StatsDtos.CompetitionStatsResponse;
 import com.sportsapp.competition.CompetitionDtos.AddTeamRequest;
+import com.sportsapp.competition.CompetitionDtos.BracketResponse;
 import com.sportsapp.competition.CompetitionDtos.CompetitionResponse;
 import com.sportsapp.competition.CompetitionDtos.CompetitionSummary;
 import com.sportsapp.competition.CompetitionDtos.CreateCompetitionRequest;
@@ -67,6 +68,11 @@ public class CompetitionController {
   @GetMapping("/{id}/standings")
   List<StandingRow> standings(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
     return service.standings(Auth.userIdOrNull(jwt), id);
+  }
+
+  @GetMapping("/{id}/bracket")
+  BracketResponse bracket(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+    return service.bracket(Auth.userIdOrNull(jwt), id);
   }
 
   @GetMapping("/{id}/stats")

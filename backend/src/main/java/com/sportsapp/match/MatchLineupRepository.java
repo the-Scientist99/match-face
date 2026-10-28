@@ -14,4 +14,8 @@ public interface MatchLineupRepository extends JpaRepository<MatchLineup, UUID> 
   @Modifying
   @Query("DELETE FROM MatchLineup l WHERE l.matchId = :matchId")
   void deleteByMatchId(UUID matchId);
+
+  @Modifying
+  @Query("DELETE FROM MatchLineup l WHERE l.matchId = :matchId AND l.side = :side")
+  void deleteByMatchIdAndSide(UUID matchId, Side side);
 }

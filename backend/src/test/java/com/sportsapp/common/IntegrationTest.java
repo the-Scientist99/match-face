@@ -123,6 +123,22 @@ public abstract class IntegrationTest {
     return id;
   }
 
+  /** A cup named "Cup"; teams seeded 1..n in argument order; bracket generated. */
+  protected UUID createCup(TestUser owner, Visibility visibility, UUID... teamIdsInSeedOrder) throws Exception {
+    String body = mvc.perform(post("/api/competitions").with(as(owner)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("name", "Cup", "type", "CUP", "visibility", visibility))))
+        .andExpect(status().isCreated())
+        .andReturn().getResponse().getContentAsString();
+    UUID id = UUID.fromString(json.readTree(body).get("id").asString());
+    for (int i = 0; i < teamIdsInSeedOrder.length; i++) {
+      mvc.perform(post("/api/competitions/{id}/teams", id).with(as(owner)).contentType(APPLICATION_JSON)
+              .content(toJson(Map.of("teamId", teamIdsInSeedOrder[i], "seed", i + 1))))
+          .andExpect(status().isOk());
+    }
+    mvc.perform(post("/api/competitions/{id}/generate", id).with(as(owner))).andExpect(status().isOk());
+    return id;
+  }
+
   /** The competition's match ids by round, then creation. */
   protected List<UUID> competitionMatches(UUID competitionId) {
     return jdbc.sql("""
