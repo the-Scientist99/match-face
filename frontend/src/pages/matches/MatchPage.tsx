@@ -1,6 +1,7 @@
-import { Button, Divider, Group, Loader, Stack, Text } from '@mantine/core'
+import { Alert, Button, Divider, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
 import { api, call, type Match } from '../../api/client'
@@ -38,19 +39,44 @@ export default function MatchPage() {
     },
   })
   const busy = action.isPending
+  const [failedEvent, setFailedEvent] = useState<NewEvent | null>(null)
 
   if (match.isPending) return <Loader />
   if (match.isError) return <Text>{t(`errors.${errorCode(match.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
   const m = match.data
   const version = { version: m.version }
   const run = (fn: () => Promise<unknown>) => action.mutate(fn as () => Promise<Match>)
-  const addEvent = (e: NewEvent) => run(() => call(api.POST('/api/matches/{id}/events', { ...path, body: e })))
+  // A failed event save stays on screen with a retry, so nothing typed at the pitch is lost (spec 8).
+  const addEvent = (e: NewEvent) =>
+    action.mutate(() => call(api.POST('/api/matches/{id}/events', { ...path, body: e })) as Promise<Match>, {
+      onSuccess: () => setFailedEvent(null),
+      onError: () => setFailedEvent(e),
+    })
+  const playerName = (playerId?: string) => m.lineup.find((l) => l.playerId === playerId)?.name ?? t('event.unknownScorer')
   const deleteEvent = (eventId: string) =>
     run(() => call(api.DELETE('/api/matches/{id}/events/{eventId}', { params: { path: { id, eventId } } })))
 
   return (
     <Stack maw={700}>
       <ScoreHeader match={m} />
+      {failedEvent && m.status === 'SCHEDULED' && (
+        <Alert color="red" title={t('event.notSaved')}>
+          <Group justify="space-between">
+            <Text size="sm">
+              {t(`event.type.${failedEvent.type}`)} · {playerName(failedEvent.playerId)}
+              {failedEvent.minute !== undefined && ` · ${failedEvent.minute}'`}
+            </Text>
+            <Group gap="xs">
+              <Button size="xs" disabled={busy} onClick={() => addEvent(failedEvent)}>
+                {t('event.retry')}
+              </Button>
+              <Button size="xs" variant="subtle" onClick={() => setFailedEvent(null)}>
+                {t('event.dismiss')}
+              </Button>
+            </Group>
+          </Group>
+        </Alert>
+      )}
       {m.canAdmin && m.status === 'SCHEDULED' && (
         <>
           <EventEntry match={m} onAdd={addEvent} disabled={busy} />

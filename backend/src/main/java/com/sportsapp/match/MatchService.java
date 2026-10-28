@@ -22,7 +22,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Match writes. Each one checks access, then takes the match row lock, then validates. */
+/** Match writes. Each one takes the match row lock, then checks access, then validates. */
 @Service
 public class MatchService {
 
@@ -208,9 +208,14 @@ public class MatchService {
     return views.summaries(ids);
   }
 
+  /**
+   * Lock first, then read anything. At REPEATABLE READ the transaction's snapshot is fixed by its first plain
+   * read; taking it after the lock means a write that waited sees what the previous writer committed.
+   */
   private Match lockAsAdmin(UUID userId, UUID matchId) {
+    Match m = matches.lockForUpdate(matchId).orElseThrow(ApiException::notFound);
     access.requireAdmin(userId, ResourceType.MATCH, matchId);
-    return matches.lockForUpdate(matchId).orElseThrow(ApiException::notFound);
+    return m;
   }
 
   private static void requireVersion(Match m, long version) {

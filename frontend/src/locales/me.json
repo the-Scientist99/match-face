@@ -133,6 +133,9 @@
     "minute": "Minut",
     "skip": "Preskoči",
     "undo": "Poništi",
-    "none": "Još nema događaja."
+    "none": "Još nema događaja.",
+    "notSaved": "Nije sačuvano",
+    "retry": "Pokušaj ponovo",
+    "dismiss": "Odbaci"
   }
 }

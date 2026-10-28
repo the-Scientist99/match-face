@@ -133,6 +133,9 @@
     "minute": "Minute",
     "skip": "Skip",
     "undo": "Undo",
-    "none": "No events yet."
+    "none": "No events yet.",
+    "notSaved": "Not saved",
+    "retry": "Retry",
+    "dismiss": "Dismiss"
   }
 }
