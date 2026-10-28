@@ -1,6 +1,7 @@
 package com.sportsapp.player;
 
 import com.sportsapp.common.ApiException;
+import com.sportsapp.common.Names;
 import com.sportsapp.player.PlayerDtos.PlayerResponse;
 import java.util.Collection;
 import java.util.Comparator;
@@ -87,7 +88,7 @@ public class PlayerService {
   public List<PlayerResponse> mine(UUID userId) {
     return players.findAllById(myPlayerIds(userId)).stream()
         .sorted(Comparator.comparing((Player p) -> !userId.equals(p.getUserId()))
-            .thenComparing(Player::getName, String.CASE_INSENSITIVE_ORDER))
+            .thenComparing(Player::getName, Names.ORDER))
         .map(p -> response(userId, p))
         .toList();
   }

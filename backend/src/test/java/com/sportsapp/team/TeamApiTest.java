@@ -150,10 +150,12 @@ class TeamApiTest extends IntegrationTest {
     UUID anas = createTeam(ana, "Alpha");
     putOnRoster(anas, ivan.playerId());
     createTeam(ivan, "Zebras");
+    createTeam(ivan, "Čelik");
+    createTeam(ivan, "Cvijet"); // MySQL's ai_ci would put Čelik first, the alphabet puts C before Č
     createTeam(zoe, "Unrelated");
     mvc.perform(get("/api/teams/mine").with(as(ivan)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[*].name").value(contains("Alpha", "Zebras")));
+        .andExpect(jsonPath("$[*].name").value(contains("Alpha", "Cvijet", "Čelik", "Zebras")));
     mvc.perform(get("/api/teams/mine")).andExpect(status().isUnauthorized());
   }
 }

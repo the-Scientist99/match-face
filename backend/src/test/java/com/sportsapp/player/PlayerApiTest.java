@@ -5,6 +5,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -85,6 +86,18 @@ class PlayerApiTest extends IntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[*].name").value(contains("Ana", "bo", "Zed")))
         .andExpect(jsonPath("$[0].id").value(ana.playerId().toString()));
+  }
+
+  @Test
+  void namesSortWithTheirLatinNeighbours() throws Exception {
+    TestUser ana = register("Ana");
+    UUID[] guests = {createGuest(ana, "Zed"), createGuest(ana, "Đorđe"), createGuest(ana, "Čedo"), createGuest(ana, "Dino"), createGuest(ana, "Bo")};
+    mvc.perform(get("/api/players/mine").with(as(ana)))
+        .andExpect(jsonPath("$[*].name").value(contains("Ana", "Bo", "Čedo", "Dino", "Đorđe", "Zed")));
+    String team = json.readTree(mvc.perform(post("/api/teams").with(as(ana)).contentType(APPLICATION_JSON).content("{\"name\":\"T\"}"))
+        .andReturn().getResponse().getContentAsString()).get("id").asString();
+    mvc.perform(put("/api/teams/{id}/players", team).with(as(ana)).contentType(APPLICATION_JSON).content(toJson(java.util.Map.of("playerIds", java.util.List.of(guests)))))
+        .andExpect(jsonPath("$.players[*].name").value(contains("Bo", "Čedo", "Dino", "Đorđe", "Zed")));
   }
 
   @Test

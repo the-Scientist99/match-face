@@ -3,6 +3,7 @@ package com.sportsapp.team;
 import com.sportsapp.access.AccessService;
 import com.sportsapp.access.ResourceType;
 import com.sportsapp.common.ApiException;
+import com.sportsapp.common.Names;
 import com.sportsapp.player.Player;
 import com.sportsapp.player.PlayerService;
 import com.sportsapp.sport.Sport;
@@ -78,11 +79,12 @@ public class TeamService {
                           WHERE g.resource_type = 'TEAM' AND g.resource_id = t.id AND g.user_id = UUID_TO_BIN(:u))
                OR EXISTS (SELECT 1 FROM team_player tp JOIN player p ON p.id = tp.player_id
                           WHERE tp.team_id = t.id AND p.user_id = UUID_TO_BIN(:u))
-            ORDER BY t.name
             """)
         .param("u", userId.toString())
         .query((rs, i) -> new TeamSummary(UUID.fromString(rs.getString("id")), rs.getString("name")))
-        .list();
+        .list().stream()
+        .sorted(Comparator.comparing(TeamSummary::name, Names.ORDER))
+        .toList();
   }
 
   @Transactional(readOnly = true)
@@ -107,7 +109,7 @@ public class TeamService {
 
   private TeamResponse response(@Nullable UUID viewerId, Team team) {
     List<RosterPlayer> rosterPlayers = players.getAll(rosterIds(team.getId())).stream()
-        .sorted(Comparator.comparing(Player::getName, String.CASE_INSENSITIVE_ORDER))
+        .sorted(Comparator.comparing(Player::getName, Names.ORDER))
         .map(p -> new RosterPlayer(p.getId(), p.getName(), p.getUserId() != null))
         .toList();
     return new TeamResponse(team.getId(), team.getName(), team.getSport(), rosterPlayers,
