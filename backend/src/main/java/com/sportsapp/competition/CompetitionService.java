@@ -186,12 +186,18 @@ public class CompetitionService {
     if (hasFinishedMatch(c.getId())) throw ApiException.conflict("TEAMS_LOCKED");
   }
 
+  /**
+   * A locking read of the competition's matches: a Finish in flight locks only its match row, so a plain
+   * (snapshot) read would miss it and the regeneration that follows would delete the new result. FOR UPDATE
+   * waits for that Finish and sees it; a later Finish waits for us. Lock order is competition → match, and
+   * match writes never take the competition lock, so this can't deadlock with them.
+   */
   private boolean hasFinishedMatch(UUID competitionId) {
     return jdbc.sql("""
-            SELECT EXISTS (SELECT 1 FROM sport_match m JOIN stage s ON s.id = m.stage_id
-                           WHERE s.competition_id = UUID_TO_BIN(:c) AND m.status = 'FINISHED')
+            SELECT m.status FROM sport_match m JOIN stage s ON s.id = m.stage_id
+            WHERE s.competition_id = UUID_TO_BIN(:c) FOR UPDATE
             """)
-        .param("c", competitionId.toString()).query(Boolean.class).single();
+        .param("c", competitionId.toString()).query(String.class).list().contains("FINISHED");
   }
 
   private CompetitionResponse response(@Nullable UUID viewerId, Competition c) {

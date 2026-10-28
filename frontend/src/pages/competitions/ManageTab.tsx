@@ -28,18 +28,18 @@ export default function ManageTab({ competition }: { competition: Competition })
     },
     onError: notifyError,
   })
-  const run = (fn: () => Promise<unknown>) => action.mutate(fn as () => Promise<Competition>)
+  // Any team change or generation in an ACTIVE league replaces every fixture (dates, lineups, live events).
+  const confirmed = () => competition.status !== 'ACTIVE' || window.confirm(t('competition.regenerateWarning'))
+  const run = (fn: () => Promise<unknown>) => {
+    if (confirmed()) action.mutate(fn as () => Promise<Competition>)
+  }
   const add = (team: string) => run(() => call(api.POST('/api/competitions/{id}/teams', { ...path, body: { teamId: team } })))
   const createAndAdd = async (name: string) => {
     const team = await call(api.POST('/api/teams', { body: { name } }))
     void queryClient.invalidateQueries({ queryKey: ['teams', 'mine'] })
     return call(api.POST('/api/competitions/{id}/teams', { ...path, body: { teamId: team.id } }))
   }
-  const generate = () => {
-    const hasFixtures = competition.status === 'ACTIVE'
-    if (hasFixtures && !window.confirm(t('competition.regenerateWarning'))) return
-    run(() => call(api.POST('/api/competitions/{id}/generate', path)))
-  }
+  const generate = () => run(() => call(api.POST('/api/competitions/{id}/generate', path)))
 
   return (
     <Stack maw={500}>
