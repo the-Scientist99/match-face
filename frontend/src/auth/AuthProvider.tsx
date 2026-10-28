@@ -14,6 +14,8 @@ type AuthState = {
   register(req: RegisterRequest): Promise<void>
   logout(): Promise<void>
   setLocale(l: Lang): Promise<void>
+  /** Re-reads the user, e.g. after renaming your own player (your name is that player's name). */
+  refreshMe(): Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -69,6 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(null)
         setUser(null)
         queryClient.clear()
+      },
+      async refreshMe() {
+        const { data } = await api.GET('/api/me')
+        if (data) setUser(data as Me)
       },
       async setLocale(l) {
         await i18n.changeLanguage(l)

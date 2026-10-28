@@ -1,20 +1,25 @@
-import { ActionIcon, Badge, Button, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Button, Group, Loader, Stack, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, call, type Player } from '../../api/client'
+import { Link } from 'react-router'
 import { fieldErrors, useNotifyError } from '../../api/errors'
+import { useAuth } from '../../auth/AuthProvider'
 
 function PlayerRow({ player }: { player: Player }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const notifyError = useNotifyError()
   const [editing, setEditing] = useState<string | null>(null)
+  const { user, refreshMe } = useAuth()
   const rename = useMutation({
     mutationFn: (name: string) => call(api.PATCH('/api/players/{id}', { params: { path: { id: player.id } }, body: { name } })),
     onSuccess: () => {
       setEditing(null)
       void queryClient.invalidateQueries({ queryKey: ['players', 'mine'] })
+      void queryClient.invalidateQueries({ queryKey: ['player', player.id] })
+      if (player.id === user?.playerId) void refreshMe()
     },
     onError: notifyError,
   })
@@ -51,7 +56,9 @@ function PlayerRow({ player }: { player: Player }) {
   }
   return (
     <Group gap="xs">
-      <Text>{player.name}</Text>
+      <Anchor component={Link} to={`/players/${player.id}`}>
+        {player.name}
+      </Anchor>
       {!player.claimed && (
         <Badge size="sm" variant="light">
           {t('players.guest')}

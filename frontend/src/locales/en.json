@@ -37,7 +37,9 @@
     "PLAYER_HAS_EVENTS": "This player has goals or cards in this match. Remove those first.",
     "MATCH_FINISHED": "This match is finished. Reopen it to make changes.",
     "INVALID_EVENT": "That event isn't valid here.",
-    "INVALID_FIELD": "That can't be changed here."
+    "INVALID_FIELD": "That can't be changed here.",
+    "CLAIM_INVALID": "This invite link is no longer valid. Ask for a new one.",
+    "MERGE_CONFLICT": "You and this player played in the same match, so the profiles can't be merged."
   },
   "auth": {
     "login": "Log in",
@@ -137,5 +139,30 @@
     "notSaved": "Not saved",
     "retry": "Retry",
     "dismiss": "Dismiss"
+  },
+  "profile": {
+    "appearances": "Matches",
+    "goals": "Goals",
+    "assists": "Assists",
+    "cleanSheets": "Clean sheets",
+    "yellowCards": "Yellow cards",
+    "redCards": "Red cards",
+    "manOfTheMatch": "Man of the match",
+    "ownGoals": "Own goals",
+    "matches": "Matches",
+    "noMatches": "No finished matches yet.",
+    "inMatch": "{{goals}} goals, {{assists}} assists"
+  },
+  "claim": {
+    "invite": "Invite to claim",
+    "shareHint": "Send this link to the player; it works once and expires in 14 days.",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "expires": "Expires on {{date}}",
+    "title": "Claim {{name}}",
+    "summary": "{{matches}} matches and {{goals}} goals will be added to your profile.",
+    "confirm": "Confirm",
+    "loginFirst": "Log in or register to add this history to your profile.",
+    "done": "Added to your profile."
   }
 }

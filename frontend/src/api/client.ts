@@ -21,6 +21,8 @@ export type Match = WithNull<
   'kickoffAt' | 'venue' | 'visibility' | 'competitionId' | 'competitionName' | 'round' | 'penaltyWinner'
 > & { home: SideView; away: SideView; events: MatchEvent[] }
 export type MatchSummary = WithNull<Schema<'MatchSummary'>, 'kickoffAt' | 'competitionId' | 'competitionName' | 'round'>
+export type PlayerMatchRow = Omit<Schema<'PlayerMatchRow'>, 'match'> & { match: MatchSummary }
+export type PlayerProfile = Omit<Schema<'PlayerProfileResponse'>, 'matches'> & { matches: PlayerMatchRow[] }
 
 /** Unwraps an openapi-fetch result: the data, or the error body thrown (for errors.ts to read). */
 export async function call<T>(result: Promise<{ data?: T; error?: unknown }>): Promise<Sent<T>> {

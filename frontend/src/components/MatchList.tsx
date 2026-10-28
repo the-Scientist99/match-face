@@ -1,4 +1,5 @@
 import { Badge, Card, Group, Stack, Text } from '@mantine/core'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import type { MatchSummary } from '../api/client'
@@ -9,7 +10,7 @@ export function formatKickoff(iso: string | null, lang: string): string | null {
 }
 
 /** One card per match: sides, score (once played), kickoff and status. Reused by competitions (M5). */
-export default function MatchList({ matches }: { matches: MatchSummary[] }) {
+export default function MatchList({ matches, extra }: { matches: MatchSummary[]; extra?: (m: MatchSummary) => ReactNode }) {
   const { t, i18n } = useTranslation()
   return (
     <Stack gap="xs">
@@ -28,6 +29,7 @@ export default function MatchList({ matches }: { matches: MatchSummary[] }) {
           <Text size="sm" c="dimmed">
             {formatKickoff(m.kickoffAt, i18n.language) ?? t('match.noKickoff')}
           </Text>
+          {extra?.(m)}
         </Card>
       ))}
     </Stack>

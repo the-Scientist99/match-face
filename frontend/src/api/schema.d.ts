@@ -68,6 +68,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/players/{id}/claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/players/claims/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["preview"];
+        put?: never;
+        post: operations["claim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/matches": {
         parameters: {
             query?: never;
@@ -448,6 +480,15 @@ export interface components {
             claimed?: boolean;
             canEdit?: boolean;
         };
+        ClaimInviteResponse: {
+            token?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+        };
+        ClaimResultResponse: {
+            /** Format: uuid */
+            playerId?: string;
+        };
         CreateMatchRequest: {
             /** Format: uuid */
             homeTeamId?: string;
@@ -546,6 +587,52 @@ export interface components {
             competitionName?: string;
             /** Format: int32 */
             round?: number;
+        };
+        PlayerMatchRow: {
+            match?: components["schemas"]["MatchSummary"];
+            /** @enum {string} */
+            side?: "HOME" | "AWAY";
+            /** Format: int32 */
+            goals?: number;
+            /** Format: int32 */
+            assists?: number;
+        };
+        PlayerProfileResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            claimed?: boolean;
+            canEdit?: boolean;
+            canInvite?: boolean;
+            totals?: components["schemas"]["PlayerTotals"];
+            matches?: components["schemas"]["PlayerMatchRow"][];
+        };
+        PlayerTotals: {
+            /** Format: int32 */
+            appearances?: number;
+            /** Format: int32 */
+            goals?: number;
+            /** Format: int32 */
+            assists?: number;
+            /** Format: int32 */
+            ownGoals?: number;
+            /** Format: int32 */
+            yellowCards?: number;
+            /** Format: int32 */
+            redCards?: number;
+            /** Format: int32 */
+            cleanSheets?: number;
+            /** Format: int32 */
+            manOfTheMatch?: number;
+        };
+        ClaimPreviewResponse: {
+            /** Format: uuid */
+            playerId?: string;
+            playerName?: string;
+            /** Format: int32 */
+            appearances?: number;
+            /** Format: int32 */
+            goals?: number;
         };
     };
     responses: never;
@@ -652,6 +739,72 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PlayerResponse"];
+                };
+            };
+        };
+    };
+    invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClaimInviteResponse"];
+                };
+            };
+        };
+    };
+    preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClaimPreviewResponse"];
+                };
+            };
+        };
+    };
+    claim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClaimResultResponse"];
                 };
             };
         };
@@ -939,7 +1092,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PlayerResponse"];
+                    "*/*": components["schemas"]["PlayerProfileResponse"];
                 };
             };
         };

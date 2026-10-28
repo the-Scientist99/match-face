@@ -1,9 +1,9 @@
-import { Alert, Button, Divider, Group, Loader, Stack, Text } from '@mantine/core'
+import { Alert, Anchor, Button, Divider, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { api, call, type Match } from '../../api/client'
 import { errorCode, useNotifyError } from '../../api/errors'
 import EventEntry, { type NewEvent } from './EventEntry'
@@ -128,9 +128,9 @@ function SimpleLineup({ match }: { match: Match }) {
           {match.lineup
             .filter((l) => l.side === side)
             .map((l) => (
-              <Text key={l.playerId} size="sm">
+              <Anchor key={l.playerId} size="sm" component={Link} to={`/players/${l.playerId}`}>
                 {l.inGoal ? `🧤 ${l.name} (${t('match.keeper')})` : l.name}
-              </Text>
+              </Anchor>
             ))}
         </Stack>
       ))}

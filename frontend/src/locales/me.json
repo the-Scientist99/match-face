@@ -37,7 +37,9 @@
     "PLAYER_HAS_EVENTS": "Ovaj igrač ima golove ili kartone na ovoj utakmici. Prvo ih uklonite.",
     "MATCH_FINISHED": "Utakmica je završena. Ponovo je otvorite da biste mijenjali.",
     "INVALID_EVENT": "Taj događaj ovdje nije ispravan.",
-    "INVALID_FIELD": "To se ovdje ne može mijenjati."
+    "INVALID_FIELD": "To se ovdje ne može mijenjati.",
+    "CLAIM_INVALID": "Ovaj link za poziv više ne važi. Zatražite novi.",
+    "MERGE_CONFLICT": "Vi i ovaj igrač ste igrali na istoj utakmici, pa se profili ne mogu spojiti."
   },
   "auth": {
     "login": "Prijava",
@@ -137,5 +139,30 @@
     "notSaved": "Nije sačuvano",
     "retry": "Pokušaj ponovo",
     "dismiss": "Odbaci"
+  },
+  "profile": {
+    "appearances": "Utakmice",
+    "goals": "Golovi",
+    "assists": "Asistencije",
+    "cleanSheets": "Mreža sačuvana",
+    "yellowCards": "Žuti kartoni",
+    "redCards": "Crveni kartoni",
+    "manOfTheMatch": "Igrač utakmice",
+    "ownGoals": "Autogolovi",
+    "matches": "Utakmice",
+    "noMatches": "Još nema završenih utakmica.",
+    "inMatch": "golovi: {{goals}}, asistencije: {{assists}}"
+  },
+  "claim": {
+    "invite": "Pozovi da preuzme profil",
+    "shareHint": "Pošaljite ovaj link igraču; radi jednom i ističe za 14 dana.",
+    "copy": "Kopiraj link",
+    "copied": "Kopirano",
+    "expires": "Ističe {{date}}",
+    "title": "Preuzmi profil: {{name}}",
+    "summary": "Na vaš profil biće dodato utakmica: {{matches}}, golova: {{goals}}.",
+    "confirm": "Potvrdi",
+    "loginFirst": "Prijavite se ili registrujte da biste dodali ovu istoriju na svoj profil.",
+    "done": "Dodato na vaš profil."
   }
 }
