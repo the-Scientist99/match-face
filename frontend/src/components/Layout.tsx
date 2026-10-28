@@ -61,7 +61,8 @@ export default function Layout() {
                   <Button component={Link} to="/login" variant="subtle" size="xs">
                     {t('auth.login')}
                   </Button>
-                  <Button component={Link} to="/register" size="xs">
+                  {/* phones: the login page links to Register, so the header keeps room for the brand */}
+                  <Button component={Link} to="/register" size="xs" visibleFrom="xs">
                     {t('auth.register')}
                   </Button>
                 </>

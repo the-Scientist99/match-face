@@ -187,3 +187,8 @@ table {
 .standings tbody tr:first-child td:first-child {
   box-shadow: inset 3px 0 0 var(--mantine-color-teal-filled);
 }
+
+/* The brand never wraps; the header's other items make room instead */
+.brand {
+  white-space: nowrap;
+}
