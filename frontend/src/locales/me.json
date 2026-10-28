@@ -1,0 +1,15 @@
+{
+  "app": { "name": "Sportska liga" },
+  "nav": { "home": "Početna" },
+  "language": { "me": "ME", "en": "EN" },
+  "home": { "title": "Moje utakmice" },
+  "errors": {
+    "UNKNOWN": "Nešto nije u redu. Pokušajte ponovo.",
+    "NOT_FOUND": "Nije pronađeno.",
+    "FORBIDDEN": "Nemate dozvolu za ovu radnju.",
+    "UNAUTHORIZED": "Prijavite se da biste nastavili.",
+    "VALIDATION": "Provjerite označena polja.",
+    "STALE": "Podaci su u međuvremenu promijenjeni. Osvježili smo ih, pokušajte ponovo.",
+    "RATE_LIMITED": "Previše pokušaja. Sačekajte minut."
+  }
+}

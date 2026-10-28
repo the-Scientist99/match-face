@@ -1,0 +1,15 @@
+{
+  "app": { "name": "Sports League" },
+  "nav": { "home": "Home" },
+  "language": { "me": "ME", "en": "EN" },
+  "home": { "title": "My matches" },
+  "errors": {
+    "UNKNOWN": "Something went wrong. Please try again.",
+    "NOT_FOUND": "Not found.",
+    "FORBIDDEN": "You don't have permission to do that.",
+    "UNAUTHORIZED": "Please log in to continue.",
+    "VALIDATION": "Please check the highlighted fields.",
+    "STALE": "This was changed elsewhere. We reloaded it, please try again.",
+    "RATE_LIMITED": "Too many attempts. Please wait a minute."
+  }
+}
