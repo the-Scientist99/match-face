@@ -49,6 +49,13 @@ public abstract class IntegrationTest {
         UUID.fromString(n.get("user").get("playerId").asString()), n.get("accessToken").asString());
   }
 
+  protected UUID createGuest(TestUser owner, String name) throws Exception {
+    String body = mvc.perform(post("/api/players").with(as(owner)).contentType(APPLICATION_JSON).content(toJson(Map.of("name", name))))
+        .andExpect(status().isCreated())
+        .andReturn().getResponse().getContentAsString();
+    return UUID.fromString(json.readTree(body).get("id").asString());
+  }
+
   protected RequestPostProcessor as(TestUser u) {
     return req -> {
       req.addHeader("Authorization", "Bearer " + u.token());
