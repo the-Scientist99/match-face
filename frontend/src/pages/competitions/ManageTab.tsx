@@ -45,7 +45,7 @@ export default function ManageTab({ competition }: { competition: Competition })
   const generate = () => run(() => call(api.POST('/api/competitions/{id}/generate', path)))
 
   return (
-    <Stack maw={500}>
+    <Stack maw={500} className="surface">
       <Title order={5}>{t('competition.teams')}</Title>
       {competition.teams.length ? (
         competition.teams.map((ct) => (

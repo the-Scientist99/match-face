@@ -1,4 +1,4 @@
-import { Anchor, Button, Group, Loader, Stack, Text, Title } from '@mantine/core'
+import { Badge, Button, Group, Loader, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
@@ -15,7 +15,7 @@ export default function HomePage() {
   })
   const { upcoming, recent } = splitMatches(mine.data ?? [])
   return (
-    <Stack maw={600}>
+    <Stack maw={600} gap="lg">
       <Group justify="space-between">
         <Title order={2}>{t('home.title')}</Title>
         <Group gap="xs">
@@ -30,11 +30,13 @@ export default function HomePage() {
       {!!competitions.data?.length && (
         <>
           <Title order={4}>{t('home.competitions')}</Title>
-          {competitions.data.map((c) => (
-            <Anchor key={c.id} component={Link} to={`/competitions/${c.id}`}>
-              {c.name}
-            </Anchor>
-          ))}
+          <Group gap="xs">
+            {competitions.data.map((c) => (
+              <Badge key={c.id} component={Link} to={`/competitions/${c.id}`} size="lg" className="pressable" style={{ textTransform: 'none' }}>
+                {c.type === 'CUP' ? '🏆' : '📋'} {c.name}
+              </Badge>
+            ))}
+          </Group>
         </>
       )}
       {mine.isPending ? (

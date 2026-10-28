@@ -1,4 +1,4 @@
-import { Alert, Anchor, Button, Divider, Group, Loader, Stack, Text } from '@mantine/core'
+import { Alert, Anchor, Badge, Button, Card, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -63,12 +63,14 @@ export default function MatchPage() {
     run(() => call(api.DELETE('/api/matches/{id}/events/{eventId}', { params: { path: { id, eventId } } })))
 
   return (
-    <Stack maw={700}>
+    <Stack maw={700} gap="lg">
       {m.competitionId && (
-        <Anchor component={Link} to={`/competitions/${m.competitionId}`} size="sm">
-          {m.competitionName}
-          {m.round !== null && ` · ${t('competition.round', { round: m.round })}`}
-        </Anchor>
+        <Group>
+          <Badge component={Link} to={`/competitions/${m.competitionId}`} size="lg" className="pressable" style={{ textTransform: 'none' }}>
+            {m.competitionName}
+            {m.round !== null && ` · ${t('competition.round', { round: m.round })}`}
+          </Badge>
+        </Group>
       )}
       <ScoreHeader match={m} />
       {failedEvent && m.status === 'SCHEDULED' && (
@@ -89,15 +91,9 @@ export default function MatchPage() {
           </Group>
         </Alert>
       )}
-      {editable && (
-        <>
-          <EventEntry match={m} onAdd={addEvent} disabled={busy} />
-          <Divider />
-        </>
-      )}
+      {editable && <EventEntry match={m} onAdd={addEvent} disabled={busy} />}
       {teamsUndecided(m) && <Text c="dimmed">{t('match.waitingForTeams')}</Text>}
       <EventList match={m} onDelete={editable ? deleteEvent : undefined} disabled={busy} />
-      <Divider />
       {editable ? (
         <LineupEditor
           key={m.lineup.map((l) => `${l.playerId}${l.side}${l.inGoal}`).join()}
@@ -109,14 +105,14 @@ export default function MatchPage() {
         <SimpleLineup match={m} />
       )}
       {m.canAdmin && !teamsUndecided(m) && (
-        <Group>
+        <Stack gap="sm">
           {m.status === 'SCHEDULED' ? (
             <>
-              <Button disabled={busy} onClick={() => setFinishing(true)}>
+              <Button size="lg" fullWidth disabled={busy} onClick={() => setFinishing(true)}>
                 {t('match.finish')}
               </Button>
               {!m.knockout && (
-                <Button variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/cancel', { ...path, body: version })))}>
+                <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/cancel', { ...path, body: version })))}>
                   {t('match.cancel')}
                 </Button>
               )}
@@ -130,11 +126,11 @@ export default function MatchPage() {
               />
             </>
           ) : (
-            <Button variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/reopen', { ...path, body: version })))}>
+            <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/reopen', { ...path, body: version })))}>
               {t('match.reopen')}
             </Button>
           )}
-        </Group>
+        </Stack>
       )}
     </Stack>
   )
@@ -144,19 +140,21 @@ function SimpleLineup({ match }: { match: Match }) {
   const { t } = useTranslation()
   if (!match.lineup.length) return null
   return (
-    <Group align="flex-start" grow>
-      {(['HOME', 'AWAY'] as const).map((side) => (
-        <Stack key={side} gap={2}>
-          <Text fw={600}>{side === 'HOME' ? match.home.name : match.away.name}</Text>
-          {match.lineup
-            .filter((l) => l.side === side)
-            .map((l) => (
-              <Anchor key={l.playerId} size="sm" component={Link} to={`/players/${l.playerId}`}>
-                {l.inGoal ? `🧤 ${l.name} (${t('match.keeper')})` : l.name}
-              </Anchor>
-            ))}
-        </Stack>
-      ))}
-    </Group>
+    <Card>
+      <Group align="flex-start" grow>
+        {(['HOME', 'AWAY'] as const).map((side) => (
+          <Stack key={side} gap={4}>
+            <Text fw={700} className="section-label">{side === 'HOME' ? match.home.name : match.away.name}</Text>
+            {match.lineup
+              .filter((l) => l.side === side)
+              .map((l) => (
+                <Anchor key={l.playerId} size="sm" component={Link} to={`/players/${l.playerId}`}>
+                  {l.inGoal ? `🧤 ${l.name} (${t('match.keeper')})` : l.name}
+                </Anchor>
+              ))}
+          </Stack>
+        ))}
+      </Group>
+    </Card>
   )
 }

@@ -80,8 +80,8 @@ export default function PlayerProfilePage() {
       </Group>
       <SimpleGrid cols={{ base: 2, xs: 4 }}>
         {TOTALS.map((k) => (
-          <Paper key={k} withBorder p="sm" ta="center">
-            <Text size="xl" fw={700}>
+          <Paper key={k} p="md" ta="center" radius="lg">
+            <Text className="score" fz={28} fw={800} c="teal" lh={1.1}>
               {p.totals[k]}
             </Text>
             <Text size="xs" c="dimmed">

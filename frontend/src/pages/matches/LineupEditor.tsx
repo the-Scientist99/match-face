@@ -1,4 +1,4 @@
-import { Button, Checkbox, Group, Stack, Text } from '@mantine/core'
+import { Button, Card, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -55,25 +55,33 @@ export default function LineupEditor({ match, onSave, disabled }: { match: Match
     ))
 
   return (
-    <Stack>
-      <Text fw={600}>{t('match.lineup')}</Text>
-      <PlayerPicker label={match.home.name ?? undefined} value={home} onChange={setHome} excludeIds={away} first={first('HOME', homeRoster)} />
-      {keeperBoxes(home)}
-      <PlayerPicker label={match.away.name ?? undefined} value={away} onChange={setAway} excludeIds={home} first={first('AWAY', awayRoster)} />
-      {keeperBoxes(away)}
-      <Group>
-        <Button
-          disabled={disabled}
-          onClick={() =>
-            onSave([
-              ...home.map((playerId) => ({ playerId, side: 'HOME' as const, inGoal: keepers.has(playerId) })),
-              ...away.map((playerId) => ({ playerId, side: 'AWAY' as const, inGoal: keepers.has(playerId) })),
-            ])
-          }
-        >
-          {t('match.saveLineup')}
-        </Button>
-      </Group>
-    </Stack>
+    <Card>
+      <Stack gap="lg">
+        <Text fw={700} size="lg">
+          {t('match.lineup')}
+        </Text>
+        <Stack gap="xs" className="section-label">
+          <PlayerPicker label={match.home.name ?? undefined} value={home} onChange={setHome} excludeIds={away} first={first('HOME', homeRoster)} />
+          {keeperBoxes(home)}
+        </Stack>
+        <Stack gap="xs" className="section-label">
+          <PlayerPicker label={match.away.name ?? undefined} value={away} onChange={setAway} excludeIds={home} first={first('AWAY', awayRoster)} />
+          {keeperBoxes(away)}
+        </Stack>
+        <Group>
+          <Button
+            disabled={disabled}
+            onClick={() =>
+              onSave([
+                ...home.map((playerId) => ({ playerId, side: 'HOME' as const, inGoal: keepers.has(playerId) })),
+                ...away.map((playerId) => ({ playerId, side: 'AWAY' as const, inGoal: keepers.has(playerId) })),
+              ])
+            }
+          >
+            {t('match.saveLineup')}
+          </Button>
+        </Group>
+      </Stack>
+    </Card>
   )
 }

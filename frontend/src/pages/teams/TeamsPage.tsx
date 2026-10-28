@@ -49,11 +49,13 @@ export default function TeamsPage() {
       {mine.isPending ? (
         <Loader />
       ) : mine.data?.length ? (
-        mine.data.map((team) => (
-          <Anchor key={team.id} component={Link} to={`/teams/${team.id}`}>
-            {team.name}
-          </Anchor>
-        ))
+        <Stack gap="sm" className="surface">
+          {mine.data.map((team) => (
+            <Anchor key={team.id} component={Link} to={`/teams/${team.id}`} fw={600}>
+              {team.name}
+            </Anchor>
+          ))}
+        </Stack>
       ) : (
         <Text c="dimmed">{t('teams.none')}</Text>
       )}

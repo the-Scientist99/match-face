@@ -1,4 +1,4 @@
-import { Button, Group, Menu, Modal, NumberInput, Select, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Button, Card, Group, Menu, Modal, NumberInput, Select, SimpleGrid, Stack, Text } from '@mantine/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Match } from '../../api/client'
@@ -33,8 +33,8 @@ export default function EventEntry({ match, onAdd, disabled }: { match: Match; o
   }
 
   const column = (side: Side) => (
-    <Stack gap="xs">
-      <Text fw={600} truncate>
+    <Stack gap={10}>
+      <Text fw={700} ta="center" truncate mb={4}>
         {side === 'HOME' ? match.home.name : match.away.name}
       </Text>
       {match.lineup
@@ -42,8 +42,16 @@ export default function EventEntry({ match, onAdd, disabled }: { match: Match; o
         .map((l) => (
           <Menu key={l.playerId} position="bottom-start" disabled={disabled}>
             <Menu.Target>
-              <Button variant="light" size="md" justify="flex-start" fullWidth disabled={disabled}>
-                {l.inGoal ? '🧤 ' : ''}
+              <Button
+                variant="light"
+                size="md"
+                radius="lg"
+                justify="flex-start"
+                fullWidth
+                disabled={disabled}
+                className="pressable"
+                leftSection={l.inGoal ? <span className="glove">🧤</span> : undefined}
+              >
                 {l.name}
               </Button>
             </Menu.Target>
@@ -59,7 +67,7 @@ export default function EventEntry({ match, onAdd, disabled }: { match: Match; o
             </Menu.Dropdown>
           </Menu>
         ))}
-      <Button variant="subtle" size="sm" disabled={disabled} onClick={() => onAdd({ type: 'GOAL', side })}>
+      <Button variant="light" color="gray" size="sm" radius="lg" fullWidth mt={4} className="pressable" disabled={disabled} onClick={() => onAdd({ type: 'GOAL', side })}>
         {t('event.unknownGoal')}
       </Button>
     </Stack>
@@ -71,10 +79,12 @@ export default function EventEntry({ match, onAdd, disabled }: { match: Match; o
 
   return (
     <>
-      <SimpleGrid cols={2}>
-        {column('HOME')}
-        {column('AWAY')}
-      </SimpleGrid>
+      <Card>
+        <SimpleGrid cols={2} spacing="lg">
+          {column('HOME')}
+          {column('AWAY')}
+        </SimpleGrid>
+      </Card>
       <Modal opened={goal !== null} onClose={() => setGoal(null)} title={t('event.type.GOAL')} centered>
         <Stack>
           <Select label={t('event.assist')} data={assistOptions} value={assist} onChange={setAssist} clearable />

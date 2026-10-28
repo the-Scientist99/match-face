@@ -7,7 +7,7 @@ import { errorCode } from '../../api/errors'
 function Board({ title, rows }: { title: string; rows: { key: string; name: string; value: string }[] }) {
   const { t } = useTranslation()
   return (
-    <Stack gap={4}>
+    <Stack gap={6} className="surface">
       <Title order={5}>{title}</Title>
       {rows.length ? (
         rows.map((r) => (

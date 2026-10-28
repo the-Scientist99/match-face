@@ -1,4 +1,30 @@
-/* Global polish on top of Mantine: materials, press feedback, numerals, typography. */
+/* Direction "Fresh and friendly" on top of Mantine: mint page, elevated cards, tinted chips, gradient accents. */
+
+:root {
+  --app-bg: #f1fcf8;
+  --app-subtle: #f8f9fa; /* quiet fills: name pills, event rows, secondary chips */
+  --app-band: linear-gradient(90deg, #20c997, #0ca678);
+  --app-primary: linear-gradient(135deg, #0ca678, #099268);
+  --app-glow: 0 4px 12px rgba(12, 166, 120, 0.3);
+  --app-tint-goal: #e6fcf5;
+  --app-tint-yellow: #fff3bf;
+  --app-tint-red: #ffe3e3;
+  --app-tint-star: #fff9db;
+}
+[data-mantine-color-scheme='dark'] {
+  --app-bg: #0e1613;
+  --app-subtle: rgba(255, 255, 255, 0.05);
+  --app-glow: 0 4px 14px rgba(32, 201, 151, 0.25);
+  --app-tint-goal: rgba(32, 201, 151, 0.16);
+  --app-tint-yellow: rgba(250, 176, 5, 0.18);
+  --app-tint-red: rgba(250, 82, 82, 0.18);
+  --app-tint-star: rgba(250, 176, 5, 0.12);
+}
+
+/* The page is mint; cards keep Mantine's body colour (white / dark), so they read as raised surfaces. */
+body {
+  background-color: var(--app-bg);
+}
 
 /* Translucent chrome: content scrolls underneath, a hairline edge instead of a hard bar */
 .app-header {
@@ -6,6 +32,13 @@
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid color-mix(in srgb, var(--mantine-color-default-border) 55%, transparent);
+}
+
+/* Primary actions: teal gradient pill with a soft glow */
+.mantine-Button-root[data-variant='filled']:not(:disabled):not([data-disabled]) {
+  background-image: var(--app-primary);
+  box-shadow: var(--app-glow);
+  border: 0;
 }
 
 /* Large text reads better slightly tighter; body text stays at 0 */
@@ -26,15 +59,81 @@ table {
 }
 
 .score-big {
-  font-size: clamp(2.75rem, 12vw, 4rem);
+  font-size: clamp(2.75rem, 12vw, 3.5rem);
   line-height: 1;
   letter-spacing: -0.04em;
   font-weight: 800;
+  color: var(--mantine-color-teal-filled);
+}
+
+/* A thin gradient band on top of hero cards (score, winner) */
+.band {
+  position: relative;
+  overflow: hidden;
+}
+.band::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 8px;
+  background: var(--app-band);
+}
+
+/* Quiet pill for a side's name, an event row, a secondary chip */
+.name-pill {
+  background: var(--app-subtle);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+.event-row {
+  background: var(--app-subtle);
+  border-radius: 16px;
+  padding: 8px;
+}
+
+/* Round emoji badge for events and stats */
+.emoji-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+  box-shadow: var(--mantine-shadow-xs);
+  background: var(--app-tint-goal);
+}
+.emoji-badge[data-tint='yellow'] { background: var(--app-tint-yellow); }
+.emoji-badge[data-tint='red'] { background: var(--app-tint-red); }
+.emoji-badge[data-tint='star'] { background: var(--app-tint-star); }
+
+/* Small white disc for the keeper glove inside a player chip */
+.glove {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--mantine-color-body) 60%, transparent);
+  box-shadow: var(--mantine-shadow-xs);
+}
+
+/* Section label above grouped fields (lineup sides, form groups) */
+.section-label .mantine-InputWrapper-label,
+.section-label {
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mantine-color-dimmed);
 }
 
 /* Instant feedback on press, a soft lift on hover where a pointer can hover */
 .pressable {
-  transition: transform 120ms ease-out, box-shadow 160ms ease-out;
+  transition: transform 120ms ease-out, box-shadow 160ms ease-out, filter 150ms ease;
   -webkit-tap-highlight-color: transparent;
 }
 .pressable:active {
@@ -42,7 +141,7 @@ table {
 }
 @media (hover: hover) {
   .pressable:hover {
-    box-shadow: var(--mantine-shadow-sm);
+    box-shadow: var(--mantine-shadow-md);
   }
 }
 
@@ -67,4 +166,24 @@ table {
     background-color: var(--mantine-color-body);
     border-bottom-color: var(--mantine-color-text);
   }
+  .mantine-Card-root,
+  .mantine-Paper-root {
+    outline: 1px solid var(--mantine-color-default-border);
+  }
+}
+
+/* A raised card on any existing container (forms, lists) without restructuring it */
+.surface {
+  background-color: var(--mantine-color-body);
+  border-radius: 24px;
+  box-shadow: var(--mantine-shadow-sm);
+  padding: var(--mantine-spacing-lg);
+}
+
+/* Standings: the leader's row gets a soft teal accent */
+.standings tbody tr:first-child td {
+  background: var(--app-tint-goal);
+}
+.standings tbody tr:first-child td:first-child {
+  box-shadow: inset 3px 0 0 var(--mantine-color-teal-filled);
 }

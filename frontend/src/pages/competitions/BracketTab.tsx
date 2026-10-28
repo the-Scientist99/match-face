@@ -1,4 +1,4 @@
-import { Alert, Card, Group, Loader, ScrollArea, Stack, Text, Title } from '@mantine/core'
+import { Card, Group, Loader, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
@@ -29,7 +29,7 @@ function MatchCard({ bm }: { bm: BracketMatch }) {
   const played = m.status === 'FINISHED'
   const winner = !played ? null : m.score.home > m.score.away ? 'HOME' : m.score.away > m.score.home ? 'AWAY' : bm.penaltyWinner
   return (
-    <Card padding="xs" w={180} className="pressable" component={Link} to={`/matches/${m.id}`}>
+    <Card padding="sm" radius="lg" w={180} className="pressable" component={Link} to={`/matches/${m.id}`}>
       <Side name={m.homeName} score={played ? m.score.home : null} won={winner === 'HOME'} pens={bm.penaltyWinner === 'HOME'} />
       <Side name={m.awayName} score={played ? m.score.away : null} won={winner === 'AWAY'} pens={bm.penaltyWinner === 'AWAY'} />
     </Card>
@@ -50,7 +50,14 @@ export default function BracketTab({ id }: { id: string }) {
   const rounds = Array.from({ length: b.rounds }, (_, i) => i + 1)
   return (
     <Stack>
-      {b.winner && <Alert color="green" title={t('bracket.winner')}>{b.winner.name}</Alert>}
+      {b.winner && (
+        <Paper className="band" p="lg" pt={28} ta="center">
+          <Text className="section-label">{t('bracket.winner')}</Text>
+          <Text fw={800} fz={24} c="teal">
+            🏆 {b.winner.name}
+          </Text>
+        </Paper>
+      )}
       <ScrollArea type="auto">
         <Group align="stretch" wrap="nowrap" gap="md">
           {rounds.map((r) => {

@@ -15,7 +15,7 @@ export default function MatchList({ matches, extra }: { matches: MatchSummary[];
   return (
     <Stack gap="xs">
       {matches.map((m) => (
-        <Card key={m.id} padding="sm" className="pressable" component={Link} to={`/matches/${m.id}`}>
+        <Card key={m.id} padding="md" radius="lg" className="pressable" component={Link} to={`/matches/${m.id}`}>
           <Group wrap="nowrap" gap="sm">
             <Text fw={600} ta="right" flex={1} truncate>
               {m.homeName ?? t('bracket.tbd')}

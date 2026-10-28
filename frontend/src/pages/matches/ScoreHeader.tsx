@@ -3,29 +3,34 @@ import { useTranslation } from 'react-i18next'
 import type { Match } from '../../api/client'
 import { formatKickoff } from '../../components/MatchList'
 
+const STATUS_COLOR = { SCHEDULED: 'blue', FINISHED: 'teal', CANCELLED: 'gray' } as const
+
 export default function ScoreHeader({ match }: { match: Match }) {
   const { t, i18n } = useTranslation()
   const details = [formatKickoff(match.kickoffAt, i18n.language), match.venue].filter(Boolean).join(' · ')
+  const side = (name: string | null) => (
+    <Text component="div" fw={700} size="sm" ta="center" lh={1.3} lineClamp={2} className="name-pill">
+      {name ?? t('bracket.tbd')}
+    </Text>
+  )
   return (
-    <Paper withBorder p="lg">
-      <Stack gap="sm" align="center">
+    <Paper className="band" p="lg" pt={28}>
+      <Stack gap="md" align="center">
         <Group wrap="nowrap" justify="center" gap="md" w="100%">
-          <Text fw={700} fz="lg" ta="right" flex={1} lh={1.2} lineClamp={2}>
-            {match.home.name ?? t('bracket.tbd')}
-          </Text>
+          <Group flex={1} justify="flex-end">
+            {side(match.home.name)}
+          </Group>
           <Text className="score score-big" component="div" aria-live="polite">
             {match.score.home}–{match.score.away}
           </Text>
-          <Text fw={700} fz="lg" flex={1} lh={1.2} lineClamp={2}>
-            {match.away.name ?? t('bracket.tbd')}
-          </Text>
+          <Group flex={1} justify="flex-start">
+            {side(match.away.name)}
+          </Group>
         </Group>
         <Group gap="xs" justify="center">
-          <Badge color={match.status === 'FINISHED' ? 'teal' : match.status === 'CANCELLED' ? 'gray' : 'blue'}>
-            {t(`match.status.${match.status}`)}
-          </Badge>
+          <Badge color={STATUS_COLOR[match.status]}>{t(`match.status.${match.status}`)}</Badge>
           {details && (
-            <Text size="sm" c="dimmed">
+            <Text size="sm" c="dimmed" fw={500}>
               {details}
             </Text>
           )}

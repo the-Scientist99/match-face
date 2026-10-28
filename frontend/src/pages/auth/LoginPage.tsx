@@ -35,7 +35,7 @@ export default function LoginPage() {
   }
 
   return (
-    <Paper withBorder p="xl" maw={420} mx="auto" mt="xl">
+    <Paper p="xl" maw={420} mx="auto" mt="xl">
       <Stack component="form" onSubmit={submit}>
         <Title order={2}>{t('auth.loginTitle')}</Title>
         <TextInput

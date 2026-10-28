@@ -52,6 +52,7 @@ export default function NewMatchPage() {
     <Stack
       component="form"
       maw={500}
+      className="surface"
       onSubmit={(e: FormEvent) => {
         e.preventDefault()
         create.mutate()

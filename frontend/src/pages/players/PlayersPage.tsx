@@ -112,7 +112,13 @@ export default function PlayersPage() {
           {t('common.add')}
         </Button>
       </Group>
-      {mine.isPending ? <Loader /> : mine.data?.map((p) => <PlayerRow key={p.id} player={p} />)}
+      {mine.isPending ? (
+        <Loader />
+      ) : (
+        <Stack gap="sm" className="surface">
+          {mine.data?.map((p) => <PlayerRow key={p.id} player={p} />)}
+        </Stack>
+      )}
     </Stack>
   )
 }

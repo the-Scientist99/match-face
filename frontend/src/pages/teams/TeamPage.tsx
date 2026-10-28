@@ -31,7 +31,7 @@ function TeamAdmin({ team }: { team: Team }) {
   })
 
   return (
-    <Stack>
+    <Stack className="surface">
       <Group
         component="form"
         align="flex-end"
@@ -72,7 +72,7 @@ export default function TeamPage() {
     <Stack maw={600}>
       <Title order={2}>{data.name}</Title>
       {data.players.length ? (
-        <List>
+        <List className="surface" listStyleType="none" spacing="xs">
           {data.players.map((p) => (
             <List.Item key={p.id}>
               {p.name}{' '}
