@@ -22,7 +22,9 @@
 - Test: `backend/src/test/java/com/sportsapp/stats/PlayerStatsTest.java`
 
 **Interfaces:**
-- Consumes: `VisibilitySql.VISIBLE_MATCH_IDS`, `MatchViews.summaries` (M3), `PlayerService`.
+- Consumes (M3): `VisibilitySql.VISIBLE_MATCH_IDS` (binds `:viewerId` as a UUID string or null), `MatchViews.summaries(List<UUID>)` (keeps the given order), `MatchDtos.MatchSummary`, `Side`, `PlayerService.getRequired/canEdit`, `AccessService`, and the `IntegrationTest` helpers `register/createGuest/createTeam/createPickup/setLineup/putOnRoster/version`.
+- Adds `IntegrationTest` helpers `addEvent(TestUser, UUID matchId, Object... keyValues)` (POST an event, expect 201) and `finish(TestUser, UUID matchId)`. Keeper lineups in tests are PUT directly, since `setLineup` sets nobody in goal.
+- `GET /api/players/{id}` stays open to anonymous viewers; only the stats are filtered.
 - Produces DTOs:
   - `PlayerTotals(int appearances, int goals, int assists, int ownGoals, int yellowCards, int redCards, int cleanSheets, int manOfTheMatch)`
   - `PlayerMatchRow(MatchSummary match, Side side, int goals, int assists)`
@@ -123,7 +125,7 @@ CREATE TABLE player_claim (
 
 - [ ] **Step 3:** Run `./mvnw -q test -Dtest=ClaimApiTest`. Expected: FAIL.
 - [ ] **Step 4: Implement `ClaimService.claim(UUID userId, String token)`** as `@Transactional`:
-  1. Load the claim by `sha256Hex(token)` with `@Lock(PESSIMISTIC_WRITE)`. If it's missing or expired → `CLAIM_INVALID`.
+  1. Load the claim by `sha256Hex(token)` with `@Lock(PESSIMISTIC_WRITE)`, **before any other read in the transaction** (M3 lesson: at REPEATABLE READ the first plain read fixes the snapshot, so a claim that waited on the lock would otherwise validate against stale rows). If it's missing or expired → `CLAIM_INVALID`.
   2. `guest = player(claim.playerId)`. If `guest.userId != null`, or the guest is the user's own player → `CLAIM_INVALID`.
   3. `mine = ownPlayer(userId)`. If any match lineup contains both `mine` and `guest` → `MERGE_CONFLICT`.
   4. Run these `JdbcClient` updates:
@@ -153,6 +155,8 @@ CREATE TABLE player_claim (
   - A grid of totals: appearances, goals, assists, clean sheets, yellows, reds, MOTM, own goals.
   - Match history: `MatchList` rows with that match's goals and assists.
   - Rename when `canEdit`, and `InviteButton` when `canInvite`.
+  - Renaming your own player also updates the header's name (deferred from M2: it stayed stale until reload). `AuthProvider` gains `refreshMe()`, which re-reads `GET /api/me`; call it after renaming your own player here and on `/players`.
+  - `MatchList` gains an optional `extra?: (m: MatchSummary) => ReactNode` rendered on each card, used here for the per-match goals and assists.
 - [ ] **Step 3: `InviteButton`.**
   - Posts an invite and shows a modal with the link `${origin}/claim/${token}`, a Copy button (`navigator.clipboard.writeText`) and the expiry date.
   - Includes the hint `claim.shareHint`: "Send this link to the player; it works once and expires in 14 days."
