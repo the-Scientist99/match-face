@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { api, call } from '../../api/client'
 import { useNotifyError } from '../../api/errors'
-import { localToIso } from './matchLogic'
+import { isoToLocal, localToIso } from './matchLogic'
 
 type Kind = 'pickup' | 'teams'
 type Visibility = 'PRIVATE' | 'PUBLIC'
@@ -21,6 +21,7 @@ export default function NewMatchPage() {
   const [homeTeamId, setHomeTeamId] = useState<string | null>(null)
   const [awayTeamId, setAwayTeamId] = useState<string | null>(null)
   const [kickoff, setKickoff] = useState('')
+  const [now] = useState(() => isoToLocal(new Date().toISOString())) // the picker's earliest choice; the server checks too
   const [venue, setVenue] = useState('')
   const [visibility, setVisibility] = useState<Visibility>('PRIVATE')
   const teams = useQuery({ queryKey: ['teams', 'mine'], queryFn: () => call(api.GET('/api/teams/mine')), enabled: kind === 'teams' })
@@ -34,7 +35,7 @@ export default function NewMatchPage() {
             ...(kind === 'pickup'
               ? { homeLabel, awayLabel }
               : { homeTeamId: homeTeamId ?? undefined, awayTeamId: awayTeamId ?? undefined }),
-            kickoffAt: localToIso(kickoff),
+            kickoffAt: localToIso(kickoff)!, // the input is required, so never empty here
             venue: venue || undefined,
             visibility,
           },
@@ -42,7 +43,7 @@ export default function NewMatchPage() {
       ),
     onSuccess: (match) => {
       queryClient.setQueryData(['match', match.id], match)
-      void queryClient.invalidateQueries({ queryKey: ['matches', 'mine'] })
+      void queryClient.invalidateQueries({ queryKey: ['matches'] })
       navigate(`/matches/${match.id}`)
     },
     onError: notifyError,
@@ -80,7 +81,14 @@ export default function NewMatchPage() {
           <Select label={t('match.away')} data={teamOptions} value={awayTeamId} onChange={setAwayTeamId} required searchable />
         </Group>
       )}
-      <TextInput label={t('match.kickoff')} type="datetime-local" value={kickoff} onChange={(e) => setKickoff(e.currentTarget.value)} />
+      <TextInput
+        label={t('match.kickoff')}
+        type="datetime-local"
+        required
+        min={now}
+        value={kickoff}
+        onChange={(e) => setKickoff(e.currentTarget.value)}
+      />
       <TextInput label={t('match.venue')} value={venue} maxLength={100} onChange={(e) => setVenue(e.currentTarget.value)} />
       <SegmentedControl
         value={visibility}

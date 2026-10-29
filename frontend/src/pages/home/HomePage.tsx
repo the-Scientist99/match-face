@@ -26,6 +26,7 @@ export default function HomePage() {
     queryKey: ['competitions', 'mine'],
     queryFn: () => call(api.GET('/api/competitions/mine')),
   })
+  const open = useQuery<MatchSummary[]>({ queryKey: ['matches', 'open'], queryFn: () => call(api.GET('/api/matches/open')) })
   const { upcoming, recent } = splitMatches(mine.data ?? [])
   return (
     <Stack gap={28}>
@@ -62,6 +63,11 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
+        </Section>
+      )}
+      {!!open.data?.length && (
+        <Section label={t('home.open')}>
+          <MatchList matches={open.data} />
         </Section>
       )}
       {mine.isPending ? (

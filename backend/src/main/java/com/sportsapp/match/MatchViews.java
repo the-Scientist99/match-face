@@ -104,7 +104,20 @@ public class MatchViews {
     Score score = SportRules.of(row.sport()).score(events.stream().map(e -> new ScoreEvent(e.type(), e.side())).toList());
     return new MatchResponse(matchId, row.version(), row.sport(), row.status(), row.kickoffAt(), row.venue(), row.visibility(),
         row.competitionId(), row.competitionName(), row.round(), row.home(), row.away(), score, row.penaltyWinner(), lineup, events,
-        access.canAdmin(viewerId, ResourceType.MATCH, matchId), row.knockout());
+        access.canAdmin(viewerId, ResourceType.MATCH, matchId), row.knockout(), mySide(matchId, viewerId),
+        viewerId != null && row.competitionId() == null && row.home().teamId() == null
+            && row.visibility() == Visibility.PUBLIC && row.status() == MatchStatus.SCHEDULED);
+  }
+
+  /** The side the viewer's own player is on in this match, or null. */
+  private Side mySide(UUID matchId, @Nullable UUID viewerId) {
+    if (viewerId == null) return null;
+    return jdbc.sql("""
+            SELECT l.side FROM match_lineup l JOIN player p ON p.id = l.player_id
+            WHERE l.match_id = UUID_TO_BIN(:m) AND p.user_id = UUID_TO_BIN(:u)
+            """)
+        .param("m", matchId.toString()).param("u", viewerId.toString())
+        .query(String.class).optional().map(Side::valueOf).orElse(null);
   }
 
   /** In the order of {@code matchIds}; ids that don't exist are skipped. */

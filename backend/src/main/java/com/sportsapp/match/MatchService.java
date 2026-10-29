@@ -3,6 +3,7 @@ package com.sportsapp.match;
 import com.sportsapp.access.AccessService;
 import com.sportsapp.access.ResourceType;
 import com.sportsapp.common.ApiException;
+import com.sportsapp.common.Visibility;
 import com.sportsapp.match.MatchDtos.CreateMatchRequest;
 import com.sportsapp.match.MatchDtos.EventRequest;
 import com.sportsapp.match.MatchDtos.FinishRequest;
@@ -15,6 +16,8 @@ import com.sportsapp.sport.Sport;
 import com.sportsapp.sport.Score;
 import com.sportsapp.sport.ScoreEvent;
 import com.sportsapp.sport.SportRules;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,9 +40,10 @@ public class MatchService {
   private final TeamService teams;
   private final MatchViews views;
   private final JdbcClient jdbc;
+  private final Clock clock;
 
   public MatchService(MatchRepository matches, MatchLineupRepository lineups, MatchEventRepository events, AccessService access,
-      PlayerService players, TeamService teams, MatchViews views, JdbcClient jdbc) {
+      PlayerService players, TeamService teams, MatchViews views, JdbcClient jdbc, Clock clock) {
     this.matches = matches;
     this.lineups = lineups;
     this.events = events;
@@ -48,6 +52,7 @@ public class MatchService {
     this.teams = teams;
     this.views = views;
     this.jdbc = jdbc;
+    this.clock = clock;
   }
 
   /** A team match (two team ids, both admined by the creator) or a pickup (two labels). */
@@ -56,6 +61,7 @@ public class MatchService {
     boolean teams = req.homeTeamId() != null && req.awayTeamId() != null && req.homeLabel() == null && req.awayLabel() == null;
     boolean pickup = req.homeTeamId() == null && req.awayTeamId() == null && req.homeLabel() != null && req.awayLabel() != null;
     if (!teams && !pickup) throw ApiException.badRequest("INVALID_SIDES");
+    requireFuture(req.kickoffAt());
     Match m = new Match(Sport.FOOTBALL, MatchStatus.SCHEDULED);
     if (teams) {
       if (req.homeTeamId().equals(req.awayTeamId())) throw ApiException.badRequest("SAME_TEAM");
@@ -79,7 +85,10 @@ public class MatchService {
   public void patch(UUID userId, UUID matchId, PatchMatchRequest req) {
     Match m = lockAsAdmin(userId, matchId);
     requireVersion(m, req.version());
-    if (req.kickoffAt() != null) m.setKickoffAt(req.kickoffAt());
+    if (req.kickoffAt() != null) {
+      requireFuture(req.kickoffAt());
+      m.setKickoffAt(req.kickoffAt());
+    }
     if (req.venue() != null) m.setVenue(MatchDtos.trimToNull(req.venue()));
     if (req.visibility() != null) {
       if (m.getStageId() != null) throw ApiException.badRequest("INVALID_FIELD"); // competition matches use its visibility
@@ -199,6 +208,7 @@ public class MatchService {
     Match m = lockAsAdmin(userId, matchId);
     requireVersion(m, r.version());
     requireScheduled(m);
+    requireStarted(m);
     if (isKnockout(m)) {
       requireTeamsSet(m);
       Score score = SportRules.of(m.getSport()).score(events.findByMatchId(matchId).stream()
@@ -251,12 +261,13 @@ public class MatchService {
   }
 
   /**
-   * In order, first failure wins: match not SCHEDULED; type not allowed by the sport; a card or MOTM
+   * In order, first failure wins: match not SCHEDULED; kickoff still ahead; type not allowed by the sport; a card or MOTM
    * without a player, or a bad assist; a player or assister not in the lineup on {@code side}; a second MOTM.
    * {@code editing}: the event being replaced, which doesn't count as an existing MOTM.
    */
   private void validateEvent(Match m, EventRequest req, UUID editing) {
     requireScheduled(m);
+    requireStarted(m);
     requireTeamsSet(m);
     if (!SportRules.of(m.getSport()).allowedEventTypes().contains(req.type())) throw ApiException.badRequest("INVALID_EVENT");
     boolean needsPlayer = req.type() == EventType.YELLOW || req.type() == EventType.RED || req.type() == EventType.MOTM;
@@ -274,6 +285,53 @@ public class MatchService {
         .anyMatch(e -> e.getType() == EventType.MOTM && !e.getId().equals(editing))) {
       throw ApiException.badRequest("INVALID_EVENT");
     }
+  }
+
+  /** Puts the user's own player on {@code side} of a public pickup match. */
+  @Transactional
+  public void join(UUID userId, UUID matchId, Side side) {
+    Match m = lockAsReader(userId, matchId);
+    if (m.getStageId() != null || m.getHomeTeamId() != null || m.getVisibility() != Visibility.PUBLIC) {
+      throw ApiException.conflict("NOT_JOINABLE");
+    }
+    requireScheduled(m);
+    UUID player = players.ownPlayer(userId).getId();
+    if (lineups.findByMatchIdAndPlayerId(matchId, player).isPresent()) throw ApiException.conflict("ALREADY_JOINED");
+    lineups.save(new MatchLineup(matchId, player, side, false));
+    matches.bumpVersion(matchId);
+  }
+
+  /** Takes the user's own player out of the lineup, unless an event names them. */
+  @Transactional
+  public void leave(UUID userId, UUID matchId) {
+    Match m = lockAsReader(userId, matchId);
+    requireScheduled(m);
+    UUID player = players.ownPlayer(userId).getId();
+    MatchLineup entry = lineups.findByMatchIdAndPlayerId(matchId, player).orElseThrow(ApiException::notFound);
+    if (events.findByMatchId(matchId).stream().anyMatch(e -> player.equals(e.getPlayerId()) || player.equals(e.getAssistPlayerId()))) {
+      throw ApiException.conflict("PLAYER_HAS_EVENTS");
+    }
+    lineups.delete(entry);
+    matches.bumpVersion(matchId);
+  }
+
+  /** Upcoming public pickups the user isn't part of yet, soonest first. */
+  @Transactional(readOnly = true)
+  public List<MatchSummary> open(UUID userId) {
+    List<UUID> ids = jdbc.sql("""
+            SELECT BIN_TO_UUID(m.id) FROM sport_match m
+            WHERE m.stage_id IS NULL AND m.home_team_id IS NULL AND m.visibility = 'PUBLIC'
+              AND m.status = 'SCHEDULED' AND m.kickoff_at > UTC_TIMESTAMP(6)
+              AND NOT EXISTS (SELECT 1 FROM admin_grant g
+                              WHERE g.resource_type = 'MATCH' AND g.resource_id = m.id AND g.user_id = UUID_TO_BIN(:u))
+              AND NOT EXISTS (SELECT 1 FROM match_lineup l JOIN player p ON p.id = l.player_id
+                              WHERE l.match_id = m.id AND p.user_id = UUID_TO_BIN(:u))
+            ORDER BY m.kickoff_at, m.created_at
+            LIMIT 50
+            """) // ponytail: first 50 only, paginate when the list grows
+        .param("u", userId.toString())
+        .query(UUID.class).list();
+    return views.summaries(ids);
   }
 
   private MatchEvent eventOf(UUID matchId, UUID eventId) {
@@ -313,6 +371,13 @@ public class MatchService {
     return m;
   }
 
+  /** Like {@link #lockAsAdmin}, for writes any reader may make (join, leave). */
+  private Match lockAsReader(UUID userId, UUID matchId) {
+    Match m = matches.lockForUpdate(matchId).orElseThrow(ApiException::notFound);
+    access.requireRead(userId, ResourceType.MATCH, matchId);
+    return m;
+  }
+
   /** Cup matches are the ones with a bracket position. */
   private static boolean isKnockout(Match m) {
     return m.getBracketPosition() != null;
@@ -326,6 +391,15 @@ public class MatchService {
   /** Lock order is always this match, then its next one; nothing locks a later round first, so no deadlock. */
   private Match lockNext(Match m) {
     return matches.lockForUpdate(m.getNextMatchId()).orElseThrow(ApiException::notFound);
+  }
+
+  private void requireFuture(Instant kickoff) {
+    if (kickoff != null && kickoff.isBefore(clock.instant())) throw ApiException.badRequest("KICKOFF_IN_PAST");
+  }
+
+  /** Events and finishing wait for kickoff; a match without one (e.g. a competition fixture) counts as started. */
+  private void requireStarted(Match m) {
+    if (m.getKickoffAt() != null && m.getKickoffAt().isAfter(clock.instant())) throw ApiException.conflict("NOT_STARTED");
   }
 
   private static void requireVersion(Match m, long version) {

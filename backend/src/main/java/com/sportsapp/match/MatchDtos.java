@@ -27,7 +27,7 @@ public final class MatchDtos {
   public record CreateMatchRequest(
       UUID homeTeamId, UUID awayTeamId,
       @Size(max = 30) String homeLabel, @Size(max = 30) String awayLabel,
-      Instant kickoffAt, @Size(max = 100) String venue, @NotNull Visibility visibility) {
+      @NotNull Instant kickoffAt, @Size(max = 100) String venue, @NotNull Visibility visibility) {
     public CreateMatchRequest {
       homeLabel = trimToNull(homeLabel);
       awayLabel = trimToNull(awayLabel);
@@ -53,6 +53,8 @@ public final class MatchDtos {
 
   public record VersionRequest(@NotNull Long version) {}
 
+  public record JoinRequest(@NotNull Side side) {}
+
   /** {@code penaltyWinner} decides a level cup match (M6). */
   public record FinishRequest(@NotNull Long version, Side penaltyWinner) {}
 
@@ -67,10 +69,12 @@ public final class MatchDtos {
   /**
    * {@code lineup}: HOME first, then by name. {@code events}: by minute (unknown last), then entry order.
    * {@code knockout}: a cup match, which can't end level (penalties) and can't be cancelled.
+   * {@code mySide}: where the viewer's own player is in the lineup. {@code joinable}: a scheduled public pickup.
    */
   public record MatchResponse(UUID id, long version, Sport sport, MatchStatus status, Instant kickoffAt, String venue,
       Visibility visibility, UUID competitionId, String competitionName, Integer round, SideView home, SideView away,
-      Score score, Side penaltyWinner, List<LineupView> lineup, List<EventView> events, boolean canAdmin, boolean knockout) {}
+      Score score, Side penaltyWinner, List<LineupView> lineup, List<EventView> events, boolean canAdmin, boolean knockout,
+      Side mySide, boolean joinable) {}
 
   public record MatchSummary(UUID id, MatchStatus status, Instant kickoffAt, String homeName, String awayName, Score score,
       UUID competitionId, String competitionName, Integer round) {}

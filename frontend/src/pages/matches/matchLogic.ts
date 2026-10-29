@@ -15,6 +15,11 @@ export function localToIso(local: string): string | undefined {
   return local ? new Date(local).toISOString() : undefined
 }
 
+/** Events and finishing wait for kickoff; no kickoff (older matches, competition fixtures) counts as started. */
+export function hasStarted(kickoffAt: string | null, now = new Date()): boolean {
+  return !kickoffAt || new Date(kickoffAt) <= now
+}
+
 /** ISO instant → `<input type="datetime-local">` value in local time. */
 export function isoToLocal(iso: string | null): string {
   if (!iso) return ''

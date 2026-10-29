@@ -26,6 +26,8 @@ const SAMPLE: Match = {
   lineup: [],
   canAdmin: false,
   knockout: false,
+  mySide: null,
+  joinable: false,
   events: [
     { id: 'e1', type: 'GOAL', side: 'HOME', playerId: null, playerName: 'Marko Ilić', assistPlayerId: null, assistPlayerName: 'Luka Perović', minute: 12 },
     { id: 'e2', type: 'YELLOW', side: 'AWAY', playerId: null, playerName: 'Stefan Radović', assistPlayerId: null, assistPlayerName: null, minute: 27 },

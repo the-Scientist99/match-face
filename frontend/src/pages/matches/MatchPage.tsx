@@ -11,12 +11,13 @@ import { KeeperIcon } from '../../components/icons'
 import EventEntry, { type NewEvent } from './EventEntry'
 import EventList from './EventList'
 import FinishDialog from './FinishDialog'
-import { teamsUndecided } from './matchLogic'
+import { formatKickoff } from '../../components/MatchList'
+import { hasStarted, teamsUndecided } from './matchLogic'
 import LineupEditor from './LineupEditor'
 import ScoreHeader from './ScoreHeader'
 
 export default function MatchPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { id = '' } = useParams()
   const queryClient = useQueryClient()
   const notifyError = useNotifyError()
@@ -33,7 +34,7 @@ export default function MatchPage() {
     mutationFn: (run: () => Promise<Match>) => run(),
     onSuccess: (updated) => {
       queryClient.setQueryData(['match', id], updated)
-      void queryClient.invalidateQueries({ queryKey: ['matches', 'mine'] })
+      void queryClient.invalidateQueries({ queryKey: ['matches'] })
       if (updated.competitionId) void queryClient.invalidateQueries({ queryKey: ['competition', updated.competitionId] })
     },
     onError: (err) => {
@@ -53,6 +54,8 @@ export default function MatchPage() {
   const m = match.data
   // a cup match waiting for an earlier round: nothing can be entered or finished yet
   const editable = m.canAdmin && m.status === 'SCHEDULED' && !teamsUndecided(m)
+  // before kickoff only the lineup can change: goals and the result wait for the match to start
+  const started = hasStarted(m.kickoffAt)
   const version = { version: m.version }
   const run = (fn: () => Promise<unknown>) => action.mutate(fn as () => Promise<Match>)
   // A failed event save stays on screen with a retry, so nothing typed at the pitch is lost (spec 8).
@@ -99,9 +102,24 @@ export default function MatchPage() {
           phones keep one column in the order entry, events, lineup, actions (via `order`) */}
       <div className="split" data-interleave>
         <div>
-          {editable && <EventEntry match={m} onAdd={addEvent} disabled={busy} />}
+          {editable && started && <EventEntry match={m} onAdd={addEvent} disabled={busy} />}
+          {editable && !started && <Text c="dimmed">{t('match.startsAt', { time: formatKickoff(m.kickoffAt, i18n.language) })}</Text>}
           {teamsUndecided(m) && <Text c="dimmed">{t('match.waitingForTeams')}</Text>}
           <Stack gap="lg" style={{ order: 2 }}>
+            {m.joinable &&
+              (m.mySide ? (
+                <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => run(() => call(api.DELETE('/api/matches/{id}/join', path)))}>
+                  {t('match.leave')}
+                </Button>
+              ) : (
+                <Group grow>
+                  {(['HOME', 'AWAY'] as const).map((side) => (
+                    <Button key={side} size="lg" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/join', { ...path, body: { side } })))}>
+                      {t('match.join', { side: side === 'HOME' ? m.home.name : m.away.name })}
+                    </Button>
+                  ))}
+                </Group>
+              ))}
             {editable ? (
               <>
                 {/* once there is a lineup it folds into one row; an empty one stays open, events need players */}
@@ -138,9 +156,11 @@ export default function MatchPage() {
               <Stack gap="sm">
                 {m.status === 'SCHEDULED' ? (
                   <>
-                    <Button size="lg" fullWidth disabled={busy} onClick={() => setFinishing(true)}>
-                      {t('match.finish')}
-                    </Button>
+                    {started && (
+                      <Button size="lg" fullWidth disabled={busy} onClick={() => setFinishing(true)}>
+                        {t('match.finish')}
+                      </Button>
+                    )}
                     {!m.knockout && (
                       <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/cancel', { ...path, body: version })))}>
                         {t('match.cancel')}

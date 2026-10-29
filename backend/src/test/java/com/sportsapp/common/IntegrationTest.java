@@ -5,6 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -73,10 +75,22 @@ public abstract class IntegrationTest {
     return id;
   }
 
-  /** A pickup match "Bibs" vs "Non-bibs". */
+  /**
+   * An already-started pickup match "Bibs" vs "Non-bibs": created with a kickoff an hour ahead (a past one is
+   * refused), then moved an hour back so events and finishing are allowed.
+   */
   protected UUID createPickup(TestUser owner, Visibility visibility) throws Exception {
+    UUID id = createUpcomingPickup(owner, visibility);
+    jdbc.sql("UPDATE sport_match SET kickoff_at = UTC_TIMESTAMP(6) - INTERVAL 1 HOUR WHERE id = UUID_TO_BIN(:id)")
+        .param("id", id.toString()).update();
+    return id;
+  }
+
+  /** A pickup match "Bibs" vs "Non-bibs" kicking off in an hour. */
+  protected UUID createUpcomingPickup(TestUser owner, Visibility visibility) throws Exception {
     String body = mvc.perform(post("/api/matches").with(as(owner)).contentType(APPLICATION_JSON)
-            .content(toJson(Map.of("homeLabel", "Bibs", "awayLabel", "Non-bibs", "visibility", visibility))))
+            .content(toJson(Map.of("homeLabel", "Bibs", "awayLabel", "Non-bibs", "visibility", visibility,
+                "kickoffAt", Instant.now().plus(Duration.ofHours(1))))))
         .andExpect(status().isCreated())
         .andReturn().getResponse().getContentAsString();
     return UUID.fromString(json.readTree(body).get("id").asString());

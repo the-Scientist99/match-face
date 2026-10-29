@@ -35,7 +35,8 @@
     "recent": "Odigrane",
     "noUpcoming": "Ništa nije zakazano.",
     "noRecent": "Još nema odigranih utakmica.",
-    "competitions": "Moja takmičenja"
+    "competitions": "Moja takmičenja",
+    "open": "Otvorene utakmice"
   },
   "errors": {
     "UNKNOWN": "Nešto nije u redu. Pokušajte ponovo.",
@@ -70,7 +71,11 @@
     "TEAMS_NOT_SET": "Oba tima još nisu poznata.",
     "CUP_MATCH_CANNOT_CANCEL": "Kup utakmice se ne mogu otkazati.",
     "TOO_MANY_TEAMS": "Kup može imati najviše 64 tima.",
-    "NOT_A_CUP": "Ovo važi samo za kupove."
+    "NOT_A_CUP": "Ovo važi samo za kupove.",
+    "KICKOFF_IN_PAST": "Termin ne može biti u prošlosti.",
+    "NOT_STARTED": "Utakmica još nije počela.",
+    "NOT_JOINABLE": "Ovoj utakmici se ne možete pridružiti.",
+    "ALREADY_JOINED": "Već ste u ovoj utakmici."
   },
   "auth": {
     "login": "Prijava",
@@ -153,7 +158,10 @@
     "reopen": "Ponovo otvori",
     "whoWonPenalties": "Rezultat je neriješen. Ko je pobijedio na penale?",
     "finishConfirm": "Završiti utakmicu rezultatom {{home}} – {{away}}?",
-    "waitingForTeams": "Čeka se da prethodno kolo odluči oba tima."
+    "waitingForTeams": "Čeka se da prethodno kolo odluči oba tima.",
+    "join": "Pridruži se: {{side}}",
+    "leave": "Napusti utakmicu",
+    "startsAt": "Počinje {{time}}. Golovi i rezultat se unose od tada."
   },
   "event": {
     "type": {

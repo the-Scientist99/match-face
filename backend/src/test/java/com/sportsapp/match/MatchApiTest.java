@@ -12,6 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.sportsapp.common.IntegrationTest;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -23,13 +26,15 @@ class MatchApiTest extends IntegrationTest {
   private ResultActions create(TestUser u, Map<String, Object> body) throws Exception {
     Map<String, Object> b = new HashMap<>(body);
     b.putIfAbsent("visibility", "PRIVATE");
+    b.putIfAbsent("kickoffAt", inHours(1));
     return mvc.perform(post("/api/matches").with(as(u)).contentType(APPLICATION_JSON).content(toJson(b)));
   }
 
   @Test
   void createPickup() throws Exception {
     TestUser ana = register("Ana");
-    create(ana, Map.of("homeLabel", " Bibs ", "awayLabel", "Non-bibs", "venue", "Park", "kickoffAt", "2026-11-01T18:00:00Z"))
+    Instant kickoff = Instant.now().plus(Duration.ofDays(3)).truncatedTo(ChronoUnit.MINUTES);
+    create(ana, Map.of("homeLabel", " Bibs ", "awayLabel", "Non-bibs", "venue", "Park", "kickoffAt", kickoff.toString()))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.home.name").value("Bibs"))
         .andExpect(jsonPath("$.home.teamId").doesNotExist())
@@ -39,11 +44,13 @@ class MatchApiTest extends IntegrationTest {
         .andExpect(jsonPath("$.status").value("SCHEDULED"))
         .andExpect(jsonPath("$.sport").value("FOOTBALL"))
         .andExpect(jsonPath("$.visibility").value("PRIVATE"))
-        .andExpect(jsonPath("$.kickoffAt").value("2026-11-01T18:00:00Z"))
+        .andExpect(jsonPath("$.kickoffAt").value(kickoff.toString()))
         .andExpect(jsonPath("$.venue").value("Park"))
         .andExpect(jsonPath("$.lineup").value(empty()))
         .andExpect(jsonPath("$.events").value(empty()))
         .andExpect(jsonPath("$.canAdmin").value(true))
+        .andExpect(jsonPath("$.mySide").doesNotExist())
+        .andExpect(jsonPath("$.joinable").value(false))
         .andExpect(jsonPath("$.version").value(0));
   }
 
@@ -128,6 +135,7 @@ class MatchApiTest extends IntegrationTest {
   void patchDetailsAndStaleVersion() throws Exception {
     TestUser ana = register("Ana");
     UUID m = createPickup(ana, PRIVATE);
+    String kickoff = Instant.now().plus(Duration.ofDays(4)).truncatedTo(ChronoUnit.MINUTES).toString();
     mvc.perform(patch("/api/matches/{id}", m).with(as(ana)).contentType(APPLICATION_JSON).content("{\"version\":0,\"venue\":\"Park\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.venue").value("Park"))
@@ -136,11 +144,11 @@ class MatchApiTest extends IntegrationTest {
     mvc.perform(patch("/api/matches/{id}", m).with(as(ana)).contentType(APPLICATION_JSON).content("{\"version\":0,\"venue\":\"Other\"}"))
         .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("STALE"));
     mvc.perform(patch("/api/matches/{id}", m).with(as(ana)).contentType(APPLICATION_JSON)
-            .content("{\"version\":1,\"venue\":\"\",\"visibility\":\"PUBLIC\",\"kickoffAt\":\"2026-11-02T10:00:00Z\"}"))
+            .content(toJson(Map.of("version", 1, "venue", "", "visibility", "PUBLIC", "kickoffAt", kickoff))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.venue").doesNotExist())
         .andExpect(jsonPath("$.visibility").value("PUBLIC"))
-        .andExpect(jsonPath("$.kickoffAt").value("2026-11-02T10:00:00Z"));
+        .andExpect(jsonPath("$.kickoffAt").value(kickoff));
   }
 
   @Test
@@ -171,11 +179,47 @@ class MatchApiTest extends IntegrationTest {
   @Test
   void mineOrdersUnscheduledFirstThenNewestKickoff() throws Exception {
     TestUser ana = register("Ana");
-    String old = create(ana, Map.of("homeLabel", "A", "awayLabel", "B", "kickoffAt", "2026-01-01T10:00:00Z")).andReturn().getResponse().getContentAsString();
-    String recent = create(ana, Map.of("homeLabel", "A", "awayLabel", "B", "kickoffAt", "2026-06-01T10:00:00Z")).andReturn().getResponse().getContentAsString();
+    String old = create(ana, Map.of("homeLabel", "A", "awayLabel", "B", "kickoffAt", inHours(1))).andReturn().getResponse().getContentAsString();
+    String recent = create(ana, Map.of("homeLabel", "A", "awayLabel", "B", "kickoffAt", inHours(2))).andReturn().getResponse().getContentAsString();
     String none = create(ana, Map.of("homeLabel", "A", "awayLabel", "B")).andReturn().getResponse().getContentAsString();
+    // matches from before kickoff was required have none
+    jdbc.sql("UPDATE sport_match SET kickoff_at = NULL WHERE id = UUID_TO_BIN(:id)").param("id", id(none)).update();
     mvc.perform(get("/api/matches/mine").with(as(ana)))
         .andExpect(jsonPath("$[*].id").value(contains(id(none), id(recent), id(old))));
+  }
+
+  @Test
+  void kickoffIsRequiredAndNotInThePast() throws Exception {
+    TestUser ana = register("Ana");
+    mvc.perform(post("/api/matches").with(as(ana)).contentType(APPLICATION_JSON)
+            .content("{\"homeLabel\":\"A\",\"awayLabel\":\"B\",\"visibility\":\"PUBLIC\"}"))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.kickoffAt").value("NotNull"));
+    create(ana, Map.of("homeLabel", "A", "awayLabel", "B", "kickoffAt", inHours(-1)))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("KICKOFF_IN_PAST"));
+    UUID m = createPickup(ana, PRIVATE);
+    mvc.perform(patch("/api/matches/{id}", m).with(as(ana)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("version", 0, "kickoffAt", inHours(-2)))))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("KICKOFF_IN_PAST"));
+  }
+
+  @Test
+  void beforeKickoffOnlyTheLineupCanChange() throws Exception {
+    TestUser ana = register("Ana");
+    UUID m = createUpcomingPickup(ana, PRIVATE);
+    setLineup(ana, m, ana.playerId(), Side.HOME);
+    mvc.perform(post("/api/matches/{id}/events", m).with(as(ana)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("type", "GOAL", "side", "HOME", "playerId", ana.playerId()))))
+        .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("NOT_STARTED"));
+    mvc.perform(post("/api/matches/{id}/finish", m).with(as(ana)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("version", version(m)))))
+        .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("NOT_STARTED"));
+    mvc.perform(post("/api/matches/{id}/cancel", m).with(as(ana)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("version", version(m)))))
+        .andExpect(status().isOk());
+  }
+
+  private static String inHours(long hours) {
+    return Instant.now().plus(Duration.ofHours(hours)).toString();
   }
 
   private String id(String body) {

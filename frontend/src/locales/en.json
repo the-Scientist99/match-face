@@ -35,7 +35,8 @@
     "recent": "Recent",
     "noUpcoming": "Nothing scheduled.",
     "noRecent": "No matches played yet.",
-    "competitions": "My competitions"
+    "competitions": "My competitions",
+    "open": "Open matches"
   },
   "errors": {
     "UNKNOWN": "Something went wrong. Please try again.",
@@ -70,7 +71,11 @@
     "TEAMS_NOT_SET": "Both teams aren't known yet.",
     "CUP_MATCH_CANNOT_CANCEL": "Cup matches can't be cancelled.",
     "TOO_MANY_TEAMS": "A cup can have at most 64 teams.",
-    "NOT_A_CUP": "This only applies to cups."
+    "NOT_A_CUP": "This only applies to cups.",
+    "KICKOFF_IN_PAST": "Kickoff can't be in the past.",
+    "NOT_STARTED": "This match hasn't kicked off yet.",
+    "NOT_JOINABLE": "This match can't be joined.",
+    "ALREADY_JOINED": "You're already in this match."
   },
   "auth": {
     "login": "Log in",
@@ -153,7 +158,10 @@
     "reopen": "Reopen",
     "whoWonPenalties": "It's level. Who won on penalties?",
     "finishConfirm": "Finish the match at {{home}} – {{away}}?",
-    "waitingForTeams": "Waiting for the earlier round to decide both teams."
+    "waitingForTeams": "Waiting for the earlier round to decide both teams.",
+    "join": "Join {{side}}",
+    "leave": "Leave match",
+    "startsAt": "Kicks off {{time}}. Goals and the result can be entered from then."
   },
   "event": {
     "type": {

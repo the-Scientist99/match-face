@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { groupByRound, isoToLocal, localToIso, needsPenalties, pickerOptions, roundLabel, showAddGuest, splitMatches, teamsUndecided } from './matchLogic'
+import { groupByRound, hasStarted, isoToLocal, localToIso, needsPenalties, pickerOptions, roundLabel, showAddGuest, splitMatches, teamsUndecided } from './matchLogic'
 
 const m = (id: string, status: 'SCHEDULED' | 'FINISHED' | 'CANCELLED', kickoffAt: string | null) =>
   ({ id, status, kickoffAt }) as Parameters<typeof splitMatches>[0][number]
@@ -22,6 +22,13 @@ test('datetime-local values round-trip through ISO, and empty means no kickoff',
   expect(iso).toMatch(/^2026-11-0[12]T\d\d:30:00\.000Z$/)
   expect(isoToLocal(iso!)).toBe('2026-11-01T18:30')
   expect(isoToLocal(null)).toBe('')
+})
+
+test('hasStarted: no kickoff counts as started; otherwise once kickoff is reached', () => {
+  const now = new Date('2026-11-01T18:00:00Z')
+  expect(hasStarted(null, now)).toBe(true)
+  expect(hasStarted('2026-11-01T18:00:00Z', now)).toBe(true)
+  expect(hasStarted('2026-11-01T18:00:01Z', now)).toBe(false)
 })
 
 test('showAddGuest hides the option for blank search and exact (case-insensitive) existing names', () => {

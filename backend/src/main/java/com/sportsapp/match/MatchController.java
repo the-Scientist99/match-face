@@ -6,6 +6,7 @@ import com.sportsapp.common.Auth;
 import com.sportsapp.match.MatchDtos.CreateMatchRequest;
 import com.sportsapp.match.MatchDtos.EventRequest;
 import com.sportsapp.match.MatchDtos.FinishRequest;
+import com.sportsapp.match.MatchDtos.JoinRequest;
 import com.sportsapp.match.MatchDtos.MatchResponse;
 import com.sportsapp.match.MatchDtos.MatchSummary;
 import com.sportsapp.match.MatchDtos.PatchMatchRequest;
@@ -53,6 +54,25 @@ public class MatchController {
   @GetMapping("/mine")
   List<MatchSummary> mine(@AuthenticationPrincipal Jwt jwt) {
     return service.mine(Auth.userId(jwt));
+  }
+
+  @GetMapping("/open")
+  List<MatchSummary> open(@AuthenticationPrincipal Jwt jwt) {
+    return service.open(Auth.userId(jwt));
+  }
+
+  @PostMapping("/{id}/join")
+  MatchResponse join(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody JoinRequest req) {
+    UUID me = Auth.userId(jwt);
+    service.join(me, id, req.side());
+    return views.view(id, me);
+  }
+
+  @DeleteMapping("/{id}/join")
+  MatchResponse leave(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+    UUID me = Auth.userId(jwt);
+    service.leave(me, id);
+    return views.view(id, me);
   }
 
   @GetMapping("/{id}")
