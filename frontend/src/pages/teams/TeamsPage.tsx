@@ -1,10 +1,12 @@
-import { Anchor, Button, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Button, Card, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router'
 import { api, call } from '../../api/client'
 import { useNotifyError } from '../../api/errors'
+import Crest from '../../components/Crest'
+import { ChevronIcon, PlusIcon } from '../../components/icons'
 
 export default function TeamsPage() {
   const { t } = useTranslation()
@@ -23,18 +25,20 @@ export default function TeamsPage() {
   })
 
   return (
-    <Stack maw={600}>
+    <Stack gap="lg">
       <Title order={2}>{t('teams.title')}</Title>
       <Group
         component="form"
         align="flex-end"
         gap="xs"
+        wrap="nowrap"
         onSubmit={(e: FormEvent) => {
           e.preventDefault()
           create.mutate(name)
         }}
       >
         <TextInput
+          flex={1}
           label={t('teams.create')}
           placeholder={t('teams.name')}
           value={name}
@@ -42,20 +46,28 @@ export default function TeamsPage() {
           required
           onChange={(e) => setName(e.currentTarget.value)}
         />
-        <Button type="submit" loading={create.isPending}>
+        <Button type="submit" leftSection={<PlusIcon size={18} />} loading={create.isPending}>
           {t('common.add')}
         </Button>
       </Group>
       {mine.isPending ? (
         <Loader />
       ) : mine.data?.length ? (
-        <Stack gap="sm" className="surface">
+        <Card p={6} className="list-rows">
           {mine.data.map((team) => (
-            <Anchor key={team.id} component={Link} to={`/teams/${team.id}`} fw={600}>
-              {team.name}
-            </Anchor>
+            <Link key={team.id} to={`/teams/${team.id}`} className="list-link">
+              <Group gap="sm" wrap="nowrap" mih={64} px="sm">
+                <Crest name={team.name} size={40} />
+                <Text fw={600} flex={1} truncate>
+                  {team.name}
+                </Text>
+                <Text c="dimmed" component="span" display="flex">
+                  <ChevronIcon size={18} />
+                </Text>
+              </Group>
+            </Link>
           ))}
-        </Stack>
+        </Card>
       ) : (
         <Text c="dimmed">{t('teams.none')}</Text>
       )}

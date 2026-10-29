@@ -4,44 +4,94 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import type { MatchSummary } from '../api/client'
 import { htmlLang, type Lang } from '../lang'
+import Crest from './Crest'
+import { ChevronIcon } from './icons'
 
 export function formatKickoff(iso: string | null, lang: string): string | null {
   return iso ? new Date(iso).toLocaleString(htmlLang(lang as Lang), { dateStyle: 'medium', timeStyle: 'short' }) : null
 }
 
-/** One card per match: home · score · away, then kickoff and status. Reused by competitions (M5). */
-export default function MatchList({ matches, extra }: { matches: MatchSummary[]; extra?: (m: MatchSummary) => ReactNode }) {
+/** One team per line: crest, name, and the goals once played. The losing side is quieter. */
+function TeamLine({ name, goals, result }: { name: string | null; goals?: ReactNode; result?: 'won' | 'lost' }) {
+  const { t } = useTranslation()
+  const lost = result === 'lost'
+  return (
+    <Group wrap="nowrap" gap="sm">
+      <Crest name={name} />
+      <Text flex={1} fw={result === 'won' ? 700 : lost ? 500 : 600} c={lost || !name ? 'dimmed' : undefined} truncate>
+        {name ?? t('bracket.tbd')}
+      </Text>
+      {goals !== undefined && (
+        <Text className="score" fz={24} fw={lost ? 600 : 700} lh={1} c={lost ? 'dimmed' : undefined}>
+          {goals}
+        </Text>
+      )}
+    </Group>
+  )
+}
+
+/** Upcoming: a date block beside the two teams. */
+function Upcoming({ m }: { m: MatchSummary }) {
+  const { i18n } = useTranslation()
+  const locale = htmlLang(i18n.language as Lang)
+  const d = m.kickoffAt ? new Date(m.kickoffAt) : null
+  return (
+    <Group wrap="nowrap" gap="md">
+      {d ? (
+        <time className="date-block" dateTime={m.kickoffAt!} title={formatKickoff(m.kickoffAt, i18n.language)!}>
+          <span className="date-block-day">{d.toLocaleDateString(locale, { weekday: 'short' })}</span>
+          <span className="score date-block-num">{d.getDate()}</span>
+          <span className="date-block-time">{d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })}</span>
+        </time>
+      ) : (
+        <span className="date-block" data-empty>
+          <span className="score date-block-num" aria-hidden>
+            –
+          </span>
+        </span>
+      )}
+      <Stack gap={8} flex={1} miw={0}>
+        <TeamLine name={m.homeName} />
+        <TeamLine name={m.awayName} />
+      </Stack>
+      <Text c="dimmed" component="span" display="flex">
+        <ChevronIcon size={18} />
+      </Text>
+    </Group>
+  )
+}
+
+/** Played or cancelled: the two teams with their goals, then the status, day and competition. */
+function Result({ m }: { m: MatchSummary }) {
   const { t, i18n } = useTranslation()
+  const cancelled = m.status === 'CANCELLED'
+  const diff = m.score.home - m.score.away
+  const result = (sign: number) => (cancelled ? 'lost' : diff * sign > 0 ? 'won' : diff * sign < 0 ? 'lost' : undefined)
+  const day = m.kickoffAt && new Date(m.kickoffAt).toLocaleDateString(htmlLang(i18n.language as Lang), { weekday: 'short', day: 'numeric', month: 'short' })
+  return (
+    <Stack gap={8}>
+      <TeamLine name={m.homeName} goals={cancelled ? '–' : m.score.home} result={result(1)} />
+      <TeamLine name={m.awayName} goals={cancelled ? '–' : m.score.away} result={result(-1)} />
+      <Group gap="xs" wrap="nowrap" className="card-foot">
+        <Badge size="sm" color={cancelled ? 'gray' : 'teal'} style={{ flexShrink: 0 }}>
+          {t(`match.status.${m.status}`)}
+        </Badge>
+        <Text size="xs" c="dimmed" truncate>
+          {[day, m.competitionName].filter(Boolean).join(' · ')}
+        </Text>
+      </Group>
+    </Stack>
+  )
+}
+
+/** One card per match: upcoming ones lead with the date, played ones with the result. Reused by competitions (M5). */
+export default function MatchList({ matches, extra }: { matches: MatchSummary[]; extra?: (m: MatchSummary) => ReactNode }) {
   return (
     <Stack gap="xs">
       {matches.map((m) => (
-        <Card key={m.id} padding="md" radius="lg" className="pressable" component={Link} to={`/matches/${m.id}`}>
-          <Group wrap="nowrap" gap="sm">
-            <Text fw={600} ta="right" flex={1} truncate>
-              {m.homeName ?? t('bracket.tbd')}
-            </Text>
-            <Text className="score" fw={700} fz="lg" miw={60} ta="center" c={m.status === 'SCHEDULED' ? 'dimmed' : undefined}>
-              {m.status === 'SCHEDULED' ? t('match.vs') : `${m.score.home} – ${m.score.away}`}
-            </Text>
-            <Text fw={600} flex={1} truncate>
-              {m.awayName ?? t('bracket.tbd')}
-            </Text>
-          </Group>
-          <Group justify="center" gap="xs" mt={4}>
-            <Text size="xs" c="dimmed">
-              {formatKickoff(m.kickoffAt, i18n.language) ?? t('match.noKickoff')}
-            </Text>
-            {m.status !== 'SCHEDULED' && (
-              <Badge size="xs" color={m.status === 'CANCELLED' ? 'gray' : 'teal'}>
-                {t(`match.status.${m.status}`)}
-              </Badge>
-            )}
-          </Group>
-          {extra && (
-            <Group justify="center" mt={2}>
-              {extra(m)}
-            </Group>
-          )}
+        <Card key={m.id} padding="sm" px="md" radius={18} className="pressable" component={Link} to={`/matches/${m.id}`}>
+          {m.status === 'SCHEDULED' ? <Upcoming m={m} /> : <Result m={m} />}
+          {extra && <Group mt="xs">{extra(m)}</Group>}
         </Card>
       ))}
     </Stack>

@@ -1,4 +1,4 @@
-import { ActionIcon, Anchor, Badge, Button, Group, Loader, Stack, TextInput, Title } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Button, Card, Group, Loader, Stack, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +6,8 @@ import { api, call, type Player } from '../../api/client'
 import { Link } from 'react-router'
 import { fieldErrors, useNotifyError } from '../../api/errors'
 import { useAuth } from '../../auth/AuthProvider'
+import Crest from '../../components/Crest'
+import { PencilIcon, PlusIcon } from '../../components/icons'
 
 function PlayerRow({ player }: { player: Player }) {
   const { t } = useTranslation()
@@ -31,12 +33,15 @@ function PlayerRow({ player }: { player: Player }) {
       <Group
         component="form"
         gap="xs"
+        wrap="nowrap"
+        py={10}
         onSubmit={(e: FormEvent) => {
           e.preventDefault()
           rename.mutate(editing)
         }}
       >
         <TextInput
+          flex={1}
           aria-label={t('players.name')}
           value={editing}
           maxLength={50}
@@ -55,18 +60,19 @@ function PlayerRow({ player }: { player: Player }) {
     )
   }
   return (
-    <Group gap="xs">
-      <Anchor component={Link} to={`/players/${player.id}`}>
+    <Group gap="sm" wrap="nowrap" mih={60}>
+      <Crest name={player.name} size={36} />
+      <Anchor component={Link} to={`/players/${player.id}`} c="var(--mantine-color-text)" fw={600} flex={1} truncate>
         {player.name}
       </Anchor>
       {!player.claimed && (
-        <Badge size="sm" variant="light">
+        <Badge size="sm" color="gray">
           {t('players.guest')}
         </Badge>
       )}
       {player.canEdit && (
-        <ActionIcon variant="subtle" size="sm" aria-label={t('players.rename')} onClick={() => setEditing(player.name)}>
-          ✎
+        <ActionIcon variant="subtle" color="gray" size={44} radius="xl" aria-label={t('players.rename')} onClick={() => setEditing(player.name)}>
+          <PencilIcon size={18} />
         </ActionIcon>
       )}
     </Group>
@@ -89,18 +95,20 @@ export default function PlayersPage() {
   })
 
   return (
-    <Stack maw={600}>
+    <Stack gap="lg">
       <Title order={2}>{t('players.title')}</Title>
       <Group
         component="form"
         align="flex-end"
         gap="xs"
+        wrap="nowrap"
         onSubmit={(e: FormEvent) => {
           e.preventDefault()
           create.mutate(name)
         }}
       >
         <TextInput
+          flex={1}
           label={t('players.addGuest')}
           placeholder={t('players.name')}
           value={name}
@@ -108,16 +116,20 @@ export default function PlayersPage() {
           required
           onChange={(e) => setName(e.currentTarget.value)}
         />
-        <Button type="submit" loading={create.isPending}>
+        <Button type="submit" leftSection={<PlusIcon size={18} />} loading={create.isPending}>
           {t('common.add')}
         </Button>
       </Group>
       {mine.isPending ? (
         <Loader />
       ) : (
-        <Stack gap="sm" className="surface">
-          {mine.data?.map((p) => <PlayerRow key={p.id} player={p} />)}
-        </Stack>
+        !!mine.data?.length && (
+          <Card py={4} className="list-rows">
+            {mine.data.map((p) => (
+              <PlayerRow key={p.id} player={p} />
+            ))}
+          </Card>
+        )
       )}
     </Stack>
   )

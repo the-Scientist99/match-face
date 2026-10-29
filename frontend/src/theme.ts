@@ -5,10 +5,13 @@ import {
 /** Soft teal-tinted elevation: cards float on the mint page instead of sitting in bordered boxes. */
 const softShadow = '0 4px 16px rgba(12, 166, 120, 0.06), 0 1px 3px rgba(0, 0, 0, 0.05)'
 
-/** Direction "Fresh and friendly": mint page, elevated white cards, soft tinted chips, teal gradient accents. */
+/** Direction "Fresh and friendly": mint page, elevated white cards, soft tinted chips, solid teal accents. */
 export const theme = createTheme({
   primaryColor: 'teal',
-  primaryShade: { light: 7, dark: 5 },
+  // filled buttons: teal 9 keeps white text at 5:1 in both schemes (teal 7 was 3.1:1, dark's teal 5 was 2.1:1);
+  // teal text uses --mantine-color-teal-text, which dark mode lightens on its own
+  primaryShade: { light: 9, dark: 9 },
+  autoContrast: true,
   defaultRadius: 'md',
   cursorType: 'pointer',
   respectReducedMotion: true,
@@ -29,7 +32,7 @@ export const theme = createTheme({
     },
   },
   components: {
-    Button: Button.extend({ defaultProps: { radius: 'xl' } }),
+    Button: Button.extend({ defaultProps: { radius: 'lg' } }),
     Card: Card.extend({ defaultProps: { radius: 24, shadow: 'sm', withBorder: false, padding: 'lg' } }),
     Paper: Paper.extend({ defaultProps: { radius: 24, shadow: 'sm', withBorder: false } }),
     Badge: Badge.extend({ defaultProps: { radius: 'xl', variant: 'light' } }),

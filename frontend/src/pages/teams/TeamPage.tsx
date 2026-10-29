@@ -1,10 +1,12 @@
-import { Badge, Button, Group, List, Loader, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Badge, Button, Card, Group, Loader, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { api, call, type Team } from '../../api/client'
 import { errorCode, useNotifyError } from '../../api/errors'
+import Crest from '../../components/Crest'
+import { ChevronIcon, PencilIcon } from '../../components/icons'
 import PlayerPicker from '../../components/PlayerPicker'
 
 function TeamAdmin({ team }: { team: Team }) {
@@ -36,12 +38,13 @@ function TeamAdmin({ team }: { team: Team }) {
         component="form"
         align="flex-end"
         gap="xs"
+        wrap="nowrap"
         onSubmit={(e: FormEvent) => {
           e.preventDefault()
           rename.mutate()
         }}
       >
-        <TextInput label={t('teams.name')} value={name} maxLength={50} required onChange={(e) => setName(e.currentTarget.value)} />
+        <TextInput flex={1} label={t('teams.name')} value={name} maxLength={50} required onChange={(e) => setName(e.currentTarget.value)} />
         <Button type="submit" variant="light" loading={rename.isPending}>
           {t('teams.rename')}
         </Button>
@@ -64,30 +67,70 @@ export default function TeamPage() {
     queryFn: () => call(api.GET('/api/teams/{id}', { params: { path: { id } } })),
     retry: false,
   })
+  const [editing, setEditing] = useState(false)
 
   if (team.isPending) return <Loader />
   if (team.isError) return <Text>{t(`errors.${errorCode(team.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
   const data = team.data
   return (
-    <Stack maw={600}>
-      <Title order={2}>{data.name}</Title>
-      {data.players.length ? (
-        <List className="surface" listStyleType="none" spacing="xs">
-          {data.players.map((p) => (
-            <List.Item key={p.id}>
-              {p.name}{' '}
-              {!p.claimed && (
-                <Badge size="xs" variant="light">
-                  {t('players.guest')}
-                </Badge>
-              )}
-            </List.Item>
-          ))}
-        </List>
-      ) : (
-        <Text c="dimmed">{t('teams.emptyRoster')}</Text>
+    <Stack gap="lg">
+      <Paper p="lg" pt="xl">
+        <Stack gap="sm" align="center">
+          <Crest name={data.name} size={72} />
+          <Title order={2} ta="center">
+            {data.name}
+          </Title>
+        </Stack>
+      </Paper>
+      <Stack gap={10}>
+        <Text component="h2" className="section-label" m={0}>
+          {data.players.length ? `${t('teams.roster')} · ${data.players.length}` : t('teams.roster')}
+        </Text>
+        {data.players.length ? (
+          <Card p={6} className="list-rows">
+            {data.players.map((p) => (
+              <Link key={p.id} to={`/players/${p.id}`} className="list-link">
+                <Group gap="sm" wrap="nowrap" mih={56} px="sm">
+                  <Crest name={p.name} size={32} />
+                  <Text fw={600} flex={1} truncate>
+                    {p.name}
+                  </Text>
+                  {!p.claimed && (
+                    <Badge size="sm" color="gray">
+                      {t('players.guest')}
+                    </Badge>
+                  )}
+                </Group>
+              </Link>
+            ))}
+          </Card>
+        ) : (
+          <Text c="dimmed">{t('teams.emptyRoster')}</Text>
+        )}
+      </Stack>
+      {data.canAdmin && (
+        <>
+          {/* rename and roster fold behind one row, like the match page's lineup; an empty team opens it */}
+          {data.players.length > 0 && (
+            <Card component="button" type="button" className="pressable row-button" aria-expanded={editing} onClick={() => setEditing(!editing)}>
+              <Group gap="sm" wrap="nowrap">
+                <PencilIcon size={18} />
+                <Text fw={600}>{t('teams.edit')}</Text>
+                {editing ? (
+                  <Text size="sm" fw={600} c="teal" ml="auto">
+                    {t('event.done')}
+                  </Text>
+                ) : (
+                  <Text c="dimmed" component="span" display="flex" ml="auto">
+                    <ChevronIcon size={18} />
+                  </Text>
+                )}
+              </Group>
+            </Card>
+          )}
+          {(editing || !data.players.length) && <TeamAdmin key={data.id} team={data} />}
+        </>
       )}
-      {data.canAdmin && <TeamAdmin key={data.id} team={data} />}
     </Stack>
   )
 }

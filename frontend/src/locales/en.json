@@ -2,14 +2,35 @@
   "app": {
     "name": "Sports League"
   },
+  "landing": {
+    "eyebrow": "For your weekly game",
+    "title": "Run your weekly game like a real league",
+    "subtitle": "Log goals and cards from the touchline. Tables, brackets and player stats update by themselves.",
+    "liveTitle": "Score it live",
+    "liveText": "Tap a player, pick a goal or a card. Made for a phone at the side of the pitch.",
+    "leaguesTitle": "Leagues and cups",
+    "leaguesText": "Fixtures, a live table or a knockout bracket, generated for you.",
+    "statsTitle": "Every player's record",
+    "statsText": "Goals, assists and clean sheets add up on each profile. Guests can claim theirs later."
+  },
   "nav": {
+    "matches": "Matches",
+    "account": "Account",
+    "main": "Main",
     "home": "Home",
     "players": "Players",
     "teams": "Teams"
   },
   "language": {
     "me": "ME",
-    "en": "EN"
+    "en": "EN",
+    "label": "Language"
+  },
+  "theme": {
+    "label": "Theme",
+    "auto": "Auto",
+    "light": "Light",
+    "dark": "Dark"
   },
   "home": {
     "title": "My matches",
@@ -96,7 +117,8 @@
     "roster": "Roster",
     "saveRoster": "Save roster",
     "emptyRoster": "No players yet.",
-    "rename": "Rename"
+    "rename": "Rename",
+    "edit": "Edit team"
   },
   "picker": {
     "placeholder": "Pick players",
@@ -154,7 +176,11 @@
     "none": "No events yet.",
     "notSaved": "Not saved",
     "retry": "Retry",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "title": "Events",
+    "edit": "Edit",
+    "done": "Done",
+    "tapPlayer": "Tap a player to log an event"
   },
   "profile": {
     "appearances": "Matches",

@@ -1,24 +1,19 @@
-/* Direction "Fresh and friendly" on top of Mantine: mint page, elevated cards, tinted chips, gradient accents. */
+/* Direction "Fresh and friendly" on top of Mantine: mint page, elevated cards, tinted chips, solid teal accents. */
 
 :root {
   --app-bg: #f1fcf8;
-  --app-subtle: #f8f9fa; /* quiet fills: name pills, event rows, secondary chips */
-  --app-band: linear-gradient(90deg, #20c997, #0ca678);
-  --app-primary: linear-gradient(135deg, #0ca678, #099268);
-  --app-glow: 0 4px 12px rgba(12, 166, 120, 0.3);
+  --app-subtle: #f8f9fa; /* quiet fills: secondary chips */
+  --app-hairline: #dcebe4;
+  --app-track: #e3efe9; /* the competition tabs' track */
   --app-tint-goal: #e6fcf5;
-  --app-tint-yellow: #fff3bf;
-  --app-tint-red: #ffe3e3;
-  --app-tint-star: #fff9db;
+  --app-num: 'Barlow Semi Condensed', system-ui, sans-serif;
 }
 [data-mantine-color-scheme='dark'] {
   --app-bg: #0e1613;
   --app-subtle: rgba(255, 255, 255, 0.05);
-  --app-glow: 0 4px 14px rgba(32, 201, 151, 0.25);
+  --app-hairline: rgba(255, 255, 255, 0.1);
+  --app-track: rgba(255, 255, 255, 0.06);
   --app-tint-goal: rgba(32, 201, 151, 0.16);
-  --app-tint-yellow: rgba(250, 176, 5, 0.18);
-  --app-tint-red: rgba(250, 82, 82, 0.18);
-  --app-tint-star: rgba(250, 176, 5, 0.12);
 }
 
 /* The page is mint; cards keep Mantine's body colour (white / dark), so they read as raised surfaces. */
@@ -34,11 +29,35 @@ body {
   border-bottom: 1px solid color-mix(in srgb, var(--mantine-color-default-border) 55%, transparent);
 }
 
-/* Primary actions: teal gradient pill with a soft glow */
-.mantine-Button-root[data-variant='filled']:not(:disabled):not([data-disabled]) {
-  background-image: var(--app-primary);
-  box-shadow: var(--app-glow);
-  border: 0;
+/* Phones: Matches, Players and Teams in a bottom bar */
+.tab-bar {
+  border-bottom: 0;
+  border-top: 1px solid color-mix(in srgb, var(--mantine-color-default-border) 55%, transparent);
+}
+.tab-bar > nav {
+  height: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 4px 8px;
+}
+.tab-bar a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-bar a[aria-current='page'] {
+  color: var(--mantine-color-teal-text);
+  font-weight: 700;
 }
 
 /* Large text reads better slightly tighter; body text stays at 0 */
@@ -46,10 +65,15 @@ h1, h2, h3 {
   letter-spacing: -0.02em;
 }
 
+/* The brand never wraps; the header's other items make room instead */
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   letter-spacing: -0.03em;
   text-decoration: none;
   color: inherit;
+  white-space: nowrap;
 }
 
 /* Scores and tables: digits of equal width, so columns and live scores don't jitter */
@@ -57,68 +81,217 @@ h1, h2, h3 {
 table {
   font-variant-numeric: tabular-nums;
 }
+/* Numbers get the condensed sports face */
+.score {
+  font-family: var(--app-num);
+}
 
 .score-big {
-  font-size: clamp(2.75rem, 12vw, 3.5rem);
+  display: flex;
+  align-items: center;
+  gap: 0.15em;
+  font-size: clamp(3rem, 16vw, 4rem);
   line-height: 1;
-  letter-spacing: -0.04em;
-  font-weight: 800;
-  color: var(--mantine-color-teal-filled);
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+.score-sep {
+  color: var(--mantine-color-dimmed);
+  font-weight: 600;
+  opacity: 0.6;
 }
 
-/* A thin gradient band on top of hero cards (score, winner) */
-.band {
-  position: relative;
-  overflow: hidden;
+/*
+ * Team colours: a stable tint per team (see Crest.tsx). --tint-bg fills a crest, --tint-fg is its text
+ * (4.5:1 or better on --tint-bg), --tint-solid marks a side (dots), --tint-soft fills that side's buttons.
+ */
+[data-tint] {
+  --tint-soft: color-mix(in srgb, var(--tint-bg) 55%, var(--mantine-color-body));
 }
-.band::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 8px;
-  background: var(--app-band);
-}
+[data-tint='blue'] { --tint-bg: #e7f5ff; --tint-fg: #1864ab; --tint-solid: #1c7ed6; }
+[data-tint='orange'] { --tint-bg: #fff4e6; --tint-fg: #b3400c; --tint-solid: #e8590c; }
+[data-tint='violet'] { --tint-bg: #f3f0ff; --tint-fg: #5f3dc4; --tint-solid: #7048e8; }
+[data-tint='green'] { --tint-bg: #ebfbee; --tint-fg: #237032; --tint-solid: #2f9e44; }
+[data-tint='pink'] { --tint-bg: #fff0f6; --tint-fg: #a61e4d; --tint-solid: #d6336c; }
+[data-tint='yellow'] { --tint-bg: #fff9db; --tint-fg: #8f6300; --tint-solid: #f59f00; }
+[data-tint='gray'] { --tint-bg: #f1f3f5; --tint-fg: #495057; --tint-solid: #adb5bd; }
+[data-mantine-color-scheme='dark'] [data-tint='blue'] { --tint-bg: rgba(51, 154, 240, 0.2); --tint-fg: #74c0fc; --tint-solid: #4dabf7; }
+[data-mantine-color-scheme='dark'] [data-tint='orange'] { --tint-bg: rgba(253, 126, 20, 0.2); --tint-fg: #ffa94d; --tint-solid: #ff922b; }
+[data-mantine-color-scheme='dark'] [data-tint='violet'] { --tint-bg: rgba(132, 94, 247, 0.22); --tint-fg: #b197fc; --tint-solid: #9775fa; }
+[data-mantine-color-scheme='dark'] [data-tint='green'] { --tint-bg: rgba(64, 192, 87, 0.2); --tint-fg: #8ce99a; --tint-solid: #51cf66; }
+[data-mantine-color-scheme='dark'] [data-tint='pink'] { --tint-bg: rgba(240, 101, 149, 0.2); --tint-fg: #faa2c1; --tint-solid: #f06595; }
+[data-mantine-color-scheme='dark'] [data-tint='yellow'] { --tint-bg: rgba(250, 176, 5, 0.18); --tint-fg: #ffd43b; --tint-solid: #fcc419; }
+[data-mantine-color-scheme='dark'] [data-tint='gray'] { --tint-bg: rgba(255, 255, 255, 0.08); --tint-fg: #ced4da; --tint-solid: #868e96; }
 
-/* Quiet pill for a side's name, an event row, a secondary chip */
-.name-pill {
-  background: var(--app-subtle);
-  border-radius: 999px;
-  padding: 6px 12px;
-}
-.event-row {
-  background: var(--app-subtle);
-  border-radius: 16px;
-  padding: 8px;
-}
-
-/* Round emoji badge for events and stats */
-.emoji-badge {
-  width: 32px;
-  height: 32px;
+/* A team's initials in a tinted disc */
+.crest {
+  width: var(--crest-size, 28px);
+  height: var(--crest-size, 28px);
+  font-size: calc(var(--crest-size, 28px) * 0.36);
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 14px;
-  box-shadow: var(--mantine-shadow-xs);
-  background: var(--app-tint-goal);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--tint-bg);
+  color: var(--tint-fg);
 }
-.emoji-badge[data-tint='yellow'] { background: var(--app-tint-yellow); }
-.emoji-badge[data-tint='red'] { background: var(--app-tint-red); }
-.emoji-badge[data-tint='star'] { background: var(--app-tint-star); }
+.tint-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: var(--tint-solid);
+}
 
-/* Small white disc for the keeper glove inside a player chip */
-.glove {
-  width: 24px;
-  height: 24px;
+/* A side's player buttons on the match page, tinted in that team's colour */
+.side-button.mantine-Button-root:not(:disabled):not([data-disabled]) {
+  background: var(--tint-soft);
+  color: var(--mantine-color-text);
+}
+@media (hover: hover) {
+  .side-button.mantine-Button-root:not(:disabled):not([data-disabled]):hover {
+    background: var(--tint-bg);
+  }
+}
+.keeper-badge {
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  background: color-mix(in srgb, var(--mantine-color-body) 60%, transparent);
+  background: var(--mantine-color-body);
+  color: var(--tint-fg);
   box-shadow: var(--mantine-shadow-xs);
+}
+.dashed-button.mantine-Button-root:not(:disabled):not([data-disabled]) {
+  border: 1px dashed var(--mantine-color-default-border);
+  background: transparent;
+  color: var(--mantine-color-dimmed);
+}
+
+/* Yellow and red cards, drawn as cards */
+.card-icon {
+  display: inline-block;
+  width: 13px;
+  height: 18px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  background: #fab005;
+}
+.card-icon[data-card='red'] {
+  background: #e03131;
+}
+.icon-own-goal {
+  color: var(--mantine-color-red-filled);
+}
+.icon-star {
+  color: var(--mantine-color-yellow-filled);
+}
+
+/* Match events: minutes down the middle, home events to the left, away to the right */
+.timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--app-hairline);
+}
+.tl-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1fr);
+  align-items: center;
+  min-height: 48px;
+}
+.tl-minute {
+  justify-self: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--mantine-color-body);
+  border: 1px solid var(--app-hairline);
+  font-size: 14px;
+  font-weight: 700;
+}
+.tl-dot {
+  justify-self: center;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--mantine-color-body);
+  border: 2px solid var(--app-hairline);
+}
+
+/* Upcoming match: the day, date and time in a tinted block */
+.date-block {
+  width: 60px;
+  height: 72px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-tint-goal);
+  text-align: center;
+}
+.date-block[data-empty] {
+  background: var(--app-subtle);
+}
+.date-block-day {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mantine-color-teal-light-color);
+}
+.date-block-num {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+.date-block-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mantine-color-dimmed);
+}
+.card-foot {
+  padding-top: 8px;
+  border-top: 1px solid var(--app-hairline);
+}
+
+/* A row that scrolls sideways, edge to edge on phones */
+.h-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  margin-inline: calc(var(--mantine-spacing-md) * -1);
+  padding: 2px var(--mantine-spacing-md) 8px;
+  scrollbar-width: none;
+}
+.h-scroll > * {
+  flex: 0 0 220px;
+}
+
+/* A card that is one big button (the lineup row) */
+.row-button {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: start;
 }
 
 /* Section label above grouped fields (lineup sides, form groups) */
@@ -127,8 +300,30 @@ table {
   font-size: var(--mantine-font-size-xs);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: var(--mantine-color-dimmed);
+}
+
+/* Competition tabs: a track with the current tab raised out of it */
+.track-tabs .mantine-Tabs-list {
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--app-track);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.track-tabs .mantine-Tabs-tab {
+  flex: 1 0 auto;
+  min-height: 40px;
+  font-weight: 600;
+}
+.track-tabs .mantine-Tabs-tab[data-active] {
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+  box-shadow: var(--mantine-shadow-xs);
+  font-weight: 700;
 }
 
 /* Instant feedback on press, a soft lift on hover where a pointer can hover */
@@ -166,6 +361,9 @@ table {
     background-color: var(--mantine-color-body);
     border-bottom-color: var(--mantine-color-text);
   }
+  .tab-bar {
+    border-top-color: var(--mantine-color-text);
+  }
   .mantine-Card-root,
   .mantine-Paper-root {
     outline: 1px solid var(--mantine-color-default-border);
@@ -180,15 +378,108 @@ table {
   padding: var(--mantine-spacing-lg);
 }
 
-/* Standings: the leader's row gets a soft teal accent */
+/* Standings: the leader's row gets a soft teal fill and a filled position disc */
 .standings tbody tr:first-child td {
   background: var(--app-tint-goal);
 }
-.standings tbody tr:first-child td:first-child {
-  box-shadow: inset 3px 0 0 var(--mantine-color-teal-filled);
+.pos-leader {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--mantine-color-teal-filled);
+  color: var(--mantine-primary-color-contrast);
 }
 
-/* The brand never wraps; the header's other items make room instead */
-.brand {
-  white-space: nowrap;
+/* A card of rows (players, teams, a roster), hairlines between them */
+.list-rows > * + * {
+  border-top: 1px solid var(--app-hairline);
+}
+.list-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: hover) {
+  .list-link:hover {
+    background: var(--app-subtle);
+  }
+}
+/* rounded link rows draw their divider inset, so it stays straight */
+.list-rows > .list-link + .list-link {
+  border-top: 0;
+  position: relative;
+}
+.list-rows > .list-link + .list-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  border-top: 1px solid var(--app-hairline);
+}
+
+/* Header links: the current page gets a soft teal pill, like the phone tab bar's teal label */
+.header-nav .mantine-Button-root[aria-current='page'] {
+  background: var(--mantine-color-teal-light);
+  color: var(--mantine-color-teal-text);
+}
+
+/*
+ * Two columns on wide screens (md and up), one on phones. Each direct child is a column.
+ * data-aside="start": a narrow first column. data-interleave: on phones the columns' items mix,
+ * placed by `order`, so a phone keeps its own reading order (the match page).
+ */
+.split {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-lg);
+}
+.split > * {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-lg);
+  min-width: 0;
+}
+@media (max-width: 61.99em) {
+  .split[data-interleave] > * {
+    display: contents;
+  }
+}
+@media (min-width: 62em) {
+  .split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .split[data-aside='start'] {
+    grid-template-columns: 340px minmax(0, 1fr);
+  }
+  /* stays in view while the other column scrolls; scrolls itself if it is taller than the window */
+  .split > .sticky-col {
+    position: sticky;
+    top: calc(60px + var(--mantine-spacing-md));
+    max-height: calc(100vh - 60px - 2 * var(--mantine-spacing-md));
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+}
+
+/* Landing page: the pitch beside a picture of the app on wide screens, stacked on phones */
+.hero {
+  display: grid;
+  gap: 32px;
+}
+@media (min-width: 62em) {
+  .hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 48px;
+  }
 }

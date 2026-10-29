@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, call, type Competition } from '../../api/client'
 import { useNotifyError } from '../../api/errors'
+import { CloseIcon } from '../../components/icons'
 
 /** Teams in the competition, adding (existing or new) and removing them, and generating fixtures. */
 export default function ManageTab({ competition }: { competition: Competition }) {
@@ -45,7 +46,7 @@ export default function ManageTab({ competition }: { competition: Competition })
   const generate = () => run(() => call(api.POST('/api/competitions/{id}/generate', path)))
 
   return (
-    <Stack maw={500} className="surface">
+    <Stack className="surface">
       <Title order={5}>{t('competition.teams')}</Title>
       {competition.teams.length ? (
         competition.teams.map((ct) => (
@@ -61,7 +62,7 @@ export default function ManageTab({ competition }: { competition: Competition })
               disabled={action.isPending}
               onClick={() => run(() => call(api.DELETE('/api/competitions/{id}/teams/{teamId}', { params: { path: { id, teamId: ct.teamId } } })))}
             >
-              ✕
+              <CloseIcon size={16} />
             </ActionIcon>
           </Group>
         ))

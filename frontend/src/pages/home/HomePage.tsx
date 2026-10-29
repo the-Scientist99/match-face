@@ -1,10 +1,23 @@
-import { Badge, Button, Group, Loader, Stack, Text, Title } from '@mantine/core'
+import { Button, Card, Flex, Group, Loader, SimpleGrid, Stack, Text, ThemeIcon, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { api, call, type CompetitionSummary, type MatchSummary } from '../../api/client'
+import { ListIcon, PlusIcon, TrophyIcon } from '../../components/icons'
 import MatchList from '../../components/MatchList'
 import { splitMatches } from '../matches/matchLogic'
+
+function Section({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Stack gap={10}>
+      <Text component="h2" className="section-label" m={0}>
+        {label}
+      </Text>
+      {children}
+    </Stack>
+  )
+}
 
 export default function HomePage() {
   const { t } = useTranslation()
@@ -15,39 +28,53 @@ export default function HomePage() {
   })
   const { upcoming, recent } = splitMatches(mine.data ?? [])
   return (
-    <Stack maw={600} gap="lg">
-      <Group justify="space-between">
+    <Stack gap={28}>
+      {/* wide screens: the actions sit beside the title instead of under it */}
+      <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ md: 'center' }} gap="md">
         <Title order={2}>{t('home.title')}</Title>
-        <Group gap="xs">
-          <Button component={Link} to="/matches/new">
+        <SimpleGrid cols={2} spacing="xs" w={{ md: 400 }}>
+          <Button component={Link} to="/matches/new" size="md" px="sm" leftSection={<PlusIcon size={18} />}>
             {t('match.new')}
           </Button>
-          <Button component={Link} to="/competitions/new" variant="light">
+          <Button component={Link} to="/competitions/new" size="md" px="sm" variant="light">
             {t('competition.new')}
           </Button>
-        </Group>
-      </Group>
+        </SimpleGrid>
+      </Flex>
       {!!competitions.data?.length && (
-        <>
-          <Title order={4}>{t('home.competitions')}</Title>
-          <Group gap="xs">
+        <Section label={t('home.competitions')}>
+          <div className="h-scroll">
             {competitions.data.map((c) => (
-              <Badge key={c.id} component={Link} to={`/competitions/${c.id}`} size="lg" className="pressable" style={{ textTransform: 'none' }}>
-                {c.type === 'CUP' ? '🏆' : '📋'} {c.name}
-              </Badge>
+              <Card key={c.id} component={Link} to={`/competitions/${c.id}`} padding="sm" radius={18} className="pressable">
+                <Group wrap="nowrap" gap="sm">
+                  <ThemeIcon size={40} radius="md" variant="light" color={c.type === 'CUP' ? 'yellow' : 'teal'}>
+                    {c.type === 'CUP' ? <TrophyIcon /> : <ListIcon />}
+                  </ThemeIcon>
+                  <Stack gap={2} miw={0}>
+                    <Text fw={600} truncate>
+                      {c.name}
+                    </Text>
+                    <Text size="sm" c="dimmed">
+                      {t(`competition.type.${c.type}`)} · {t(`competition.status.${c.status}`)}
+                    </Text>
+                  </Stack>
+                </Group>
+              </Card>
             ))}
-          </Group>
-        </>
+          </div>
+        </Section>
       )}
       {mine.isPending ? (
         <Loader />
       ) : (
-        <>
-          <Title order={4}>{t('home.upcoming')}</Title>
-          {upcoming.length ? <MatchList matches={upcoming} /> : <Text c="dimmed">{t('home.noUpcoming')}</Text>}
-          <Title order={4}>{t('home.recent')}</Title>
-          {recent.length ? <MatchList matches={recent} /> : <Text c="dimmed">{t('home.noRecent')}</Text>}
-        </>
+        <div className="split">
+          <Section label={upcoming.length ? `${t('home.upcoming')} · ${upcoming.length}` : t('home.upcoming')}>
+            {upcoming.length ? <MatchList matches={upcoming} /> : <Text c="dimmed">{t('home.noUpcoming')}</Text>}
+          </Section>
+          <Section label={t('home.recent')}>
+            {recent.length ? <MatchList matches={recent} /> : <Text c="dimmed">{t('home.noRecent')}</Text>}
+          </Section>
+        </div>
       )}
     </Stack>
   )

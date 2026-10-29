@@ -1,4 +1,4 @@
-import { Alert, Anchor, Badge, Button, Card, Group, Loader, Stack, Text } from '@mantine/core'
+import { Alert, Anchor, Badge, Button, Card, Group, Loader, Stack, Text, VisuallyHidden } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
 import { api, call, type Match } from '../../api/client'
 import { errorCode, useNotifyError } from '../../api/errors'
+import { sideTints } from '../../components/Crest'
+import { KeeperIcon } from '../../components/icons'
 import EventEntry, { type NewEvent } from './EventEntry'
 import EventList from './EventList'
 import FinishDialog from './FinishDialog'
@@ -44,6 +46,7 @@ export default function MatchPage() {
   const busy = action.isPending
   const [failedEvent, setFailedEvent] = useState<NewEvent | null>(null)
   const [finishing, setFinishing] = useState(false)
+  const [lineupOpen, setLineupOpen] = useState(false)
 
   if (match.isPending) return <Loader />
   if (match.isError) return <Text>{t(`errors.${errorCode(match.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
@@ -58,12 +61,13 @@ export default function MatchPage() {
       onSuccess: () => setFailedEvent(null),
       onError: () => setFailedEvent(e),
     })
+  const lineupCount = (side: 'HOME' | 'AWAY') => m.lineup.filter((l) => l.side === side).length
   const playerName = (playerId?: string) => m.lineup.find((l) => l.playerId === playerId)?.name ?? t('event.unknownScorer')
   const deleteEvent = (eventId: string) =>
     run(() => call(api.DELETE('/api/matches/{id}/events/{eventId}', { params: { path: { id, eventId } } })))
 
   return (
-    <Stack maw={700} gap="lg">
+    <Stack gap="lg">
       {m.competitionId && (
         <Group>
           <Badge component={Link} to={`/competitions/${m.competitionId}`} size="lg" className="pressable" style={{ textTransform: 'none' }}>
@@ -91,47 +95,81 @@ export default function MatchPage() {
           </Group>
         </Alert>
       )}
-      {editable && <EventEntry match={m} onAdd={addEvent} disabled={busy} />}
-      {teamsUndecided(m) && <Text c="dimmed">{t('match.waitingForTeams')}</Text>}
-      <EventList match={m} onDelete={editable ? deleteEvent : undefined} disabled={busy} />
-      {editable ? (
-        <LineupEditor
-          key={m.lineup.map((l) => `${l.playerId}${l.side}${l.inGoal}`).join()}
-          match={m}
-          disabled={busy}
-          onSave={(entries) => run(() => call(api.PUT('/api/matches/{id}/lineup', { ...path, body: { entries } })))}
-        />
-      ) : (
-        <SimpleLineup match={m} />
-      )}
-      {m.canAdmin && !teamsUndecided(m) && (
-        <Stack gap="sm">
-          {m.status === 'SCHEDULED' ? (
-            <>
-              <Button size="lg" fullWidth disabled={busy} onClick={() => setFinishing(true)}>
-                {t('match.finish')}
-              </Button>
-              {!m.knockout && (
-                <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/cancel', { ...path, body: version })))}>
-                  {t('match.cancel')}
-                </Button>
-              )}
-              <FinishDialog
-                match={m}
-                opened={finishing}
-                onClose={() => setFinishing(false)}
-                onFinish={(penaltyWinner) =>
-                  run(() => call(api.POST('/api/matches/{id}/finish', { ...path, body: { ...version, penaltyWinner } })))
-                }
-              />
-            </>
-          ) : (
-            <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/reopen', { ...path, body: version })))}>
-              {t('match.reopen')}
-            </Button>
-          )}
-        </Stack>
-      )}
+      {/* wide screens: entry, lineup and actions on the left, the timeline beside them and in view.
+          phones keep one column in the order entry, events, lineup, actions (via `order`) */}
+      <div className="split" data-interleave>
+        <div>
+          {editable && <EventEntry match={m} onAdd={addEvent} disabled={busy} />}
+          {teamsUndecided(m) && <Text c="dimmed">{t('match.waitingForTeams')}</Text>}
+          <Stack gap="lg" style={{ order: 2 }}>
+            {editable ? (
+              <>
+                {/* once there is a lineup it folds into one row; an empty one stays open, events need players */}
+                {m.lineup.length > 0 && (
+                  <Card component="button" type="button" className="pressable row-button" aria-expanded={lineupOpen} onClick={() => setLineupOpen(!lineupOpen)}>
+                    <Group gap="sm" wrap="nowrap">
+                      <Text fw={600}>{t('match.lineup')}</Text>
+                      <Text size="sm" c="dimmed">
+                        {lineupCount('HOME')} {t('match.vs')} {lineupCount('AWAY')}
+                      </Text>
+                      <Text size="sm" fw={600} c="teal" ml="auto">
+                        {lineupOpen ? t('event.done') : t('event.edit')}
+                      </Text>
+                    </Group>
+                  </Card>
+                )}
+                {(lineupOpen || !m.lineup.length) && (
+                  <LineupEditor
+                    key={m.lineup.map((l) => `${l.playerId}${l.side}${l.inGoal}`).join()}
+                    match={m}
+                    disabled={busy}
+                    onSave={(entries) =>
+                      action.mutate(() => call(api.PUT('/api/matches/{id}/lineup', { ...path, body: { entries } })) as Promise<Match>, {
+                        onSuccess: () => setLineupOpen(false),
+                      })
+                    }
+                  />
+                )}
+              </>
+            ) : (
+              <SimpleLineup match={m} />
+            )}
+            {m.canAdmin && !teamsUndecided(m) && (
+              <Stack gap="sm">
+                {m.status === 'SCHEDULED' ? (
+                  <>
+                    <Button size="lg" fullWidth disabled={busy} onClick={() => setFinishing(true)}>
+                      {t('match.finish')}
+                    </Button>
+                    {!m.knockout && (
+                      <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/cancel', { ...path, body: version })))}>
+                        {t('match.cancel')}
+                      </Button>
+                    )}
+                    <FinishDialog
+                      match={m}
+                      opened={finishing}
+                      onClose={() => setFinishing(false)}
+                      onFinish={(penaltyWinner) =>
+                        run(() => call(api.POST('/api/matches/{id}/finish', { ...path, body: { ...version, penaltyWinner } })))
+                      }
+                    />
+                  </>
+                ) : (
+                  <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/reopen', { ...path, body: version })))}>
+                    {t('match.reopen')}
+                  </Button>
+                )}
+              </Stack>
+            )}
+          </Stack>
+        </div>
+        <div className="sticky-col">
+          <div style={{ order: 1 }}>
+            <EventList match={m} onDelete={editable ? deleteEvent : undefined} disabled={busy} />
+          </div>
+        </div>
+      </div>
     </Stack>
   )
 }
@@ -139,17 +177,29 @@ export default function MatchPage() {
 function SimpleLineup({ match }: { match: Match }) {
   const { t } = useTranslation()
   if (!match.lineup.length) return null
+  const tints = sideTints(match.home.name, match.away.name)
   return (
     <Card>
       <Group align="flex-start" grow>
         {(['HOME', 'AWAY'] as const).map((side) => (
-          <Stack key={side} gap={4}>
-            <Text fw={700} className="section-label">{side === 'HOME' ? match.home.name : match.away.name}</Text>
+          <Stack key={side} gap={6} data-tint={tints[side]}>
+            <Group gap={8} wrap="nowrap">
+              <span className="tint-dot" />
+              <Text className="section-label" truncate>
+                {side === 'HOME' ? match.home.name : match.away.name}
+              </Text>
+            </Group>
             {match.lineup
               .filter((l) => l.side === side)
               .map((l) => (
-                <Anchor key={l.playerId} size="sm" component={Link} to={`/players/${l.playerId}`}>
-                  {l.inGoal ? `🧤 ${l.name} (${t('match.keeper')})` : l.name}
+                <Anchor key={l.playerId} size="sm" component={Link} to={`/players/${l.playerId}`} display="flex" style={{ alignItems: 'center', gap: 6 }}>
+                  {l.name}
+                  {l.inGoal && (
+                    <>
+                      <KeeperIcon size={14} />
+                      <VisuallyHidden>({t('match.keeper')})</VisuallyHidden>
+                    </>
+                  )}
                 </Anchor>
               ))}
           </Stack>

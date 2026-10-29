@@ -2,14 +2,35 @@
   "app": {
     "name": "Sportska liga"
   },
+  "landing": {
+    "eyebrow": "Za vaš termin",
+    "title": "Vodite svoj termin kao pravu ligu",
+    "subtitle": "Upisujte golove i kartone pored terena. Tabele, žrijeb i statistika igrača ažuriraju se sami.",
+    "liveTitle": "Rezultat uživo",
+    "liveText": "Dodirnite igrača i izaberite gol ili karton. Napravljeno za telefon pored terena.",
+    "leaguesTitle": "Lige i kupovi",
+    "leaguesText": "Raspored, tabela uživo ili kup žrijeb, napravljeni za vas.",
+    "statsTitle": "Učinak svakog igrača",
+    "statsText": "Golovi, asistencije i sačuvane mreže sabiraju se na profilu. Gosti kasnije mogu preuzeti svoj."
+  },
   "nav": {
+    "matches": "Utakmice",
+    "account": "Nalog",
+    "main": "Glavni meni",
     "home": "Početna",
     "players": "Igrači",
     "teams": "Timovi"
   },
   "language": {
     "me": "ME",
-    "en": "EN"
+    "en": "EN",
+    "label": "Jezik"
+  },
+  "theme": {
+    "label": "Tema",
+    "auto": "Auto",
+    "light": "Svijetla",
+    "dark": "Tamna"
   },
   "home": {
     "title": "Moje utakmice",
@@ -96,7 +117,8 @@
     "roster": "Sastav",
     "saveRoster": "Sačuvaj sastav",
     "emptyRoster": "Još nema igrača.",
-    "rename": "Preimenuj"
+    "rename": "Preimenuj",
+    "edit": "Uredi tim"
   },
   "picker": {
     "placeholder": "Izaberite igrače",
@@ -154,7 +176,11 @@
     "none": "Još nema događaja.",
     "notSaved": "Nije sačuvano",
     "retry": "Pokušaj ponovo",
-    "dismiss": "Odbaci"
+    "dismiss": "Odbaci",
+    "title": "Događaji",
+    "edit": "Uredi",
+    "done": "Gotovo",
+    "tapPlayer": "Dodirnite igrača da upišete događaj"
   },
   "profile": {
     "appearances": "Utakmice",

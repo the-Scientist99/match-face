@@ -1,7 +1,9 @@
-import { Button, Card, Group, Menu, Modal, NumberInput, Select, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Button, Card, Group, Menu, Modal, NumberInput, Select, SimpleGrid, Stack, Text, VisuallyHidden } from '@mantine/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Match } from '../../api/client'
+import { sideTints } from '../../components/Crest'
+import { KeeperIcon } from '../../components/icons'
 
 type Side = 'HOME' | 'AWAY'
 type EventType = 'GOAL' | 'OWN_GOAL' | 'YELLOW' | 'RED' | 'MOTM'
@@ -32,11 +34,16 @@ export default function EventEntry({ match, onAdd, disabled }: { match: Match; o
     setGoal(null)
   }
 
+  const tints = sideTints(match.home.name, match.away.name)
+  // each side's buttons wear that team's colour, the same as its crest in the score header
   const column = (side: Side) => (
-    <Stack gap={10}>
-      <Text fw={700} ta="center" truncate mb={4}>
-        {side === 'HOME' ? match.home.name : match.away.name}
-      </Text>
+    <Stack gap={8} data-tint={tints[side]}>
+      <Group gap={8} wrap="nowrap" px={4}>
+        <span className="tint-dot" />
+        <Text fw={700} size="sm" truncate>
+          {side === 'HOME' ? match.home.name : match.away.name}
+        </Text>
+      </Group>
       {match.lineup
         .filter((l) => l.side === side)
         .map((l) => (
@@ -45,14 +52,22 @@ export default function EventEntry({ match, onAdd, disabled }: { match: Match; o
               <Button
                 variant="light"
                 size="md"
-                radius="lg"
+                h={48}
+                px={l.inGoal ? 10 : 12}
                 justify="flex-start"
                 fullWidth
                 disabled={disabled}
-                className="pressable"
-                leftSection={l.inGoal ? <span className="glove">🧤</span> : undefined}
+                className="pressable side-button"
+                leftSection={
+                  l.inGoal ? (
+                    <span className="keeper-badge">
+                      <KeeperIcon size={14} />
+                    </span>
+                  ) : undefined
+                }
               >
                 {l.name}
+                {l.inGoal && <VisuallyHidden> ({t('match.keeper')})</VisuallyHidden>}
               </Button>
             </Menu.Target>
             <Menu.Dropdown>
@@ -67,7 +82,15 @@ export default function EventEntry({ match, onAdd, disabled }: { match: Match; o
             </Menu.Dropdown>
           </Menu>
         ))}
-      <Button variant="light" color="gray" size="sm" radius="lg" fullWidth mt={4} className="pressable" disabled={disabled} onClick={() => onAdd({ type: 'GOAL', side })}>
+      <Button
+        variant="default"
+        size="sm"
+        h="auto"
+        mih={44}
+        py={6}
+        fullWidth
+        styles={{ label: { whiteSpace: 'normal', lineHeight: 1.25 } }}
+        className="pressable dashed-button" disabled={disabled} onClick={() => onAdd({ type: 'GOAL', side })}>
         {t('event.unknownGoal')}
       </Button>
     </Stack>
@@ -80,7 +103,10 @@ export default function EventEntry({ match, onAdd, disabled }: { match: Match; o
   return (
     <>
       <Card>
-        <SimpleGrid cols={2} spacing="lg">
+        <Text component="h2" className="section-label" m={0} mb="md">
+          {t('event.tapPlayer')}
+        </Text>
+        <SimpleGrid cols={2} spacing="sm">
           {column('HOME')}
           {column('AWAY')}
         </SimpleGrid>

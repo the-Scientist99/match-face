@@ -1,4 +1,4 @@
-import { Badge, Group, Loader, Stack, Tabs, Text, Title } from '@mantine/core'
+import { Badge, Loader, Stack, Tabs, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams } from 'react-router'
@@ -26,12 +26,14 @@ export default function CompetitionPage() {
   const tab = params.get('tab') ?? 'fixtures'
 
   return (
-    <Stack maw={800}>
-      <Group gap="xs">
+    <Stack>
+      <Stack gap={8} align="flex-start">
         <Title order={2}>{c.name}</Title>
-        <Badge variant="light">{t(`competition.status.${c.status}`)}</Badge>
-      </Group>
-      <Tabs value={tab} onChange={(v) => setParams(v ? { tab: v } : {}, { replace: true })}>
+        <Badge>
+          {t(`competition.type.${c.type}`)} · {t(`competition.status.${c.status}`)}
+        </Badge>
+      </Stack>
+      <Tabs className="track-tabs" value={tab} onChange={(v) => setParams(v ? { tab: v } : {}, { replace: true })}>
         <Tabs.List>
           <Tabs.Tab value="fixtures">{t('competition.fixtures')}</Tabs.Tab>
           {c.type === 'CUP' ? (

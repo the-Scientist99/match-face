@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { api, call, type Bracket, type BracketMatch } from '../../api/client'
 import { errorCode } from '../../api/errors'
+import { TrophyIcon } from '../../components/icons'
 import { roundLabel } from '../matches/matchLogic'
 
 /** An empty slot waits for an earlier round (bye teams are placed straight into round 2). */
@@ -51,11 +52,14 @@ export default function BracketTab({ id }: { id: string }) {
   return (
     <Stack>
       {b.winner && (
-        <Paper className="band" p="lg" pt={28} ta="center">
+        <Paper p="lg" ta="center">
           <Text className="section-label">{t('bracket.winner')}</Text>
-          <Text fw={800} fz={24} c="teal">
-            🏆 {b.winner.name}
-          </Text>
+          <Group gap="xs" justify="center" mt={4}>
+            <TrophyIcon size={26} color="var(--mantine-color-yellow-filled)" />
+            <Text fw={800} fz={24} c="teal">
+              {b.winner.name}
+            </Text>
+          </Group>
         </Paper>
       )}
       <ScrollArea type="auto">

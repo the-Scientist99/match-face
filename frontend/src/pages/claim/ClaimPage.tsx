@@ -38,7 +38,7 @@ export default function ClaimPage() {
   if (preview.isError) return <Text>{t(`errors.${errorCode(preview.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
   const p = preview.data
   return (
-    <Stack maw={500} className="surface">
+    <Stack maw={500} w="100%" mx="auto" className="surface">
       <Title order={2}>{t('claim.title', { name: p.playerName })}</Title>
       <Text>{t('claim.summary', { matches: p.appearances, goals: p.goals })}</Text>
       {user ? (

@@ -57,9 +57,12 @@ export default function LineupEditor({ match, onSave, disabled }: { match: Match
   return (
     <Card>
       <Stack gap="lg">
-        <Text fw={700} size="lg">
-          {t('match.lineup')}
-        </Text>
+        {/* a saved lineup opens from the match page's Lineup row, which already names it */}
+        {!match.lineup.length && (
+          <Text fw={700} size="lg">
+            {t('match.lineup')}
+          </Text>
+        )}
         <Stack gap="xs" className="section-label">
           <PlayerPicker label={match.home.name ?? undefined} value={home} onChange={setHome} excludeIds={away} first={first('HOME', homeRoster)} />
           {keeperBoxes(home)}

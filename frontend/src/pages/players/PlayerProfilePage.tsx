@@ -6,6 +6,8 @@ import { useParams } from 'react-router'
 import { api, call, type PlayerProfile, type PlayerMatchRow } from '../../api/client'
 import { errorCode, useNotifyError } from '../../api/errors'
 import { useAuth } from '../../auth/AuthProvider'
+import Crest from '../../components/Crest'
+import { PencilIcon } from '../../components/icons'
 import InviteButton from '../../components/InviteButton'
 import MatchList from '../../components/MatchList'
 
@@ -29,7 +31,7 @@ function Rename({ profile }: { profile: PlayerProfile }) {
   })
   if (name === null) {
     return (
-      <Button variant="subtle" size="xs" onClick={() => setName(profile.name)}>
+      <Button variant="light" leftSection={<PencilIcon size={16} />} onClick={() => setName(profile.name)}>
         {t('players.rename')}
       </Button>
     )
@@ -38,16 +40,18 @@ function Rename({ profile }: { profile: PlayerProfile }) {
     <Group
       component="form"
       gap="xs"
+      wrap="nowrap"
+      flex={1}
       onSubmit={(e: FormEvent) => {
         e.preventDefault()
         rename.mutate(name)
       }}
     >
-      <TextInput aria-label={t('players.name')} value={name} maxLength={50} required autoFocus onChange={(e) => setName(e.currentTarget.value)} />
-      <Button type="submit" size="xs" loading={rename.isPending}>
+      <TextInput flex={1} aria-label={t('players.name')} value={name} maxLength={50} required autoFocus onChange={(e) => setName(e.currentTarget.value)} />
+      <Button type="submit" loading={rename.isPending}>
         {t('common.save')}
       </Button>
-      <Button size="xs" variant="subtle" onClick={() => setName(null)}>
+      <Button variant="subtle" onClick={() => setName(null)}>
         {t('common.cancel')}
       </Button>
     </Group>
@@ -69,41 +73,66 @@ export default function PlayerProfilePage() {
   const rows = new Map<string, PlayerMatchRow>(p.matches.map((r) => [r.match.id, r]))
 
   return (
-    <Stack maw={700}>
-      <Group gap="xs">
-        <Title order={2}>{p.name}</Title>
-        {!p.claimed && <Badge variant="light">{t('players.guest')}</Badge>}
-      </Group>
-      <Group gap="xs">
-        {p.canEdit && <Rename key={p.name} profile={p} />}
-        {p.canInvite && <InviteButton playerId={p.id} />}
-      </Group>
-      <SimpleGrid cols={{ base: 2, xs: 4 }}>
-        {TOTALS.map((k) => (
-          <Paper key={k} p="md" ta="center" radius="lg">
-            <Text className="score" fz={28} fw={800} c="teal" lh={1.1}>
-              {p.totals[k]}
-            </Text>
-            <Text size="xs" c="dimmed">
-              {t(`profile.${k}`)}
-            </Text>
-          </Paper>
-        ))}
-      </SimpleGrid>
-      <Title order={4}>{t('profile.matches')}</Title>
-      {p.matches.length ? (
-        <MatchList
-          matches={p.matches.map((r) => r.match)}
-          extra={(m) => {
-            const r = rows.get(m.id)
-            return r && (r.goals || r.assists) ? (
-              <Text size="sm">{t('profile.inMatch', { goals: r.goals, assists: r.assists })}</Text>
-            ) : null
-          }}
-        />
-      ) : (
-        <Text c="dimmed">{t('profile.noMatches')}</Text>
-      )}
-    </Stack>
+    // wide screens: who they are and their totals stay in view beside the match history
+    <div className="split" data-aside="start">
+      <div className="sticky-col">
+        <Paper p="lg">
+          <Stack gap="md">
+            <Group gap="md" wrap="nowrap">
+              <Crest name={p.name} size={64} />
+              <Stack gap={6} miw={0} align="flex-start">
+                <Title order={2} lh={1.15}>
+                  {p.name}
+                </Title>
+                {!p.claimed && (
+                  <Badge size="sm" color="gray">
+                    {t('players.guest')}
+                  </Badge>
+                )}
+              </Stack>
+            </Group>
+            {(p.canEdit || p.canInvite) && (
+              <Group gap="xs">
+                {p.canEdit && <Rename key={p.name} profile={p} />}
+                {p.canInvite && <InviteButton playerId={p.id} />}
+              </Group>
+            )}
+          </Stack>
+        </Paper>
+        <Paper p="md">
+          <SimpleGrid cols={4} spacing="xs" verticalSpacing="lg">
+            {TOTALS.map((k) => (
+              // a zero is quieter, so the numbers that happened stand out
+              <Stack key={k} gap={2} ta="center">
+                <Text className="score" fz={30} fw={700} lh={1.1} c={p.totals[k] ? undefined : 'dimmed'}>
+                  {p.totals[k]}
+                </Text>
+                <Text size="xs" c="dimmed" fw={500} lh={1.25}>
+                  {t(`profile.${k}`)}
+                </Text>
+              </Stack>
+            ))}
+          </SimpleGrid>
+        </Paper>
+      </div>
+      <div>
+        <Text component="h2" className="section-label" m={0} mb={-8}>
+          {t('profile.matches')}
+        </Text>
+        {p.matches.length ? (
+          <MatchList
+            matches={p.matches.map((r) => r.match)}
+            extra={(m) => {
+              const r = rows.get(m.id)
+              return r && (r.goals || r.assists) ? (
+                <Text size="sm">{t('profile.inMatch', { goals: r.goals, assists: r.assists })}</Text>
+              ) : null
+            }}
+          />
+        ) : (
+          <Text c="dimmed">{t('profile.noMatches')}</Text>
+        )}
+      </div>
+    </div>
   )
 }
