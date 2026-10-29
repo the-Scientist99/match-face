@@ -84,7 +84,8 @@ export default function Layout() {
                         data={SCHEMES.map((s) => ({ value: s, label: t(`theme.${s}`) }))}
                       />
                       <Menu.Divider />
-                      <Menu.Item onClick={() => logout().then(() => navigate('/'))}>{t('auth.logout')}</Menu.Item>
+                      {/* Leave first: logging out on a protected page would send its guard to /login?next=<page>, and the next person to log in would land there */}
+                      <Menu.Item onClick={async () => { await navigate('/', { flushSync: true }); await logout() }}>{t('auth.logout')}</Menu.Item>
                     </Menu.Dropdown>
                   </Menu>
                 </>
