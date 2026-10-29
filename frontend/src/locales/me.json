@@ -75,7 +75,9 @@
     "KICKOFF_IN_PAST": "Termin ne može biti u prošlosti.",
     "NOT_STARTED": "Utakmica još nije počela.",
     "NOT_JOINABLE": "Ovoj utakmici se ne možete pridružiti.",
-    "ALREADY_JOINED": "Već ste u ovoj utakmici."
+    "ALREADY_JOINED": "Već ste u ovoj utakmici.",
+    "INVALID_IMAGE": "Ovu datoteku ne možemo koristiti kao sliku. Probajte JPEG ili PNG.",
+    "CONTENT_TOO_LARGE": "Slika je prevelika (najviše 5 MB)."
   },
   "auth": {
     "login": "Prijava",
@@ -269,5 +271,10 @@
     "tbd": "Čeka se",
     "pens": "penali",
     "winner": "Pobjednik"
+  },
+  "image": {
+    "add": "Dodaj sliku",
+    "change": "Promijeni sliku",
+    "remove": "Ukloni"
   }
 }

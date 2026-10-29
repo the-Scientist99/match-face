@@ -1,9 +1,11 @@
-import { Badge, Loader, Stack, Tabs, Text, Title } from '@mantine/core'
+import { Badge, Group, Loader, Stack, Tabs, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams } from 'react-router'
 import { api, call, type Competition } from '../../api/client'
 import { errorCode } from '../../api/errors'
+import Crest from '../../components/Crest'
+import EditableCrest, { RemoveImageButton } from '../../components/ImageUpload'
 import BracketTab from './BracketTab'
 import FixturesTab from './FixturesTab'
 import ManageTab from './ManageTab'
@@ -27,12 +29,20 @@ export default function CompetitionPage() {
 
   return (
     <Stack>
-      <Stack gap={8} align="flex-start">
-        <Title order={2}>{c.name}</Title>
-        <Badge>
-          {t(`competition.type.${c.type}`)} · {t(`competition.status.${c.status}`)}
-        </Badge>
-      </Stack>
+      <Group gap="md" wrap="nowrap">
+        {c.canAdmin ? (
+          <EditableCrest kind="competitions" id={c.id} name={c.name} imageUrl={c.imageUrl} size={64} />
+        ) : (
+          c.imageUrl && <Crest name={c.name} size={64} src={c.imageUrl} />
+        )}
+        <Stack gap={8} align="flex-start" miw={0}>
+          <Title order={2}>{c.name}</Title>
+          <Badge>
+            {t(`competition.type.${c.type}`)} · {t(`competition.status.${c.status}`)}
+          </Badge>
+          {c.canAdmin && c.imageUrl && <RemoveImageButton kind="competitions" id={c.id} />}
+        </Stack>
+      </Group>
       <Tabs className="track-tabs" value={tab} onChange={(v) => setParams(v ? { tab: v } : {}, { replace: true })}>
         <Tabs.List>
           <Tabs.Tab value="fixtures">{t('competition.fixtures')}</Tabs.Tab>

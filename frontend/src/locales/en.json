@@ -75,7 +75,9 @@
     "KICKOFF_IN_PAST": "Kickoff can't be in the past.",
     "NOT_STARTED": "This match hasn't kicked off yet.",
     "NOT_JOINABLE": "This match can't be joined.",
-    "ALREADY_JOINED": "You're already in this match."
+    "ALREADY_JOINED": "You're already in this match.",
+    "INVALID_IMAGE": "That file isn't a picture we can use. Try a JPEG or PNG.",
+    "CONTENT_TOO_LARGE": "That picture is too big (5 MB at most)."
   },
   "auth": {
     "login": "Log in",
@@ -269,5 +271,10 @@
     "tbd": "TBD",
     "pens": "pens",
     "winner": "Winner"
+  },
+  "image": {
+    "add": "Add image",
+    "change": "Change image",
+    "remove": "Remove"
   }
 }

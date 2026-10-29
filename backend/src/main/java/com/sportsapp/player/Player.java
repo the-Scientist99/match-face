@@ -10,6 +10,10 @@ public class Player extends BaseEntity {
 
   private String name;
 
+  /** Read-only here: only {@code ImageService} writes it. */
+  @Column(insertable = false, updatable = false)
+  private String image;
+
   @Column(name = "user_id")
   private UUID userId;
 
@@ -26,6 +30,7 @@ public class Player extends BaseEntity {
 
   public String getName() { return name; }
   public void setName(String name) { this.name = name; }
+  public String getImage() { return image; }
   public UUID getUserId() { return userId; }
   public void setUserId(UUID userId) { this.userId = userId; }
   public UUID getCreatedByUserId() { return createdByUserId; }

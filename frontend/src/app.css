@@ -138,6 +138,30 @@ table {
   background: var(--tint-bg);
   color: var(--tint-fg);
 }
+img.crest {
+  object-fit: cover;
+}
+/* A crest its editor can tap to pick a new image, with a pencil badge to say so */
+.crest-edit {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+.crest-edit-badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mantine-primary-color-filled);
+  color: var(--mantine-color-white);
+  border: 2px solid var(--mantine-color-body);
+}
 .tint-dot {
   width: 10px;
   height: 10px;

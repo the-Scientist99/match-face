@@ -20,6 +20,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setTeam"];
+        post?: never;
+        delete: operations["removeTeam"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/players/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setPlayer"];
+        post?: never;
+        delete: operations["removePlayer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/matches/{id}/lineup": {
         parameters: {
             query?: never;
@@ -31,6 +63,22 @@ export interface paths {
         put: operations["setLineup"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/competitions/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setCompetition"];
+        post?: never;
+        delete: operations["removeCompetition"];
         options?: never;
         head?: never;
         patch?: never;
@@ -558,7 +606,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["removeTeam"];
+        delete: operations["removeTeam_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -576,6 +624,7 @@ export interface components {
             id?: string;
             name?: string;
             claimed?: boolean;
+            imageUrl?: string;
         };
         TeamResponse: {
             /** Format: uuid */
@@ -585,6 +634,10 @@ export interface components {
             sport?: "FOOTBALL";
             players?: components["schemas"]["RosterPlayer"][];
             canAdmin?: boolean;
+            imageUrl?: string;
+        };
+        ImageResponse: {
+            imageUrl?: string;
         };
         LineupEntry: {
             /** Format: uuid */
@@ -662,6 +715,7 @@ export interface components {
             /** Format: uuid */
             teamId?: string;
             name?: string;
+            imageUrl?: string;
         };
         CreateTeamRequest: {
             name: string;
@@ -675,6 +729,7 @@ export interface components {
             name?: string;
             claimed?: boolean;
             canEdit?: boolean;
+            imageUrl?: string;
         };
         ClaimInviteResponse: {
             token?: string;
@@ -750,6 +805,7 @@ export interface components {
             teams?: components["schemas"]["CompetitionTeamView"][];
             canAdmin?: boolean;
             completed?: boolean;
+            imageUrl?: string;
         };
         CompetitionTeamView: {
             /** Format: uuid */
@@ -820,6 +876,7 @@ export interface components {
             id?: string;
             name?: string;
             canAdmin?: boolean;
+            imageUrl?: string;
         };
         MatchSummary: {
             /** Format: uuid */
@@ -836,6 +893,8 @@ export interface components {
             competitionName?: string;
             /** Format: int32 */
             round?: number;
+            homeImageUrl?: string;
+            awayImageUrl?: string;
         };
         PlayerMatchRow: {
             match?: components["schemas"]["MatchSummary"];
@@ -855,6 +914,7 @@ export interface components {
             canInvite?: boolean;
             totals?: components["schemas"]["PlayerTotals"];
             matches?: components["schemas"]["PlayerMatchRow"][];
+            imageUrl?: string;
         };
         PlayerTotals: {
             /** Format: int32 */
@@ -955,6 +1015,7 @@ export interface components {
             type?: "LEAGUE" | "CUP";
             /** @enum {string} */
             status?: "DRAFT" | "ACTIVE";
+            imageUrl?: string;
         };
     };
     responses: never;
@@ -991,6 +1052,108 @@ export interface operations {
             };
         };
     };
+    setTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImageResponse"];
+                };
+            };
+        };
+    };
+    removeTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImageResponse"];
+                };
+            };
+        };
+    };
+    setPlayer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImageResponse"];
+                };
+            };
+        };
+    };
+    removePlayer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImageResponse"];
+                };
+            };
+        };
+    };
     setLineup: {
         parameters: {
             query?: never;
@@ -1013,6 +1176,57 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MatchResponse"];
+                };
+            };
+        };
+    };
+    setCompetition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImageResponse"];
+                };
+            };
+        };
+    };
+    removeCompetition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImageResponse"];
                 };
             };
         };
@@ -1943,7 +2157,7 @@ export interface operations {
             };
         };
     };
-    removeTeam: {
+    removeTeam_1: {
         parameters: {
             query?: never;
             header?: never;

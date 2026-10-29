@@ -2,6 +2,7 @@ package com.sportsapp.player;
 
 import com.sportsapp.common.ApiException;
 import com.sportsapp.common.Names;
+import com.sportsapp.image.ImageStore;
 import com.sportsapp.player.PlayerDtos.PlayerResponse;
 import java.util.Collection;
 import java.util.Comparator;
@@ -104,6 +105,6 @@ public class PlayerService {
   }
 
   public PlayerResponse response(@Nullable UUID viewerId, Player p) {
-    return new PlayerResponse(p.getId(), p.getName(), p.getUserId() != null, canEdit(viewerId, p));
+    return new PlayerResponse(p.getId(), p.getName(), p.getUserId() != null, canEdit(viewerId, p), ImageStore.url(p.getImage()));
   }
 }

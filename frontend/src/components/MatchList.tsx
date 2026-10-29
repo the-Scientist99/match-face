@@ -12,12 +12,12 @@ export function formatKickoff(iso: string | null, lang: string): string | null {
 }
 
 /** One team per line: crest, name, and the goals once played. The losing side is quieter. */
-function TeamLine({ name, goals, result }: { name: string | null; goals?: ReactNode; result?: 'won' | 'lost' }) {
+function TeamLine({ name, image, goals, result }: { name: string | null; image: string | null; goals?: ReactNode; result?: 'won' | 'lost' }) {
   const { t } = useTranslation()
   const lost = result === 'lost'
   return (
     <Group wrap="nowrap" gap="sm">
-      <Crest name={name} />
+      <Crest name={name} src={image} />
       <Text flex={1} fw={result === 'won' ? 700 : lost ? 500 : 600} c={lost || !name ? 'dimmed' : undefined} truncate>
         {name ?? t('bracket.tbd')}
       </Text>
@@ -51,8 +51,8 @@ function Upcoming({ m }: { m: MatchSummary }) {
         </span>
       )}
       <Stack gap={8} flex={1} miw={0}>
-        <TeamLine name={m.homeName} />
-        <TeamLine name={m.awayName} />
+        <TeamLine name={m.homeName} image={m.homeImageUrl} />
+        <TeamLine name={m.awayName} image={m.awayImageUrl} />
       </Stack>
       <Text c="dimmed" component="span" display="flex">
         <ChevronIcon size={18} />
@@ -70,8 +70,8 @@ function Result({ m }: { m: MatchSummary }) {
   const day = m.kickoffAt && new Date(m.kickoffAt).toLocaleDateString(htmlLang(i18n.language as Lang), { weekday: 'short', day: 'numeric', month: 'short' })
   return (
     <Stack gap={8}>
-      <TeamLine name={m.homeName} goals={cancelled ? '–' : m.score.home} result={result(1)} />
-      <TeamLine name={m.awayName} goals={cancelled ? '–' : m.score.away} result={result(-1)} />
+      <TeamLine name={m.homeName} image={m.homeImageUrl} goals={cancelled ? '–' : m.score.home} result={result(1)} />
+      <TeamLine name={m.awayName} image={m.awayImageUrl} goals={cancelled ? '–' : m.score.away} result={result(-1)} />
       <Group gap="xs" wrap="nowrap" className="card-foot">
         <Badge size="sm" color={cancelled ? 'gray' : 'teal'} style={{ flexShrink: 0 }}>
           {t(`match.status.${m.status}`)}

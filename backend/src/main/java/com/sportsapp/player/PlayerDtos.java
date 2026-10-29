@@ -33,7 +33,7 @@ public final class PlayerDtos {
    * {@code canInvite}: the viewer created this guest and it is unclaimed.
    */
   public record PlayerProfileResponse(UUID id, String name, boolean claimed, boolean canEdit, boolean canInvite,
-      PlayerTotals totals, List<PlayerMatchRow> matches) {}
+      PlayerTotals totals, List<PlayerMatchRow> matches, String imageUrl) {}
 
   public record ClaimInviteResponse(String token, Instant expiresAt) {}
 
@@ -44,5 +44,5 @@ public final class PlayerDtos {
   public record ClaimResultResponse(UUID playerId) {}
 
   /** {@code claimed}: the player belongs to a registered user. {@code canEdit}: the viewer may rename it. */
-  public record PlayerResponse(UUID id, String name, boolean claimed, boolean canEdit) {}
+  public record PlayerResponse(UUID id, String name, boolean claimed, boolean canEdit, String imageUrl) {}
 }

@@ -7,6 +7,7 @@ import { api, call, type PlayerProfile, type PlayerMatchRow } from '../../api/cl
 import { errorCode, useNotifyError } from '../../api/errors'
 import { useAuth } from '../../auth/AuthProvider'
 import Crest from '../../components/Crest'
+import EditableCrest, { RemoveImageButton } from '../../components/ImageUpload'
 import { PencilIcon } from '../../components/icons'
 import InviteButton from '../../components/InviteButton'
 import MatchList from '../../components/MatchList'
@@ -79,7 +80,11 @@ export default function PlayerProfilePage() {
         <Paper p="lg">
           <Stack gap="md">
             <Group gap="md" wrap="nowrap">
-              <Crest name={p.name} size={64} />
+              {p.canEdit ? (
+                <EditableCrest kind="players" id={p.id} name={p.name} imageUrl={p.imageUrl} size={64} />
+              ) : (
+                <Crest name={p.name} size={64} src={p.imageUrl} />
+              )}
               <Stack gap={6} miw={0} align="flex-start">
                 <Title order={2} lh={1.15}>
                   {p.name}
@@ -94,6 +99,7 @@ export default function PlayerProfilePage() {
             {(p.canEdit || p.canInvite) && (
               <Group gap="xs">
                 {p.canEdit && <Rename key={p.name} profile={p} />}
+                {p.canEdit && p.imageUrl && <RemoveImageButton kind="players" id={p.id} />}
                 {p.canInvite && <InviteButton playerId={p.id} />}
               </Group>
             )}

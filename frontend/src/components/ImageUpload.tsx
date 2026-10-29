@@ -1,0 +1,68 @@
+import { Button, FileButton, Loader, UnstyledButton } from '@mantine/core'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { api, call } from '../api/client'
+import { useNotifyError } from '../api/errors'
+import Crest from './Crest'
+import { PencilIcon } from './icons'
+import { toSquareJpeg } from './squareImage'
+
+type Owner = { kind: 'players' | 'teams' | 'competitions'; id: string }
+
+/** Uploads (a file) or removes (null) the image of a player, team or competition. */
+function useImage({ kind, id }: Owner) {
+  const queryClient = useQueryClient()
+  const notifyError = useNotifyError()
+  // the three endpoints have the same shape; one literal path keeps openapi-fetch's typing simple
+  const path = `/api/${kind}/{id}/image` as '/api/teams/{id}/image'
+  const params = { params: { path: { id } } }
+  return useMutation({
+    mutationFn: async (file: File | null) => {
+      if (!file) return call(api.DELETE(path, params))
+      const blob = await toSquareJpeg(file)
+      return call(
+        api.PUT(path, {
+          ...params,
+          body: { file: '' }, // the real body is the form below
+          bodySerializer: () => {
+            const form = new FormData()
+            form.append('file', blob, 'image.jpg')
+            return form
+          },
+        }),
+      )
+    },
+    // a logo shows on match cards, lists and pages alike: refetch whatever is on screen
+    onSuccess: () => queryClient.invalidateQueries(),
+    onError: notifyError,
+  })
+}
+
+/** The crest for someone who may edit it: tapping it picks a new image; a pencil badge says so. */
+export default function EditableCrest({ name, imageUrl, size, ...owner }: Owner & { name: string; imageUrl: string | null; size: number }) {
+  const { t } = useTranslation()
+  const save = useImage(owner)
+  return (
+    <FileButton accept="image/*" disabled={save.isPending} onChange={(file) => file && save.mutate(file)}>
+      {(props) => (
+        <UnstyledButton {...props} className="crest-edit pressable" aria-label={imageUrl ? t('image.change') : t('image.add')}>
+          <Crest name={name} src={imageUrl} size={size} />
+          <span className="crest-edit-badge" aria-hidden>
+            {save.isPending ? <Loader size={12} color="white" /> : <PencilIcon size={14} />}
+          </span>
+        </UnstyledButton>
+      )}
+    </FileButton>
+  )
+}
+
+/** A quiet link to remove the image; kept apart from the crest so a stray tap can't delete it. */
+export function RemoveImageButton(owner: Owner) {
+  const { t } = useTranslation()
+  const save = useImage(owner)
+  return (
+    <Button size="compact-sm" variant="subtle" color="gray" loading={save.isPending} onClick={() => save.mutate(null)}>
+      {t('image.remove')}
+    </Button>
+  )
+}

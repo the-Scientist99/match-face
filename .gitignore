@@ -2,6 +2,7 @@ node_modules/
 dist/
 .DS_Store
 backend/target/
+backend/data/
 backend/src/main/resources/static/
 .idea/
 .superpowers/

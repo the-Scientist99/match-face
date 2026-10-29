@@ -2,6 +2,7 @@ package com.sportsapp.player;
 
 import com.sportsapp.common.ApiException;
 import com.sportsapp.common.Tokens;
+import com.sportsapp.image.ImageStore;
 import com.sportsapp.player.PlayerDtos.ClaimInviteResponse;
 import com.sportsapp.player.PlayerDtos.ClaimPreviewResponse;
 import com.sportsapp.stats.PlayerStatsQuery;
@@ -28,13 +29,16 @@ public class ClaimService {
   private final PlayerStatsQuery stats;
   private final JdbcClient jdbc;
   private final Clock clock;
+  private final ImageStore images;
 
-  public ClaimService(PlayerClaimRepository claims, PlayerService players, PlayerStatsQuery stats, JdbcClient jdbc, Clock clock) {
+  public ClaimService(PlayerClaimRepository claims, PlayerService players, PlayerStatsQuery stats, JdbcClient jdbc, Clock clock,
+      ImageStore images) {
     this.claims = claims;
     this.players = players;
     this.stats = stats;
     this.jdbc = jdbc;
     this.clock = clock;
+    this.images = images;
   }
 
   /** Only the guest's creator, only while unclaimed. Replaces any earlier invite for this guest. */
@@ -74,6 +78,13 @@ public class ClaimService {
             """)
         .param("g", g).param("m", m).query(Boolean.class).single();
     if (sameMatch) throw ApiException.conflict("MERGE_CONFLICT");
+    // the guest's photo moves over if the claimer has none, otherwise it goes with the guest
+    String guestImage = jdbc.sql("SELECT image FROM player WHERE id = UUID_TO_BIN(:g)").param("g", g)
+        .query((rs, i) -> rs.getString("image")).list().getFirst();
+    if (guestImage != null && jdbc.sql("UPDATE player SET image = :i WHERE id = UUID_TO_BIN(:m) AND image IS NULL")
+        .param("i", guestImage).param("m", m).update() == 0) {
+      images.deleteAfterCommit(guestImage);
+    }
     for (String sql : new String[] {
         "UPDATE match_lineup SET player_id = UUID_TO_BIN(:m) WHERE player_id = UUID_TO_BIN(:g)",
         "UPDATE match_event SET player_id = UUID_TO_BIN(:m) WHERE player_id = UUID_TO_BIN(:g)",

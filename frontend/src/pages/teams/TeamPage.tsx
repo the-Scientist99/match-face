@@ -6,6 +6,7 @@ import { Link, useParams } from 'react-router'
 import { api, call, type Team } from '../../api/client'
 import { errorCode, useNotifyError } from '../../api/errors'
 import Crest from '../../components/Crest'
+import EditableCrest, { RemoveImageButton } from '../../components/ImageUpload'
 import { ChevronIcon, PencilIcon } from '../../components/icons'
 import PlayerPicker from '../../components/PlayerPicker'
 
@@ -76,10 +77,15 @@ export default function TeamPage() {
     <Stack gap="lg">
       <Paper p="lg" pt="xl">
         <Stack gap="sm" align="center">
-          <Crest name={data.name} size={72} />
+          {data.canAdmin ? (
+            <EditableCrest kind="teams" id={data.id} name={data.name} imageUrl={data.imageUrl} size={72} />
+          ) : (
+            <Crest name={data.name} size={72} src={data.imageUrl} />
+          )}
           <Title order={2} ta="center">
             {data.name}
           </Title>
+          {data.canAdmin && data.imageUrl && <RemoveImageButton kind="teams" id={data.id} />}
         </Stack>
       </Paper>
       <Stack gap={10}>
@@ -91,7 +97,7 @@ export default function TeamPage() {
             {data.players.map((p) => (
               <Link key={p.id} to={`/players/${p.id}`} className="list-link">
                 <Group gap="sm" wrap="nowrap" mih={56} px="sm">
-                  <Crest name={p.name} size={32} />
+                  <Crest name={p.name} size={32} src={p.imageUrl} />
                   <Text fw={600} flex={1} truncate>
                     {p.name}
                   </Text>

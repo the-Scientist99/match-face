@@ -4,6 +4,7 @@ import com.sportsapp.access.AccessService;
 import com.sportsapp.access.ResourceType;
 import com.sportsapp.common.ApiException;
 import com.sportsapp.common.Names;
+import com.sportsapp.image.ImageStore;
 import com.sportsapp.player.Player;
 import com.sportsapp.player.PlayerService;
 import com.sportsapp.sport.Sport;
@@ -74,7 +75,7 @@ public class TeamService {
   @Transactional(readOnly = true)
   public List<TeamSummary> mine(UUID userId) {
     return jdbc.sql("""
-            SELECT BIN_TO_UUID(t.id) id, t.name,
+            SELECT BIN_TO_UUID(t.id) id, t.name, t.image,
                    EXISTS (SELECT 1 FROM admin_grant g
                            WHERE g.resource_type = 'TEAM' AND g.resource_id = t.id AND g.user_id = UUID_TO_BIN(:u)) can_admin
             FROM team t
@@ -84,7 +85,8 @@ public class TeamService {
                           WHERE tp.team_id = t.id AND p.user_id = UUID_TO_BIN(:u))
             """)
         .param("u", userId.toString())
-        .query((rs, i) -> new TeamSummary(UUID.fromString(rs.getString("id")), rs.getString("name"), rs.getBoolean("can_admin")))
+        .query((rs, i) -> new TeamSummary(UUID.fromString(rs.getString("id")), rs.getString("name"), rs.getBoolean("can_admin"),
+            ImageStore.url(rs.getString("image"))))
         .list().stream()
         .sorted(Comparator.comparing(TeamSummary::name, Names.ORDER))
         .toList();
@@ -113,9 +115,9 @@ public class TeamService {
   private TeamResponse response(@Nullable UUID viewerId, Team team) {
     List<RosterPlayer> rosterPlayers = players.getAll(rosterIds(team.getId())).stream()
         .sorted(Comparator.comparing(Player::getName, Names.ORDER))
-        .map(p -> new RosterPlayer(p.getId(), p.getName(), p.getUserId() != null))
+        .map(p -> new RosterPlayer(p.getId(), p.getName(), p.getUserId() != null, ImageStore.url(p.getImage())))
         .toList();
     return new TeamResponse(team.getId(), team.getName(), team.getSport(), rosterPlayers,
-        access.canAdmin(viewerId, ResourceType.TEAM, team.getId()));
+        access.canAdmin(viewerId, ResourceType.TEAM, team.getId()), ImageStore.url(team.getImage()));
   }
 }

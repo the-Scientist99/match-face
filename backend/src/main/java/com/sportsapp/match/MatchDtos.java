@@ -58,8 +58,8 @@ public final class MatchDtos {
   /** {@code penaltyWinner} decides a level cup match (M6). */
   public record FinishRequest(@NotNull Long version, Side penaltyWinner) {}
 
-  /** {@code name}: the team's name, or the pickup label. */
-  public record SideView(UUID teamId, String name) {}
+  /** {@code name}: the team's name, or the pickup label. {@code imageUrl}: the team's logo (none for pickup sides). */
+  public record SideView(UUID teamId, String name, String imageUrl) {}
 
   public record LineupView(UUID playerId, String name, Side side, boolean inGoal) {}
 
@@ -77,5 +77,6 @@ public final class MatchDtos {
       Side mySide, boolean joinable) {}
 
   public record MatchSummary(UUID id, MatchStatus status, Instant kickoffAt, String homeName, String awayName, Score score,
-      UUID competitionId, String competitionName, Integer round) {}
+      UUID competitionId, String competitionName, Integer round,
+      String homeImageUrl, String awayImageUrl) {}
 }

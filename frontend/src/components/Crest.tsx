@@ -25,10 +25,15 @@ export function initials(name: string): string {
   return letters.join('').toLocaleUpperCase()
 }
 
-/** A team's initials in a disc of its colour. Decorative: the name is always written next to it. */
-export default function Crest({ name, tint, size = 28 }: { name: string | null; tint?: Tint; size?: number }) {
+/**
+ * A team's logo or player's photo (`src`), else their initials in a disc of their colour. Decorative: the
+ * name is always written next to it.
+ */
+export default function Crest({ name, tint, size = 28, src }: { name: string | null; tint?: Tint; size?: number; src?: string | null }) {
+  const style = { '--crest-size': `${size}px` } as CSSProperties
+  if (src) return <img className="crest" data-tint={tint ?? tintOf(name)} style={style} src={src} alt="" loading="lazy" />
   return (
-    <span className="crest" data-tint={tint ?? tintOf(name)} style={{ '--crest-size': `${size}px` } as CSSProperties} aria-hidden>
+    <span className="crest" data-tint={tint ?? tintOf(name)} style={style} aria-hidden>
       {name ? initials(name) : '?'}
     </span>
   )

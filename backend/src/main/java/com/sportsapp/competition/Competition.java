@@ -17,6 +17,10 @@ public class Competition extends BaseEntity {
 
   private String name;
 
+  /** Read-only here: only {@code ImageService} writes it. */
+  @Column(insertable = false, updatable = false)
+  private String image;
+
   @Enumerated(EnumType.STRING)
   private Sport sport;
 
@@ -46,6 +50,7 @@ public class Competition extends BaseEntity {
   public long getVersion() { return version; }
   public String getName() { return name; }
   public void setName(String name) { this.name = name; }
+  public String getImage() { return image; }
   public Sport getSport() { return sport; }
   public CompetitionType getType() { return type; }
   public Visibility getVisibility() { return visibility; }

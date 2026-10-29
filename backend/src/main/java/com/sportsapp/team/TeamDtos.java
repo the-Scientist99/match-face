@@ -29,11 +29,11 @@ public final class TeamDtos {
 
   public record SetRosterRequest(@NotNull List<@NotNull UUID> playerIds) {}
 
-  public record RosterPlayer(UUID id, String name, boolean claimed) {}
+  public record RosterPlayer(UUID id, String name, boolean claimed, String imageUrl) {}
 
   /** {@code players} sorted by name. */
-  public record TeamResponse(UUID id, String name, Sport sport, List<RosterPlayer> players, boolean canAdmin) {}
+  public record TeamResponse(UUID id, String name, Sport sport, List<RosterPlayer> players, boolean canAdmin, String imageUrl) {}
 
   /** {@code canAdmin}: the user may manage it (and use it in new matches and competitions). */
-  public record TeamSummary(UUID id, String name, boolean canAdmin) {}
+  public record TeamSummary(UUID id, String name, boolean canAdmin, String imageUrl) {}
 }

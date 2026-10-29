@@ -10,6 +10,7 @@ import com.sportsapp.competition.CompetitionDtos.CompetitionSummary;
 import com.sportsapp.competition.CompetitionDtos.CompetitionTeamView;
 import com.sportsapp.competition.CompetitionDtos.CreateCompetitionRequest;
 import com.sportsapp.competition.CompetitionDtos.PatchCompetitionRequest;
+import com.sportsapp.image.ImageStore;
 import com.sportsapp.match.MatchDtos.MatchSummary;
 import com.sportsapp.competition.CompetitionDtos.BracketMatch;
 import com.sportsapp.competition.CompetitionDtos.BracketResponse;
@@ -204,7 +205,7 @@ public class CompetitionService {
   @Transactional(readOnly = true)
   public List<CompetitionSummary> mine(UUID userId) {
     return jdbc.sql("""
-            SELECT BIN_TO_UUID(c.id) id, c.name, c.type, c.status FROM competition c
+            SELECT BIN_TO_UUID(c.id) id, c.name, c.type, c.status, c.image FROM competition c
             WHERE EXISTS (SELECT 1 FROM admin_grant g
                           WHERE g.resource_type = 'COMPETITION' AND g.resource_id = c.id AND g.user_id = UUID_TO_BIN(:u))
                OR EXISTS (SELECT 1 FROM competition_team ct JOIN team_player tp ON tp.team_id = ct.team_id
@@ -212,7 +213,8 @@ public class CompetitionService {
             """)
         .param("u", userId.toString())
         .query((rs, i) -> new CompetitionSummary(UUID.fromString(rs.getString("id")), rs.getString("name"),
-            CompetitionType.valueOf(rs.getString("type")), CompetitionStatus.valueOf(rs.getString("status"))))
+            CompetitionType.valueOf(rs.getString("type")), CompetitionStatus.valueOf(rs.getString("status")),
+            ImageStore.url(rs.getString("image"))))
         .list().stream()
         .sorted(Comparator.comparing(CompetitionSummary::name, Names.ORDER))
         .toList();
@@ -257,6 +259,7 @@ public class CompetitionService {
         .query((rs, i) -> new int[] {rs.getInt("total"), rs.getInt("open")}).single();
     boolean completed = counts[0] > 0 && counts[1] == 0;
     return new CompetitionResponse(c.getId(), c.getVersion(), c.getName(), c.getSport(), c.getType(), c.getVisibility(), c.getStatus(),
-        c.isDoubleRoundRobin(), teamViews, access.canAdmin(viewerId, ResourceType.COMPETITION, c.getId()), completed);
+        c.isDoubleRoundRobin(), teamViews, access.canAdmin(viewerId, ResourceType.COMPETITION, c.getId()), completed,
+        ImageStore.url(c.getImage()));
   }
 }

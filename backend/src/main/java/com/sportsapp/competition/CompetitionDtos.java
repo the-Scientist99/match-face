@@ -45,12 +45,13 @@ public final class CompetitionDtos {
    * FINISHED or CANCELLED.
    */
   public record CompetitionResponse(UUID id, long version, String name, Sport sport, CompetitionType type, Visibility visibility,
-      CompetitionStatus status, boolean doubleRoundRobin, List<CompetitionTeamView> teams, boolean canAdmin, boolean completed) {}
+      CompetitionStatus status, boolean doubleRoundRobin, List<CompetitionTeamView> teams, boolean canAdmin, boolean completed,
+      String imageUrl) {}
 
   public record BracketMatch(MatchSummary match, int round, int position, Side penaltyWinner) {}
 
   /** {@code matches} by round, then position; {@code winner} is null until the final is FINISHED. */
   public record BracketResponse(int rounds, List<BracketMatch> matches, TeamRef winner) {}
 
-  public record CompetitionSummary(UUID id, String name, CompetitionType type, CompetitionStatus status) {}
+  public record CompetitionSummary(UUID id, String name, CompetitionType type, CompetitionStatus status, String imageUrl) {}
 }

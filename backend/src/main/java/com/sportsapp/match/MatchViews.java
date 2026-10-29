@@ -5,6 +5,7 @@ import com.sportsapp.access.ResourceType;
 import com.sportsapp.common.ApiException;
 import com.sportsapp.common.Names;
 import com.sportsapp.common.Visibility;
+import com.sportsapp.image.ImageStore;
 import com.sportsapp.match.MatchDtos.EventView;
 import com.sportsapp.match.MatchDtos.LineupView;
 import com.sportsapp.match.MatchDtos.MatchResponse;
@@ -55,7 +56,8 @@ public class MatchViews {
                    m.round, m.penalty_winner_side, BIN_TO_UUID(c.id) competition_id, c.name competition_name,
                    m.bracket_position IS NOT NULL knockout,
                    BIN_TO_UUID(m.home_team_id) home_team_id, BIN_TO_UUID(m.away_team_id) away_team_id,
-                   COALESCE(ht.name, m.home_label) home_name, COALESCE(at.name, m.away_label) away_name
+                   COALESCE(ht.name, m.home_label) home_name, COALESCE(at.name, m.away_label) away_name,
+                   ht.image home_image, at.image away_image
             FROM sport_match m
             LEFT JOIN team ht ON ht.id = m.home_team_id
             LEFT JOIN team at ON at.id = m.away_team_id
@@ -69,8 +71,8 @@ public class MatchViews {
             rs.getString("visibility") == null ? null : Visibility.valueOf(rs.getString("visibility")),
             rs.getObject("round", Integer.class),
             rs.getString("penalty_winner_side") == null ? null : Side.valueOf(rs.getString("penalty_winner_side")),
-            new SideView(uuid(rs, "home_team_id"), rs.getString("home_name")),
-            new SideView(uuid(rs, "away_team_id"), rs.getString("away_name")),
+            new SideView(uuid(rs, "home_team_id"), rs.getString("home_name"), ImageStore.url(rs.getString("home_image"))),
+            new SideView(uuid(rs, "away_team_id"), rs.getString("away_name"), ImageStore.url(rs.getString("away_image"))),
             uuid(rs, "competition_id"), rs.getString("competition_name"), rs.getBoolean("knockout")))
         .optional().orElseThrow(ApiException::notFound);
 
@@ -128,7 +130,7 @@ public class MatchViews {
             SELECT BIN_TO_UUID(m.id) id, m.status, m.kickoff_at, m.round,
                    BIN_TO_UUID(MAX(c.id)) competition_id, MAX(c.name) competition_name,
                    COALESCE(ht.name, m.home_label) home_name, COALESCE(at.name, m.away_label) away_name,
-                   %s home_goals, %s away_goals
+                   ht.image home_image, at.image away_image, %s home_goals, %s away_goals
             FROM sport_match m
             LEFT JOIN team ht ON ht.id = m.home_team_id
             LEFT JOIN team at ON at.id = m.away_team_id
@@ -141,7 +143,8 @@ public class MatchViews {
         .param("ids", matchIds.stream().map(MatchViews::bytes).toList())
         .query((rs, i) -> new MatchSummary(uuid(rs, "id"), MatchStatus.valueOf(rs.getString("status")), instant(rs, "kickoff_at"),
             rs.getString("home_name"), rs.getString("away_name"), new Score(rs.getInt("home_goals"), rs.getInt("away_goals")),
-            uuid(rs, "competition_id"), rs.getString("competition_name"), rs.getObject("round", Integer.class)))
+            uuid(rs, "competition_id"), rs.getString("competition_name"), rs.getObject("round", Integer.class),
+            ImageStore.url(rs.getString("home_image")), ImageStore.url(rs.getString("away_image"))))
         .list().stream()
         .collect(Collectors.toMap(MatchSummary::id, Function.identity()));
     return matchIds.stream().map(byId::get).filter(s -> s != null).toList();

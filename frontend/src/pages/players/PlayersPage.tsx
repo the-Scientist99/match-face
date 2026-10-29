@@ -61,7 +61,7 @@ function PlayerRow({ player }: { player: Player }) {
   }
   return (
     <Group gap="sm" wrap="nowrap" mih={60}>
-      <Crest name={player.name} size={36} />
+      <Crest name={player.name} size={36} src={player.imageUrl} />
       <Anchor component={Link} to={`/players/${player.id}`} c="var(--mantine-color-text)" fw={600} flex={1} truncate>
         {player.name}
       </Anchor>

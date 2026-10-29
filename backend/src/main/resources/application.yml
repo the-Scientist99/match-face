@@ -10,7 +10,11 @@ spring:
     properties:
       hibernate.type.preferred_uuid_jdbc_type: BINARY
       hibernate.jdbc.time_zone: UTC
+  servlet.multipart:
+    max-file-size: 5MB
+    max-request-size: 5MB
 
 app:
   jwt.secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLTEyMzQ1Njc4OTA=}
   auth.cookie-secure: ${COOKIE_SECURE:true}
+  images.dir: ${IMAGES_DIR:./data/images}

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { api, call, type CompetitionSummary, type MatchSummary } from '../../api/client'
 import { ListIcon, PlusIcon, TrophyIcon } from '../../components/icons'
+import Crest from '../../components/Crest'
 import MatchList from '../../components/MatchList'
 import { splitMatches } from '../matches/matchLogic'
 
@@ -48,9 +49,13 @@ export default function HomePage() {
             {competitions.data.map((c) => (
               <Card key={c.id} component={Link} to={`/competitions/${c.id}`} padding="sm" radius={18} className="pressable">
                 <Group wrap="nowrap" gap="sm">
-                  <ThemeIcon size={40} radius="md" variant="light" color={c.type === 'CUP' ? 'yellow' : 'teal'}>
-                    {c.type === 'CUP' ? <TrophyIcon /> : <ListIcon />}
-                  </ThemeIcon>
+                  {c.imageUrl ? (
+                    <Crest name={c.name} size={40} src={c.imageUrl} />
+                  ) : (
+                    <ThemeIcon size={40} radius="md" variant="light" color={c.type === 'CUP' ? 'yellow' : 'teal'}>
+                      {c.type === 'CUP' ? <TrophyIcon /> : <ListIcon />}
+                    </ThemeIcon>
+                  )}
                   <Stack gap={2} miw={0}>
                     <Text fw={600} truncate>
                       {c.name}

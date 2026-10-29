@@ -7,31 +7,35 @@ type Schema<K extends keyof components['schemas']> = Sent<components['schemas'][
 
 export type Me = Schema<'MeResponse'>
 export type AuthResponse = Schema<'AuthResponse'>
-export type Player = Schema<'PlayerResponse'>
-export type Team = Schema<'TeamResponse'>
-export type TeamSummary = Schema<'TeamSummary'>
+export type Player = WithNull<Schema<'PlayerResponse'>, 'imageUrl'>
+export type RosterPlayer = WithNull<Schema<'RosterPlayer'>, 'imageUrl'>
+export type Team = WithNull<Omit<Schema<'TeamResponse'>, 'players'>, 'imageUrl'> & { players: RosterPlayer[] }
+export type TeamSummary = WithNull<Schema<'TeamSummary'>, 'imageUrl'>
 
 /** `K` may be null in responses (the backend sends null for "none"). */
 type WithNull<T, K extends keyof T> = Omit<T, K> & { [P in K]: T[P] | null }
 
 /** `name` is null for a cup slot an earlier round hasn't filled yet. */
-export type SideView = WithNull<Schema<'SideView'>, 'teamId' | 'name'>
+export type SideView = WithNull<Schema<'SideView'>, 'teamId' | 'name' | 'imageUrl'>
 export type MatchEvent = WithNull<Schema<'EventView'>, 'playerId' | 'playerName' | 'assistPlayerId' | 'assistPlayerName' | 'minute'>
 export type Match = WithNull<
   Omit<Schema<'MatchResponse'>, 'home' | 'away' | 'events'>,
   'kickoffAt' | 'venue' | 'visibility' | 'competitionId' | 'competitionName' | 'round' | 'penaltyWinner' | 'mySide'
 > & { home: SideView; away: SideView; events: MatchEvent[] }
-export type MatchSummary = WithNull<Schema<'MatchSummary'>, 'kickoffAt' | 'competitionId' | 'competitionName' | 'round' | 'homeName' | 'awayName'>
+export type MatchSummary = WithNull<
+  Schema<'MatchSummary'>,
+  'kickoffAt' | 'competitionId' | 'competitionName' | 'round' | 'homeName' | 'awayName' | 'homeImageUrl' | 'awayImageUrl'
+>
 export type CompetitionTeamView = WithNull<Schema<'CompetitionTeamView'>, 'seed'>
-export type Competition = Omit<Schema<'CompetitionResponse'>, 'teams'> & { teams: CompetitionTeamView[] }
-export type CompetitionSummary = Schema<'CompetitionSummary'>
+export type Competition = WithNull<Omit<Schema<'CompetitionResponse'>, 'teams'>, 'imageUrl'> & { teams: CompetitionTeamView[] }
+export type CompetitionSummary = WithNull<Schema<'CompetitionSummary'>, 'imageUrl'>
 export type StandingRow = Schema<'StandingRow'>
 export type CompetitionStats = Schema<'CompetitionStatsResponse'>
 export type TeamRef = Schema<'TeamRef'>
 export type BracketMatch = WithNull<Omit<Schema<'BracketMatch'>, 'match'>, 'penaltyWinner'> & { match: MatchSummary }
 export type Bracket = { rounds: number; matches: BracketMatch[]; winner: TeamRef | null }
 export type PlayerMatchRow = Omit<Schema<'PlayerMatchRow'>, 'match'> & { match: MatchSummary }
-export type PlayerProfile = Omit<Schema<'PlayerProfileResponse'>, 'matches'> & { matches: PlayerMatchRow[] }
+export type PlayerProfile = WithNull<Omit<Schema<'PlayerProfileResponse'>, 'matches'>, 'imageUrl'> & { matches: PlayerMatchRow[] }
 
 /** Unwraps an openapi-fetch result: the data, or the error body thrown (for errors.ts to read). */
 export async function call<T>(result: Promise<{ data?: T; error?: unknown }>): Promise<Sent<T>> {

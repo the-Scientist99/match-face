@@ -29,6 +29,7 @@
 | M5 | [M5-leagues.md](M5-leagues.md) | Leagues: fixtures, standings, competition stats | M4 |
 | M6 | [M6-cups.md](M6-cups.md) | Cups: bracket, byes, advancement, penalties | M5 |
 | M7 | inline below | Public share pages, end-to-end test, single deployable, deployment | M6 |
+| M8 | [M8-images.md](M8-images.md) | Player photos, team logos, competition photos (stored on disk) | M6 (can ship before M7) |
 
 ## Global Constraints
 
@@ -230,4 +231,6 @@ These are inputs the spec implies but no happy-path test would hit. Each has a p
   - Run `./mvnw -q test`. Expected: all PASS.
   - Run `scripts/build.sh && SPRING_PROFILES_ACTIVE=prod JWT_SECRET=$(openssl rand -base64 48) java -jar backend/target/backend-*.jar`, then open `http://localhost:8080/c/<id>`. Expected: the SPA loads.
 - [ ] **Step 5:** Deploy to the target the user chose (jar + MySQL 26.7 + HTTPS reverse proxy). Write the steps into `README.md` under "Deployment".
+  - Images (M8): set `IMAGES_DIR=/var/lib/sportsapp/images`, outside the jar's folder and owned by the app user. Lightsail's automatic snapshots back it up together with the database.
+  - The reverse proxy must allow request bodies of at least 5 MB (nginx: `client_max_body_size 6m;`), or uploads fail before reaching the app.
 - [ ] **Step 6:** Commit: `feat: single deployable jar and prod profile`.

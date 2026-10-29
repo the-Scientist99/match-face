@@ -57,7 +57,7 @@ export default function TeamsPage() {
           {mine.data.map((team) => (
             <Link key={team.id} to={`/teams/${team.id}`} className="list-link">
               <Group gap="sm" wrap="nowrap" mih={64} px="sm">
-                <Crest name={team.name} size={40} />
+                <Crest name={team.name} size={40} src={team.imageUrl} />
                 <Text fw={600} flex={1} truncate>
                   {team.name}
                 </Text>
