@@ -6,6 +6,7 @@ import { useNotifyError } from '../api/errors'
 import { useAuth } from '../auth/AuthProvider'
 import type { Lang } from '../lang'
 import { initials } from './Crest'
+import Logo from './Logo'
 import { BallIcon, PersonIcon, ShieldIcon } from './icons'
 
 /** Header links on wider screens, the bottom tab bar on phones */
@@ -38,8 +39,7 @@ export default function Layout() {
         <Container size={PAGE_WIDTH} h="100%" px="md">
           <Group h="100%" justify="space-between" wrap="nowrap">
             <Title order={4} className="brand" renderRoot={(props) => <Link to="/" {...props} />}>
-              <ShieldIcon size={24} color="var(--mantine-color-teal-text)" />
-              {t('app.name')}
+              <Logo />
             </Title>
             <Group gap="xs" wrap="nowrap">
               {user ? (

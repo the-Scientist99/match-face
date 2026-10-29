@@ -483,3 +483,15 @@ table {
     gap: 48px;
   }
 }
+
+/* The brand name beside the Kickoff mark: "Match" in ink, "Face" in teal, the sports face */
+.wordmark {
+  font-family: var(--app-num);
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.wordmark > span {
+  color: var(--mantine-color-teal-text);
+}
