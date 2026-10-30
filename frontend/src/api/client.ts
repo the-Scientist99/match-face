@@ -5,7 +5,7 @@ import type { components, paths } from './schema'
 export type Sent<T> = T extends (infer U)[] ? Sent<U>[] : T extends object ? { [K in keyof T]-?: Sent<T[K]> } : T
 type Schema<K extends keyof components['schemas']> = Sent<components['schemas'][K]>
 
-export type Me = Schema<'MeResponse'>
+export type Me = WithNull<Schema<'MeResponse'>, 'imageUrl'>
 export type AuthResponse = Schema<'AuthResponse'>
 export type Player = WithNull<Schema<'PlayerResponse'>, 'imageUrl'>
 export type RosterPlayer = WithNull<Schema<'RosterPlayer'>, 'imageUrl'>

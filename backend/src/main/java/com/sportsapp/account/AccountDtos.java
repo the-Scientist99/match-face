@@ -45,7 +45,8 @@ public final class AccountDtos {
     }
   }
 
-  public record MeResponse(UUID id, String email, String locale, UUID playerId, String displayName) {}
+  /** {@code imageUrl}: the photo of the user's own player, or null. */
+  public record MeResponse(UUID id, String email, String locale, UUID playerId, String displayName, String imageUrl) {}
 
   public record AuthResponse(String accessToken, MeResponse user) {}
 }

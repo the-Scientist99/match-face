@@ -5,7 +5,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { useNotifyError } from '../api/errors'
 import { useAuth } from '../auth/AuthProvider'
 import type { Lang } from '../lang'
-import { initials } from './Crest'
+import Crest, { initials } from './Crest'
 import Logo from './Logo'
 import { BallIcon, PersonIcon, ShieldIcon } from './icons'
 
@@ -56,7 +56,7 @@ export default function Layout() {
                   <Menu position="bottom-end" width={260}>
                     <Menu.Target>
                       <ActionIcon size={44} radius="xl" variant="light" fz="sm" fw={700} aria-label={t('nav.account')}>
-                        {initials(user.displayName)}
+                        {user.imageUrl ? <Crest name={user.displayName} src={user.imageUrl} size={44} /> : initials(user.displayName)}
                       </ActionIcon>
                     </Menu.Target>
                     <Menu.Dropdown>

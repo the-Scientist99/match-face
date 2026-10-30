@@ -137,6 +137,7 @@ class ImageApiTest extends IntegrationTest {
         .andExpect(jsonPath("$.imageUrl").value(logo))
         .andExpect(jsonPath("$.players[0].imageUrl").value(photo));
     mvc.perform(get("/api/players/mine").with(as(ana))).andExpect(jsonPath("$[0].imageUrl").value(photo));
+    mvc.perform(get("/api/me").with(as(ana))).andExpect(jsonPath("$.imageUrl").value(photo));
     mvc.perform(get("/api/players/{id}", ana.playerId())).andExpect(jsonPath("$.imageUrl").value(photo));
     mvc.perform(get("/api/competitions/mine").with(as(ana))).andExpect(jsonPath("$[0].imageUrl").value(cover));
     mvc.perform(get("/api/competitions/{id}", competition).with(as(ana))).andExpect(jsonPath("$.imageUrl").value(cover));

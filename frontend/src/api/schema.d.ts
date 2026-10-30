@@ -909,6 +909,7 @@ export interface components {
             /** Format: uuid */
             playerId?: string;
             displayName?: string;
+            imageUrl?: string;
         };
         LoginRequest: {
             email: string;

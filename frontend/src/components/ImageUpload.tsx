@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, call } from '../api/client'
 import { useNotifyError } from '../api/errors'
+import { useAuth } from '../auth/AuthProvider'
 import Crest from './Crest'
 import { PencilIcon } from './icons'
 import { toSquareJpeg } from './squareImage'
@@ -13,6 +14,7 @@ type Owner = { kind: 'players' | 'teams' | 'competitions'; id: string }
 function useImage({ kind, id }: Owner) {
   const queryClient = useQueryClient()
   const notifyError = useNotifyError()
+  const { refreshMe } = useAuth()
   // the three endpoints have the same shape; one literal path keeps openapi-fetch's typing simple
   const path = `/api/${kind}/{id}/image` as '/api/teams/{id}/image'
   const params = { params: { path: { id } } }
@@ -32,8 +34,9 @@ function useImage({ kind, id }: Owner) {
         }),
       )
     },
-    // a logo shows on match cards, lists and pages alike: refetch whatever is on screen
-    onSuccess: () => queryClient.invalidateQueries(),
+    // a logo shows on match cards, lists and pages alike: refetch whatever is on screen,
+    // and the header avatar when it may be your own photo
+    onSuccess: () => Promise.all([queryClient.invalidateQueries(), kind === 'players' && refreshMe()]),
     onError: notifyError,
   })
 }

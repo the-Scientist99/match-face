@@ -7,6 +7,7 @@ import com.sportsapp.account.AccountDtos.PatchMeRequest;
 import com.sportsapp.account.AccountDtos.RegisterRequest;
 import com.sportsapp.common.ApiException;
 import com.sportsapp.common.Tokens;
+import com.sportsapp.image.ImageStore;
 import com.sportsapp.player.Player;
 import com.sportsapp.player.PlayerService;
 import java.nio.charset.StandardCharsets;
@@ -133,6 +134,6 @@ public class AuthService {
   }
 
   private static MeResponse me(UserAccount user, Player player) {
-    return new MeResponse(user.getId(), user.getEmail(), user.getLocale(), player.getId(), player.getName());
+    return new MeResponse(user.getId(), user.getEmail(), user.getLocale(), player.getId(), player.getName(), ImageStore.url(player.getImage()));
   }
 }
