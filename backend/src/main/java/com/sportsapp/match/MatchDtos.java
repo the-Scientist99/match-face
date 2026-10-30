@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public final class MatchDtos {
@@ -78,12 +79,13 @@ public final class MatchDtos {
    * {@code mySide}: where the viewer's own player is in the lineup. {@code joinable}: a scheduled public pickup.
    * {@code maxPerSide}: a pickup's player limit per side, null for none. {@code rsvps}: roster players' answers,
    * HOME first, then by name. {@code canRsvp}: the viewer is on a roster of this scheduled team match;
-   * {@code myRsvp} is their answer (null: none yet).
+   * {@code myRsvp} is their answer (null: none yet). {@code lineupSides}: the sides the viewer may pick.
    */
   public record MatchResponse(UUID id, long version, Sport sport, MatchStatus status, Instant kickoffAt, String venue,
       Visibility visibility, UUID competitionId, String competitionName, Integer round, SideView home, SideView away,
       Score score, Side penaltyWinner, List<LineupView> lineup, List<EventView> events, boolean canAdmin, boolean knockout,
-      Side mySide, boolean joinable, Integer maxPerSide, List<RsvpView> rsvps, boolean canRsvp, Boolean myRsvp) {}
+      Side mySide, boolean joinable, Integer maxPerSide, List<RsvpView> rsvps, boolean canRsvp, Boolean myRsvp,
+      Set<Side> lineupSides) {}
 
   /** {@code spotsLeft}: free places on both sides of a capped pickup, null if it has no limit. */
   public record MatchSummary(UUID id, MatchStatus status, Instant kickoffAt, String homeName, String awayName, Score score,

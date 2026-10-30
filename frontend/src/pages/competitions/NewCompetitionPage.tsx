@@ -16,9 +16,10 @@ export default function NewCompetitionPage() {
   const [name, setName] = useState('')
   const [visibility, setVisibility] = useState<Visibility>('PRIVATE')
   const [doubleRoundRobin, setDoubleRoundRobin] = useState(false)
+  const [entriesOpen, setEntriesOpen] = useState(false)
   const [type, setType] = useState<'LEAGUE' | 'CUP'>('LEAGUE')
   const create = useMutation({
-    mutationFn: () => call(api.POST('/api/competitions', { body: { name, type, visibility, doubleRoundRobin: type === 'LEAGUE' && doubleRoundRobin } })),
+    mutationFn: () => call(api.POST('/api/competitions', { body: { name, type, visibility, doubleRoundRobin: type === 'LEAGUE' && doubleRoundRobin, entriesOpen: visibility === 'PUBLIC' && entriesOpen } })),
     onSuccess: (c) => {
       void queryClient.invalidateQueries({ queryKey: ['competitions', 'mine'] })
       navigate(`/competitions/${c.id}?tab=manage`)
@@ -56,6 +57,14 @@ export default function NewCompetitionPage() {
           { value: 'PUBLIC', label: t('match.visibility.PUBLIC') },
         ]}
       />
+      {visibility === 'PUBLIC' && (
+        <Checkbox
+          label={t('competition.entriesOpen')}
+          description={t('competition.entriesOpenHint')}
+          checked={entriesOpen}
+          onChange={(e) => setEntriesOpen(e.currentTarget.checked)}
+        />
+      )}
       {type === 'LEAGUE' && (
         <Checkbox label={t('competition.doubleRoundRobin')} checked={doubleRoundRobin} onChange={(e) => setDoubleRoundRobin(e.currentTarget.checked)} />
       )}

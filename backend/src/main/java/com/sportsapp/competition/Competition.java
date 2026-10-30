@@ -36,6 +36,9 @@ public class Competition extends BaseEntity {
   @Column(name = "double_round_robin")
   private boolean doubleRoundRobin;
 
+  @Column(name = "entries_open")
+  private boolean entriesOpen;
+
   protected Competition() {}
 
   public Competition(String name, Sport sport, CompetitionType type, Visibility visibility, boolean doubleRoundRobin) {
@@ -59,4 +62,6 @@ public class Competition extends BaseEntity {
   public void setStatus(CompetitionStatus status) { this.status = status; }
   public boolean isDoubleRoundRobin() { return doubleRoundRobin; }
   public void setDoubleRoundRobin(boolean doubleRoundRobin) { this.doubleRoundRobin = doubleRoundRobin; }
+  public boolean isEntriesOpen() { return entriesOpen; }
+  public void setEntriesOpen(boolean entriesOpen) { this.entriesOpen = entriesOpen; }
 }

@@ -7,10 +7,12 @@ import com.sportsapp.match.MatchDtos.MatchSummary;
 import com.sportsapp.stats.CompetitionStatsQuery;
 import com.sportsapp.stats.StatsDtos.CompetitionStatsResponse;
 import com.sportsapp.competition.CompetitionDtos.AddTeamRequest;
+import com.sportsapp.competition.CompetitionDtos.ApproveEntryRequest;
 import com.sportsapp.competition.CompetitionDtos.BracketResponse;
 import com.sportsapp.competition.CompetitionDtos.CompetitionResponse;
 import com.sportsapp.competition.CompetitionDtos.CompetitionSummary;
 import com.sportsapp.competition.CompetitionDtos.CreateCompetitionRequest;
+import com.sportsapp.competition.CompetitionDtos.EntryRequest;
 import com.sportsapp.competition.CompetitionDtos.PatchCompetitionRequest;
 import com.sportsapp.competition.CompetitionDtos.RoundKickoffRequest;
 import jakarta.validation.Valid;
@@ -101,6 +103,28 @@ public class CompetitionController {
   CompetitionResponse removeTeam(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @PathVariable UUID teamId) {
     UUID me = Auth.userId(jwt);
     service.removeTeam(me, id, teamId);
+    return service.get(me, id);
+  }
+
+  @PostMapping("/{id}/entries")
+  CompetitionResponse enter(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody EntryRequest req) {
+    UUID me = Auth.userId(jwt);
+    service.enter(me, id, req.teamId());
+    return service.get(me, id);
+  }
+
+  @PostMapping("/{id}/entries/{teamId}/approve")
+  CompetitionResponse approveEntry(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @PathVariable UUID teamId,
+      @Valid @RequestBody ApproveEntryRequest req) {
+    UUID me = Auth.userId(jwt);
+    service.approveEntry(me, id, teamId, req);
+    return service.get(me, id);
+  }
+
+  @DeleteMapping("/{id}/entries/{teamId}")
+  CompetitionResponse removeEntry(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @PathVariable UUID teamId) {
+    UUID me = Auth.userId(jwt);
+    service.removeEntry(me, id, teamId);
     return service.get(me, id);
   }
 

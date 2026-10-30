@@ -340,6 +340,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/competitions/{id}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["enter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/competitions/{id}/entries/{teamId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approveEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/register": {
         parameters: {
             query?: never;
@@ -660,6 +692,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/competitions/{id}/entries/{teamId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeEntry"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -750,6 +798,7 @@ export interface components {
             rsvps?: components["schemas"]["RsvpView"][];
             canRsvp?: boolean;
             myRsvp?: boolean;
+            lineupSides?: ("HOME" | "AWAY")[];
         };
         RsvpView: {
             /** Format: uuid */
@@ -785,6 +834,11 @@ export interface components {
             /** Format: date-time */
             kickoffAt: string;
         };
+        CompetitionEntryView: {
+            /** Format: uuid */
+            teamId?: string;
+            name?: string;
+        };
         CompetitionResponse: {
             /** Format: uuid */
             id?: string;
@@ -804,6 +858,8 @@ export interface components {
             canAdmin?: boolean;
             completed?: boolean;
             imageUrl?: string;
+            entriesOpen?: boolean;
+            entries?: components["schemas"]["CompetitionEntryView"][];
         };
         CompetitionTeamView: {
             /** Format: uuid */
@@ -883,10 +939,19 @@ export interface components {
             /** @enum {string} */
             visibility: "PUBLIC" | "PRIVATE";
             doubleRoundRobin?: boolean;
+            entriesOpen?: boolean;
         };
         AddTeamRequest: {
             /** Format: uuid */
             teamId: string;
+            /** Format: int32 */
+            seed?: number;
+        };
+        EntryRequest: {
+            /** Format: uuid */
+            teamId: string;
+        };
+        ApproveEntryRequest: {
             /** Format: int32 */
             seed?: number;
         };
@@ -943,6 +1008,7 @@ export interface components {
             /** @enum {string} */
             visibility?: "PUBLIC" | "PRIVATE";
             doubleRoundRobin?: boolean;
+            entriesOpen?: boolean;
         };
         TeamSummary: {
             /** Format: uuid */
@@ -1747,6 +1813,59 @@ export interface operations {
             };
         };
     };
+    enter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntryRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionResponse"];
+                };
+            };
+        };
+    };
+    approveEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                teamId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionResponse"];
+                };
+            };
+        };
+    };
     register: {
         parameters: {
             query?: never;
@@ -2312,6 +2431,29 @@ export interface operations {
         };
     };
     removeTeam_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                teamId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionResponse"];
+                };
+            };
+        };
+    };
+    removeEntry: {
         parameters: {
             query?: never;
             header?: never;

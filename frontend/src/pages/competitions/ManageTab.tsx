@@ -1,4 +1,4 @@
-import { ActionIcon, Button, Group, NumberInput, Select, Stack, Text, TextInput, Title } from '@mantine/core'
+import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,7 +6,7 @@ import { api, call, type Competition } from '../../api/client'
 import { useNotifyError } from '../../api/errors'
 import { CloseIcon } from '../../components/icons'
 
-/** Teams in the competition, adding (existing or new) and removing them, and generating fixtures. */
+/** Teams in the competition, adding (existing or new) and removing them, entries from others, and generating fixtures. */
 export default function ManageTab({ competition }: { competition: Competition }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -43,10 +43,52 @@ export default function ManageTab({ competition }: { competition: Competition })
     void queryClient.invalidateQueries({ queryKey: ['teams', 'mine'] })
     return call(api.POST('/api/competitions/{id}/teams', { ...path, body: { teamId: team.id, seed: seedValue } }))
   }
-  const generate = () => run(() => call(api.POST('/api/competitions/{id}/generate', path)))
+  const generate = () => {
+    if (competition.entries.length === 0 || window.confirm(t('competition.entriesDropWarning'))) run(() => call(api.POST('/api/competitions/{id}/generate', path)))
+  }
+  const entryPath = (teamId: string) => ({ params: { path: { id, teamId } } })
 
   return (
     <Stack className="surface">
+      {competition.visibility === 'PUBLIC' && competition.status === 'DRAFT' && (
+        <Checkbox
+          label={t('competition.entriesOpen')}
+          description={t('competition.entriesOpenHint')}
+          checked={competition.entriesOpen}
+          disabled={action.isPending}
+          onChange={(e) => {
+            const entriesOpen = e.currentTarget.checked
+            run(() => call(api.PATCH('/api/competitions/{id}', { ...path, body: { version: competition.version, entriesOpen } })))
+          }}
+        />
+      )}
+      {competition.entries.length > 0 && <Title order={5}>{t('competition.entriesTitle')}</Title>}
+      {competition.entries.map((entry) => (
+        <Group key={entry.teamId} justify="space-between">
+          <Text>{entry.name}</Text>
+          <Group gap="xs">
+            <Button
+              size="xs"
+              disabled={action.isPending}
+              onClick={() => {
+                run(() => call(api.POST('/api/competitions/{id}/entries/{teamId}/approve', { ...entryPath(entry.teamId), body: { seed: seedValue } })))
+                setSeed('')
+              }}
+            >
+              {t('competition.approve')}
+            </Button>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              aria-label={t('competition.reject')}
+              disabled={action.isPending}
+              onClick={() => run(() => call(api.DELETE('/api/competitions/{id}/entries/{teamId}', entryPath(entry.teamId))))}
+            >
+              <CloseIcon size={16} />
+            </ActionIcon>
+          </Group>
+        </Group>
+      ))}
       <Title order={5}>{t('competition.teams')}</Title>
       {competition.teams.length ? (
         competition.teams.map((ct) => (

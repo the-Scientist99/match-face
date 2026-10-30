@@ -166,6 +166,7 @@ The picker suggests the team roster. The organizer may also add any of "my playe
 ### Visibility
 - **Public:** readable by anyone via `/c/{id}` or `/m/{id}`, with no login. All `GET` API endpoints accept anonymous requests and apply the same visibility rules (anonymous sees public only), so no separate public API exists. Public items are not listed or searchable in v1.
 - **Private:** readable by admins and members.
+- **Entries (added 2026-10-30):** a public competition in draft can open entries. A team's admin asks to join from its page, and the organizer approves or rejects each request; the team's admin can withdraw it. Generating fixtures, or making the competition private, closes entries and drops waiting requests. The admins of a team in a competition can read it and pick their own side's lineup in its matches; results stay with the organizer, and an organizer can pick only from the roster of a team they don't admin.
   - Competition members: users whose player is on the roster of a team in the competition.
   - One-off match members: users whose player is in the match's lineup.
 - **Team:** readable by its admins, its roster members, and anyone who can read a competition it plays in.

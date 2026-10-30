@@ -18,7 +18,7 @@ import com.sportsapp.sport.ScoreEvent;
 import com.sportsapp.sport.SportRules;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -108,18 +108,25 @@ public class MatchService {
   /**
    * Replaces the lineup. Players must be the admin's players, or already in this lineup (they may have left
    * the roster that made them available since). In a competition match a side may also use its team's
-   * roster, and a player picked for a side who isn't on that team's roster is added to it.
+   * roster, and a player picked for a side whose team the admin also admins, who isn't on its roster, is
+   * added to it. A competition match's team admins pick just their side: {@code entries} can't name another
+   * side, and that side's lineup stays as it is.
    */
   @Transactional
   public void setLineup(UUID userId, UUID matchId, List<LineupEntry> entries) {
-    Match m = lockAsAdmin(userId, matchId);
+    Match m = lockAsReader(userId, matchId);
+    Set<Side> mySides = views.lineupSides(userId, matchId, m.getStageId() != null, m.getHomeTeamId(), m.getAwayTeamId());
+    if (mySides.isEmpty() || !entries.stream().allMatch(e -> mySides.contains(e.side()))) throw ApiException.forbidden();
     requireScheduled(m);
     requireTeamsSet(m);
-    Set<UUID> ids = entries.stream().map(LineupEntry::playerId).collect(Collectors.toSet());
-    if (ids.size() != entries.size()) throw ApiException.badRequest("DUPLICATE_PLAYER");
     List<MatchLineup> current = lineups.findByMatchId(matchId);
-    Set<UUID> allowed = new HashSet<>(players.myPlayerIds(userId));
-    current.forEach(l -> allowed.add(l.getPlayerId()));
+    List<LineupEntry> merged = new ArrayList<>(entries);
+    current.stream().filter(l -> !mySides.contains(l.getSide()))
+        .forEach(l -> merged.add(new LineupEntry(l.getPlayerId(), l.getSide(), l.isInGoal())));
+    Set<UUID> ids = merged.stream().map(LineupEntry::playerId).collect(Collectors.toSet());
+    if (ids.size() != merged.size()) throw ApiException.badRequest("DUPLICATE_PLAYER");
+    Set<UUID> mine = players.myPlayerIds(userId);
+    Set<UUID> inLineup = current.stream().map(MatchLineup::getPlayerId).collect(Collectors.toSet());
     Map<Side, UUID> sideTeams = new java.util.EnumMap<>(Side.class);
     if (m.getStageId() != null) {
       if (m.getHomeTeamId() != null) sideTeams.put(Side.HOME, m.getHomeTeamId());
@@ -127,22 +134,26 @@ public class MatchService {
     }
     Map<Side, Set<UUID>> rosters = new java.util.EnumMap<>(Side.class);
     sideTeams.forEach((side, team) -> rosters.put(side, teams.rosterIds(team)));
+    // someone else's team takes only its own roster, so an organizer's players can't land on it
+    Set<Side> foreign = sideTeams.keySet().stream()
+        .filter(side -> !access.canAdmin(userId, ResourceType.TEAM, sideTeams.get(side))).collect(Collectors.toSet());
     for (LineupEntry e : entries) {
       boolean onRoster = rosters.getOrDefault(e.side(), Set.of()).contains(e.playerId());
-      if (!onRoster && !allowed.contains(e.playerId())) throw ApiException.badRequest("PLAYER_NOT_AVAILABLE");
+      boolean usable = inLineup.contains(e.playerId()) || (mine.contains(e.playerId()) && !foreign.contains(e.side()));
+      if (!onRoster && !usable) throw ApiException.badRequest("PLAYER_NOT_AVAILABLE");
     }
     // a player an event names (as player or assister) must stay in the lineup, on that event's side
-    Map<UUID, Side> newSides = entries.stream().collect(Collectors.toMap(LineupEntry::playerId, LineupEntry::side));
+    Map<UUID, Side> newSides = merged.stream().collect(Collectors.toMap(LineupEntry::playerId, LineupEntry::side));
     for (MatchEvent e : events.findByMatchId(matchId)) {
       for (UUID p : new UUID[] {e.getPlayerId(), e.getAssistPlayerId()}) {
         if (p != null && newSides.get(p) != e.getSide()) throw ApiException.conflict("PLAYER_HAS_EVENTS");
       }
     }
     lineups.deleteByMatchId(matchId);
-    lineups.saveAll(entries.stream().map(e -> new MatchLineup(matchId, e.playerId(), e.side(), e.inGoal())).toList());
+    lineups.saveAll(merged.stream().map(e -> new MatchLineup(matchId, e.playerId(), e.side(), e.inGoal())).toList());
     for (LineupEntry e : entries) {
       UUID team = sideTeams.get(e.side());
-      if (team != null && !rosters.get(e.side()).contains(e.playerId())) teams.addToRoster(team, e.playerId());
+      if (team != null && !foreign.contains(e.side()) && !rosters.get(e.side()).contains(e.playerId())) teams.addToRoster(team, e.playerId());
     }
     matches.bumpVersion(matchId);
   }
@@ -382,7 +393,7 @@ public class MatchService {
 
   /**
    * Matches I hold a grant for or play in, competition matches of competitions I admin, and team matches of
-   * teams I play for: unscheduled first, then newest kickoff, then newest created.
+   * teams I play for or admin: unscheduled first, then newest kickoff, then newest created.
    */
   @Transactional(readOnly = true)
   public List<MatchSummary> mine(UUID userId) {
@@ -396,6 +407,8 @@ public class MatchService {
                           WHERE s.id = m.stage_id AND g.user_id = UUID_TO_BIN(:u))
                OR EXISTS (SELECT 1 FROM team_player tp JOIN player p ON p.id = tp.player_id
                           WHERE tp.team_id IN (m.home_team_id, m.away_team_id) AND p.user_id = UUID_TO_BIN(:u))
+               OR EXISTS (SELECT 1 FROM admin_grant g WHERE g.resource_type = 'TEAM'
+                          AND g.resource_id IN (m.home_team_id, m.away_team_id) AND g.user_id = UUID_TO_BIN(:u))
             ORDER BY m.kickoff_at IS NULL DESC, m.kickoff_at DESC, m.created_at DESC
             """)
         .param("u", userId.toString())

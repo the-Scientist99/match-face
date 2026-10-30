@@ -17,14 +17,15 @@ function useRoster(teamId: string | null) {
   )
 }
 
-/** Picks each side's players (a player can't be on both) and who is in goal; Save replaces the lineup. */
+/** Picks the players of the sides I may pick (a player can't be on both) and who is in goal; Save replaces those sides. */
 export default function LineupEditor({ match, onSave, disabled }: { match: Match; onSave: (entries: Entry[]) => void; disabled: boolean }) {
   const { t } = useTranslation()
-  // an empty lineup starts from the roster players who said they're in
-  const ids = (side: Entry['side']) =>
-    match.lineup.length
-      ? match.lineup.filter((l) => l.side === side).map((l) => l.playerId)
-      : match.rsvps.filter((r) => r.side === side && r.going).map((r) => r.playerId)
+  const canPick = (side: Entry['side']) => match.lineupSides.includes(side)
+  // an empty side starts from the roster players who said they're in
+  const ids = (side: Entry['side']) => {
+    const picked = match.lineup.filter((l) => l.side === side).map((l) => l.playerId)
+    return picked.length ? picked : match.rsvps.filter((r) => r.side === side && r.going).map((r) => r.playerId)
+  }
   const [home, setHome] = useState(() => ids('HOME'))
   const [away, setAway] = useState(() => ids('AWAY'))
   const [keepers, setKeepers] = useState(() => new Set(match.lineup.filter((l) => l.inGoal).map((l) => l.playerId)))
@@ -64,26 +65,30 @@ export default function LineupEditor({ match, onSave, disabled }: { match: Match
     <Card>
       <Stack gap="lg">
         {/* a saved lineup opens from the match page's Lineup row, which already names it */}
-        {!match.lineup.length && (
+        {!match.lineup.some((l) => canPick(l.side)) && (
           <Text fw={700} size="lg">
             {t('match.lineup')}
           </Text>
         )}
-        <Stack gap="xs" className="section-label">
-          <PlayerPicker label={match.home.name ?? undefined} value={home} onChange={setHome} excludeIds={away} first={first('HOME', homeRoster)} />
-          {keeperBoxes(home)}
-        </Stack>
-        <Stack gap="xs" className="section-label">
-          <PlayerPicker label={match.away.name ?? undefined} value={away} onChange={setAway} excludeIds={home} first={first('AWAY', awayRoster)} />
-          {keeperBoxes(away)}
-        </Stack>
+        {canPick('HOME') && (
+          <Stack gap="xs" className="section-label">
+            <PlayerPicker label={match.home.name ?? undefined} value={home} onChange={setHome} excludeIds={away} first={first('HOME', homeRoster)} />
+            {keeperBoxes(home)}
+          </Stack>
+        )}
+        {canPick('AWAY') && (
+          <Stack gap="xs" className="section-label">
+            <PlayerPicker label={match.away.name ?? undefined} value={away} onChange={setAway} excludeIds={home} first={first('AWAY', awayRoster)} />
+            {keeperBoxes(away)}
+          </Stack>
+        )}
         <Group>
           <Button
             disabled={disabled}
             onClick={() =>
               onSave([
-                ...home.map((playerId) => ({ playerId, side: 'HOME' as const, inGoal: keepers.has(playerId) })),
-                ...away.map((playerId) => ({ playerId, side: 'AWAY' as const, inGoal: keepers.has(playerId) })),
+                ...(canPick('HOME') ? home : []).map((playerId) => ({ playerId, side: 'HOME' as const, inGoal: keepers.has(playerId) })),
+                ...(canPick('AWAY') ? away : []).map((playerId) => ({ playerId, side: 'AWAY' as const, inGoal: keepers.has(playerId) })),
               ])
             }
           >

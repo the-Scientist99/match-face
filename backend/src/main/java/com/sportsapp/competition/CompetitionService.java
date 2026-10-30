@@ -4,7 +4,10 @@ import com.sportsapp.access.AccessService;
 import com.sportsapp.access.ResourceType;
 import com.sportsapp.common.ApiException;
 import com.sportsapp.common.Names;
+import com.sportsapp.common.Visibility;
 import com.sportsapp.competition.CompetitionDtos.AddTeamRequest;
+import com.sportsapp.competition.CompetitionDtos.ApproveEntryRequest;
+import com.sportsapp.competition.CompetitionDtos.CompetitionEntryView;
 import com.sportsapp.competition.CompetitionDtos.CompetitionResponse;
 import com.sportsapp.competition.CompetitionDtos.CompetitionSummary;
 import com.sportsapp.competition.CompetitionDtos.CompetitionTeamView;
@@ -46,6 +49,7 @@ public class CompetitionService {
 
   private final CompetitionRepository competitions;
   private final CompetitionTeamRepository competitionTeams;
+  private final CompetitionEntryRepository entries;
   private final FixtureService fixtures;
   private final AccessService access;
   private final TeamService teams;
@@ -53,12 +57,13 @@ public class CompetitionService {
   private final JdbcClient jdbc;
   private final Clock clock;
 
-  public CompetitionService(CompetitionRepository competitions, CompetitionTeamRepository competitionTeams, FixtureService fixtures,
-      AccessService access, TeamService teams, MatchViews matchViews, JdbcClient jdbc, Clock clock) {
+  public CompetitionService(CompetitionRepository competitions, CompetitionTeamRepository competitionTeams,
+      CompetitionEntryRepository entries, FixtureService fixtures, AccessService access, TeamService teams, MatchViews matchViews, JdbcClient jdbc, Clock clock) {
     this.clock = clock;
     this.matchViews = matchViews;
     this.competitions = competitions;
     this.competitionTeams = competitionTeams;
+    this.entries = entries;
     this.fixtures = fixtures;
     this.access = access;
     this.teams = teams;
@@ -67,7 +72,10 @@ public class CompetitionService {
 
   @Transactional
   public UUID create(UUID userId, CreateCompetitionRequest req) {
-    Competition c = competitions.save(new Competition(req.name(), Sport.FOOTBALL, req.type(), req.visibility(), req.doubleRoundRobin()));
+    if (req.entriesOpen() && req.visibility() != Visibility.PUBLIC) throw ApiException.badRequest("ENTRIES_NEED_PUBLIC");
+    Competition c = new Competition(req.name(), Sport.FOOTBALL, req.type(), req.visibility(), req.doubleRoundRobin());
+    c.setEntriesOpen(req.entriesOpen());
+    competitions.save(c);
     access.grantOwner(userId, ResourceType.COMPETITION, c.getId());
     return c.getId();
   }
@@ -93,7 +101,15 @@ public class CompetitionService {
       c.setDoubleRoundRobin(req.doubleRoundRobin());
     }
     if (req.name() != null && !req.name().isEmpty()) c.setName(req.name());
-    if (req.visibility() != null) c.setVisibility(req.visibility());
+    if (req.visibility() != null) {
+      c.setVisibility(req.visibility());
+      if (req.visibility() == Visibility.PRIVATE) closeEntries(c);
+    }
+    if (req.entriesOpen() != null) {
+      if (req.entriesOpen() && c.getVisibility() != Visibility.PUBLIC) throw ApiException.badRequest("ENTRIES_NEED_PUBLIC");
+      if (req.entriesOpen() && c.getStatus() != CompetitionStatus.DRAFT) throw ApiException.conflict("COMPETITION_STARTED");
+      c.setEntriesOpen(req.entriesOpen());
+    }
   }
 
   /** Allowed until a match has a result; an active competition's fixtures are then regenerated. */
@@ -101,12 +117,52 @@ public class CompetitionService {
   public void addTeam(UUID userId, UUID competitionId, AddTeamRequest req) {
     Competition c = lockAsAdmin(userId, competitionId);
     access.requireAdmin(userId, ResourceType.TEAM, req.teamId());
+    enrol(c, req.teamId(), req.seed());
+  }
+
+  private void enrol(Competition c, UUID teamId, Integer seed) {
     requireTeamsChangeable(c);
-    List<CompetitionTeam> current = competitionTeams.findByCompetitionId(competitionId);
-    if (current.stream().anyMatch(ct -> ct.getTeamId().equals(req.teamId()))) throw ApiException.conflict("TEAM_ALREADY_ADDED");
-    if (req.seed() != null && current.stream().anyMatch(ct -> req.seed().equals(ct.getSeed()))) throw ApiException.conflict("DUPLICATE_SEED");
-    competitionTeams.save(new CompetitionTeam(competitionId, req.teamId(), req.seed()));
+    List<CompetitionTeam> current = competitionTeams.findByCompetitionId(c.getId());
+    if (current.stream().anyMatch(ct -> ct.getTeamId().equals(teamId))) throw ApiException.conflict("TEAM_ALREADY_ADDED");
+    if (seed != null && current.stream().anyMatch(ct -> seed.equals(ct.getSeed()))) throw ApiException.conflict("DUPLICATE_SEED");
+    competitionTeams.save(new CompetitionTeam(c.getId(), teamId, seed));
+    entries.deleteByCompetitionIdAndTeamId(c.getId(), teamId);
     if (c.getStatus() == CompetitionStatus.ACTIVE) fixtures.generate(c);
+  }
+
+  /** A team's admin asks to join a public competition with open entries; the organizer decides. */
+  @Transactional
+  public void enter(UUID userId, UUID competitionId, UUID teamId) {
+    Competition c = competitions.lockForUpdate(competitionId).orElseThrow(ApiException::notFound);
+    access.requireRead(userId, ResourceType.COMPETITION, competitionId);
+    access.requireAdmin(userId, ResourceType.TEAM, teamId);
+    if (!c.isEntriesOpen()) throw ApiException.conflict("ENTRIES_CLOSED");
+    if (competitionTeams.findByCompetitionId(competitionId).stream().anyMatch(ct -> ct.getTeamId().equals(teamId))) {
+      throw ApiException.conflict("TEAM_ALREADY_ADDED");
+    }
+    if (entries.findByCompetitionIdAndTeamId(competitionId, teamId).isPresent()) throw ApiException.conflict("ENTRY_EXISTS");
+    entries.save(new CompetitionEntry(competitionId, teamId));
+  }
+
+  /** Requests exist only in a draft: generating drops them, so this never touches fixtures. */
+  @Transactional
+  public void approveEntry(UUID userId, UUID competitionId, UUID teamId, ApproveEntryRequest req) {
+    Competition c = lockAsAdmin(userId, competitionId);
+    entries.findByCompetitionIdAndTeamId(competitionId, teamId).orElseThrow(ApiException::notFound);
+    enrol(c, teamId, req.seed());
+  }
+
+  /** The organizer rejects a request, or the team's admin withdraws it. */
+  @Transactional
+  public void removeEntry(UUID userId, UUID competitionId, UUID teamId) {
+    competitions.lockForUpdate(competitionId).orElseThrow(ApiException::notFound);
+    if (!access.canAdmin(userId, ResourceType.TEAM, teamId)) access.requireAdmin(userId, ResourceType.COMPETITION, competitionId);
+    entries.delete(entries.findByCompetitionIdAndTeamId(competitionId, teamId).orElseThrow(ApiException::notFound));
+  }
+
+  private void closeEntries(Competition c) {
+    c.setEntriesOpen(false);
+    entries.deleteByCompetitionId(c.getId());
   }
 
   /** Like adding; an active competition left with fewer than 2 teams loses its fixtures and is a draft again. */
@@ -153,6 +209,7 @@ public class CompetitionService {
     requireTeamsChangeable(c);
     fixtures.generate(c);
     c.setStatus(CompetitionStatus.ACTIVE);
+    closeEntries(c);
   }
 
   /** By round, then kickoff (none last), then creation. */
@@ -225,7 +282,7 @@ public class CompetitionService {
     return Standings.compute(teamRefs, results, SportRules.of(c.getSport()));
   }
 
-  /** Competitions I admin or play in (my player on a team's roster), by name. */
+  /** Competitions I admin, play in (my player on a team's roster) or have a team I admin in, by name. */
   @Transactional(readOnly = true)
   public List<CompetitionSummary> mine(UUID userId) {
     return jdbc.sql("""
@@ -234,6 +291,8 @@ public class CompetitionService {
                           WHERE g.resource_type = 'COMPETITION' AND g.resource_id = c.id AND g.user_id = UUID_TO_BIN(:u))
                OR EXISTS (SELECT 1 FROM competition_team ct JOIN team_player tp ON tp.team_id = ct.team_id
                           JOIN player p ON p.id = tp.player_id WHERE ct.competition_id = c.id AND p.user_id = UUID_TO_BIN(:u))
+               OR EXISTS (SELECT 1 FROM competition_team ct JOIN admin_grant g ON g.resource_type = 'TEAM' AND g.resource_id = ct.team_id
+                          WHERE ct.competition_id = c.id AND g.user_id = UUID_TO_BIN(:u))
             """)
         .param("u", userId.toString())
         .query((rs, i) -> new CompetitionSummary(UUID.fromString(rs.getString("id")), rs.getString("name"),
@@ -282,8 +341,13 @@ public class CompetitionService {
         .param("c", c.getId().toString())
         .query((rs, i) -> new int[] {rs.getInt("total"), rs.getInt("open")}).single();
     boolean completed = counts[0] > 0 && counts[1] == 0;
+    boolean canAdmin = access.canAdmin(viewerId, ResourceType.COMPETITION, c.getId());
+    List<CompetitionEntryView> entryViews = entries.findByCompetitionId(c.getId()).stream()
+        .filter(e -> canAdmin || access.canAdmin(viewerId, ResourceType.TEAM, e.getTeamId()))
+        .map(e -> new CompetitionEntryView(e.getTeamId(), teams.name(e.getTeamId())))
+        .sorted(Comparator.comparing(CompetitionEntryView::name, Names.ORDER))
+        .toList();
     return new CompetitionResponse(c.getId(), c.getVersion(), c.getName(), c.getSport(), c.getType(), c.getVisibility(), c.getStatus(),
-        c.isDoubleRoundRobin(), teamViews, access.canAdmin(viewerId, ResourceType.COMPETITION, c.getId()), completed,
-        ImageStore.url(c.getImage()));
+        c.isDoubleRoundRobin(), teamViews, canAdmin, completed, ImageStore.url(c.getImage()), c.isEntriesOpen(), entryViews);
   }
 }

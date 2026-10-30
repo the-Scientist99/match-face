@@ -7,13 +7,15 @@ public final class VisibilitySql {
 
   /**
    * Selects {@code competition.id}s visible to {@code :viewerId}: public ones, ones they admin, and ones a
-   * team they play for (their player on its roster) takes part in.
+   * team they play for (their player on its roster) or admin takes part in.
    */
   public static final String VISIBLE_COMPETITION_IDS = """
       SELECT c.id FROM competition c WHERE c.visibility = 'PUBLIC'
         OR EXISTS (SELECT 1 FROM admin_grant g WHERE g.resource_type = 'COMPETITION' AND g.resource_id = c.id AND g.user_id = UUID_TO_BIN(:viewerId))
         OR EXISTS (SELECT 1 FROM competition_team ct JOIN team_player tp ON tp.team_id = ct.team_id JOIN player p ON p.id = tp.player_id
                    WHERE ct.competition_id = c.id AND p.user_id = UUID_TO_BIN(:viewerId))
+        OR EXISTS (SELECT 1 FROM competition_team ct JOIN admin_grant g ON g.resource_type = 'TEAM' AND g.resource_id = ct.team_id
+                   WHERE ct.competition_id = c.id AND g.user_id = UUID_TO_BIN(:viewerId))
       """;
 
   /**

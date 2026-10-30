@@ -23,8 +23,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -133,7 +135,17 @@ public class MatchViews {
         access.canAdmin(viewerId, ResourceType.MATCH, matchId), row.knockout(), mySide(matchId, viewerId),
         viewerId != null && row.competitionId() == null && row.home().teamId() == null
             && row.visibility() == Visibility.PUBLIC && row.status() == MatchStatus.SCHEDULED, row.maxPerSide(),
-        rsvps, canRsvp, myRsvp);
+        rsvps, canRsvp, myRsvp,
+        lineupSides(viewerId, matchId, row.competitionId() != null, row.home().teamId(), row.away().teamId()));
+  }
+
+  /** Both sides for the match's admins; in a competition match, also a side for the admins of its team. */
+  Set<Side> lineupSides(@Nullable UUID userId, UUID matchId, boolean competition, @Nullable UUID home, @Nullable UUID away) {
+    if (access.canAdmin(userId, ResourceType.MATCH, matchId)) return EnumSet.allOf(Side.class);
+    Set<Side> sides = EnumSet.noneOf(Side.class);
+    if (competition && home != null && access.canAdmin(userId, ResourceType.TEAM, home)) sides.add(Side.HOME);
+    if (competition && away != null && access.canAdmin(userId, ResourceType.TEAM, away)) sides.add(Side.AWAY);
+    return sides;
   }
 
   /** The side the viewer's own player is on in this match, or null. */

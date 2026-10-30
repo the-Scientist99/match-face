@@ -7,6 +7,7 @@ import { errorCode } from '../../api/errors'
 import Crest from '../../components/Crest'
 import EditableCrest, { RemoveImageButton } from '../../components/ImageUpload'
 import BracketTab from './BracketTab'
+import EnterTeam from './EnterTeam'
 import FixturesTab from './FixturesTab'
 import ManageTab from './ManageTab'
 import StatsTab from './StatsTab'
@@ -43,6 +44,7 @@ export default function CompetitionPage() {
           {c.canAdmin && c.imageUrl && <RemoveImageButton kind="competitions" id={c.id} />}
         </Stack>
       </Group>
+      {!c.canAdmin && (c.entriesOpen || c.entries.length > 0) && <EnterTeam competition={c} />}
       <Tabs className="track-tabs" value={tab} onChange={(v) => setParams(v ? { tab: v } : {}, { replace: true })}>
         <Tabs.List>
           <Tabs.Tab value="fixtures">{t('competition.fixtures')}</Tabs.Tab>

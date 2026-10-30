@@ -58,6 +58,8 @@ export default function MatchPage() {
   const m = match.data
   // a cup match waiting for an earlier round: nothing can be entered or finished yet
   const editable = m.canAdmin && m.status === 'SCHEDULED' && !teamsUndecided(m)
+  const canPickLineup = m.lineupSides.length > 0 && m.status === 'SCHEDULED' && !teamsUndecided(m)
+  const myLineup = m.lineup.filter((l) => m.lineupSides.includes(l.side)) // the other side's changes don't reset my editor
   // before kickoff only the lineup can change: goals and the result wait for the match to start
   const started = hasStarted(m.kickoffAt)
   const version = { version: m.version }
@@ -156,10 +158,10 @@ export default function MatchPage() {
                   })}
                 </Group>
               ))}
-            {editable ? (
+            {canPickLineup ? (
               <>
                 {/* once there is a lineup it folds into one row; an empty one stays open, events need players */}
-                {m.lineup.length > 0 && (
+                {myLineup.length > 0 && (
                   <Card component="button" type="button" className="pressable row-button" aria-expanded={lineupOpen} onClick={() => setLineupOpen(!lineupOpen)}>
                     <Group gap="sm" wrap="nowrap">
                       <Text fw={600}>{t('match.lineup')}</Text>
@@ -172,9 +174,9 @@ export default function MatchPage() {
                     </Group>
                   </Card>
                 )}
-                {(lineupOpen || !m.lineup.length) && (
+                {(lineupOpen || !myLineup.length) && (
                   <LineupEditor
-                    key={m.lineup.map((l) => `${l.playerId}${l.side}${l.inGoal}`).join()}
+                    key={myLineup.map((l) => `${l.playerId}${l.side}${l.inGoal}`).join()}
                     match={m}
                     disabled={busy}
                     onSave={(entries) =>
@@ -184,6 +186,7 @@ export default function MatchPage() {
                     }
                   />
                 )}
+                {!m.canAdmin && <SimpleLineup match={m} />}
               </>
             ) : (
               <SimpleLineup match={m} />
