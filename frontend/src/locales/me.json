@@ -36,6 +36,7 @@
     "noUpcoming": "Ništa nije zakazano.",
     "noRecent": "Još nema odigranih utakmica.",
     "competitions": "Moja takmičenja",
+    "openCompetitions": "Takmičenja otvorena za prijave",
     "open": "Otvorene utakmice"
   },
   "errors": {
@@ -156,6 +157,7 @@
       "CANCELLED": "Otkazana"
     },
     "lineup": "Sastavi",
+    "logInToTakePart": "Prijavite se da učestvujete",
     "saveLineup": "Sačuvaj sastave",
     "inGoal": "{{name}} na golu",
     "keeper": "golman",
@@ -256,6 +258,7 @@
     "entryPending": "Čeka odobrenje organizatora",
     "withdraw": "Povuci",
     "needTeam": "Za prijavu vam treba sopstveni tim.",
+    "logInToEnter": "Prijavite se da prijavite tim",
     "regenerateWarning": "Ovo zamjenjuje cijeli raspored i termine.",
     "status": {
       "DRAFT": "U pripremi",

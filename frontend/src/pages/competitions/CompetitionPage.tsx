@@ -1,9 +1,9 @@
-import { Badge, Group, Loader, Stack, Tabs, Text, Title } from '@mantine/core'
+import { Badge, Button, CopyButton, Group, Loader, Stack, Tabs, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams } from 'react-router'
 import { api, call, type Competition } from '../../api/client'
-import { errorCode } from '../../api/errors'
+import LoadError from '../../auth/LoadError'
 import Crest from '../../components/Crest'
 import EditableCrest, { RemoveImageButton } from '../../components/ImageUpload'
 import BracketTab from './BracketTab'
@@ -24,7 +24,7 @@ export default function CompetitionPage() {
   })
 
   if (competition.isPending) return <Loader />
-  if (competition.isError) return <Text>{t(`errors.${errorCode(competition.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
+  if (competition.isError) return <LoadError error={competition.error} />
   const c = competition.data
   const tab = params.get('tab') ?? 'fixtures'
 
@@ -42,6 +42,15 @@ export default function CompetitionPage() {
             {t(`competition.type.${c.type}`)} · {t(`competition.status.${c.status}`)}
           </Badge>
           {c.canAdmin && c.imageUrl && <RemoveImageButton kind="competitions" id={c.id} />}
+          {c.visibility === 'PUBLIC' && (
+            <CopyButton value={`${window.location.origin}/competitions/${c.id}`}>
+              {({ copied, copy }) => (
+                <Button size="xs" variant="light" color={copied ? 'green' : undefined} onClick={copy}>
+                  {copied ? t('claim.copied') : t('claim.copy')}
+                </Button>
+              )}
+            </CopyButton>
+          )}
         </Stack>
       </Group>
       {!c.canAdmin && (c.entriesOpen || c.entries.length > 0) && <EnterTeam competition={c} />}

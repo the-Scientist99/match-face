@@ -36,6 +36,7 @@
     "noUpcoming": "Nothing scheduled.",
     "noRecent": "No matches played yet.",
     "competitions": "My competitions",
+    "openCompetitions": "Competitions open to teams",
     "open": "Open matches"
   },
   "errors": {
@@ -156,6 +157,7 @@
       "CANCELLED": "Cancelled"
     },
     "lineup": "Lineup",
+    "logInToTakePart": "Log in to take part",
     "saveLineup": "Save lineup",
     "inGoal": "{{name}} in goal",
     "keeper": "keeper",
@@ -256,6 +258,7 @@
     "entryPending": "Waiting for the organizer's approval",
     "withdraw": "Withdraw",
     "needTeam": "You need a team of your own to ask to join.",
+    "logInToEnter": "Log in to ask to join",
     "regenerateWarning": "This replaces all fixtures and their dates.",
     "status": {
       "DRAFT": "Draft",

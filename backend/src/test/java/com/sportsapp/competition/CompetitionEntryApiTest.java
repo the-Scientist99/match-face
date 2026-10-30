@@ -310,6 +310,31 @@ class CompetitionEntryApiTest extends IntegrationTest {
   }
 
   @Test
+  void openListsPublicCompetitionsTakingEntriesThatIHaveNoPartIn() throws Exception {
+    UUID open = create("PUBLIC", true);
+    create("PUBLIC", false);
+    create("PRIVATE", false);
+    UUID started = playingLeague();
+    mvc.perform(get("/api/competitions/open").with(as(bob))).andExpect(jsonPath("$[*].id").value(contains(open.toString())));
+    mvc.perform(get("/api/competitions/open").with(as(ana))).andExpect(jsonPath("$").value(empty()));
+    mvc.perform(get("/api/competitions/open").with(as(bob))).andExpect(jsonPath("$[*].id").value(not(hasItem(started.toString()))));
+  }
+
+  @Test
+  void openLeavesOutACompetitionMyTeamIsIn() throws Exception {
+    UUID c = create("PUBLIC", true);
+    enter(bob, c, bees).andExpect(status().isOk());
+    mvc.perform(get("/api/competitions/open").with(as(bob))).andExpect(jsonPath("$[*].id").value(contains(c.toString())));
+    approve(ana, c, bees, "{}").andExpect(status().isOk());
+    mvc.perform(get("/api/competitions/open").with(as(bob))).andExpect(jsonPath("$").value(empty()));
+    TestUser ivan = register("Ivan");
+    putOnRoster(bees, ivan.playerId());
+    mvc.perform(get("/api/competitions/open").with(as(ivan))).andExpect(jsonPath("$").value(empty()));
+    TestUser zoe = register("Zoe");
+    mvc.perform(get("/api/competitions/open").with(as(zoe))).andExpect(jsonPath("$[*].id").value(contains(c.toString())));
+  }
+
+  @Test
   void aPickupsAdminPicksBothSides() throws Exception {
     UUID m = createUpcomingPickup(ana, PRIVATE);
     mvc.perform(get("/api/matches/{id}", m).with(as(ana))).andExpect(jsonPath("$.lineupSides").value(containsInAnyOrder("HOME", "AWAY")));

@@ -20,12 +20,45 @@ function Section({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
+function CompetitionCards({ competitions }: { competitions: CompetitionSummary[] }) {
+  const { t } = useTranslation()
+  return (
+    <div className="h-scroll">
+      {competitions.map((c) => (
+        <Card key={c.id} component={Link} to={`/competitions/${c.id}`} padding="sm" radius={18} className="pressable">
+          <Group wrap="nowrap" gap="sm">
+            {c.imageUrl ? (
+              <Crest name={c.name} size={40} src={c.imageUrl} />
+            ) : (
+              <ThemeIcon size={40} radius="md" variant="light" color={c.type === 'CUP' ? 'yellow' : 'teal'}>
+                {c.type === 'CUP' ? <TrophyIcon /> : <ListIcon />}
+              </ThemeIcon>
+            )}
+            <Stack gap={2} miw={0}>
+              <Text fw={600} truncate>
+                {c.name}
+              </Text>
+              <Text size="sm" c="dimmed">
+                {t(`competition.type.${c.type}`)} · {t(`competition.status.${c.status}`)}
+              </Text>
+            </Stack>
+          </Group>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
 export default function HomePage() {
   const { t } = useTranslation()
   const mine = useQuery<MatchSummary[]>({ queryKey: ['matches', 'mine'], queryFn: () => call(api.GET('/api/matches/mine')) })
   const competitions = useQuery<CompetitionSummary[]>({
     queryKey: ['competitions', 'mine'],
     queryFn: () => call(api.GET('/api/competitions/mine')),
+  })
+  const openCompetitions = useQuery<CompetitionSummary[]>({
+    queryKey: ['competitions', 'open'],
+    queryFn: () => call(api.GET('/api/competitions/open')),
   })
   const open = useQuery<MatchSummary[]>({ queryKey: ['matches', 'open'], queryFn: () => call(api.GET('/api/matches/open')) })
   const { upcoming, recent } = splitMatches(mine.data ?? [])
@@ -45,29 +78,12 @@ export default function HomePage() {
       </Flex>
       {!!competitions.data?.length && (
         <Section label={t('home.competitions')}>
-          <div className="h-scroll">
-            {competitions.data.map((c) => (
-              <Card key={c.id} component={Link} to={`/competitions/${c.id}`} padding="sm" radius={18} className="pressable">
-                <Group wrap="nowrap" gap="sm">
-                  {c.imageUrl ? (
-                    <Crest name={c.name} size={40} src={c.imageUrl} />
-                  ) : (
-                    <ThemeIcon size={40} radius="md" variant="light" color={c.type === 'CUP' ? 'yellow' : 'teal'}>
-                      {c.type === 'CUP' ? <TrophyIcon /> : <ListIcon />}
-                    </ThemeIcon>
-                  )}
-                  <Stack gap={2} miw={0}>
-                    <Text fw={600} truncate>
-                      {c.name}
-                    </Text>
-                    <Text size="sm" c="dimmed">
-                      {t(`competition.type.${c.type}`)} · {t(`competition.status.${c.status}`)}
-                    </Text>
-                  </Stack>
-                </Group>
-              </Card>
-            ))}
-          </div>
+          <CompetitionCards competitions={competitions.data} />
+        </Section>
+      )}
+      {!!openCompetitions.data?.length && (
+        <Section label={t('home.openCompetitions')}>
+          <CompetitionCards competitions={openCompetitions.data} />
         </Section>
       )}
       {!!open.data?.length && (

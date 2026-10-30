@@ -5,15 +5,19 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { api, call, type Competition } from '../../api/client'
 import { useNotifyError } from '../../api/errors'
+import { useAuth } from '../../auth/AuthProvider'
+import { useLoginPath } from '../../auth/RequireAuth'
 
 /** For a team's admin: asks to join a competition with open entries, and shows the requests still waiting. */
 export default function EnterTeam({ competition }: { competition: Competition }) {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const loginPath = useLoginPath()
   const queryClient = useQueryClient()
   const notifyError = useNotifyError()
   const [teamId, setTeamId] = useState<string | null>(null)
   const id = competition.id
-  const teams = useQuery({ queryKey: ['teams', 'mine'], queryFn: () => call(api.GET('/api/teams/mine')) })
+  const teams = useQuery({ queryKey: ['teams', 'mine'], queryFn: () => call(api.GET('/api/teams/mine')), enabled: !!user })
   const taken = new Set([...competition.teams, ...competition.entries].map((team) => team.teamId))
   const options = (teams.data ?? []).filter((team) => team.canAdmin && !taken.has(team.id)).map((team) => ({ value: team.id, label: team.name }))
 
@@ -29,6 +33,14 @@ export default function EnterTeam({ competition }: { competition: Competition })
   const enter = (team: string) => action.mutate(() => call(api.POST('/api/competitions/{id}/entries', { params: { path: { id } }, body: { teamId: team } })))
   const withdraw = (team: string) =>
     action.mutate(() => call(api.DELETE('/api/competitions/{id}/entries/{teamId}', { params: { path: { id, teamId: team } } })))
+
+  if (!user) {
+    return (
+      <Button variant="light" component={Link} to={loginPath}>
+        {t('competition.logInToEnter')}
+      </Button>
+    )
+  }
 
   return (
     <Stack className="surface">

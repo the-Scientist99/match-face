@@ -59,6 +59,11 @@ public class CompetitionController {
     return service.mine(Auth.userId(jwt));
   }
 
+  @GetMapping("/open")
+  List<CompetitionSummary> open(@AuthenticationPrincipal Jwt jwt) {
+    return service.open(Auth.userId(jwt));
+  }
+
   @GetMapping("/{id}")
   CompetitionResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
     return service.get(Auth.userIdOrNull(jwt), id);

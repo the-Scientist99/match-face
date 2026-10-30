@@ -6,6 +6,9 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
 import { api, call, type Match } from '../../api/client'
 import { errorCode, useNotifyError } from '../../api/errors'
+import { useAuth } from '../../auth/AuthProvider'
+import LoadError from '../../auth/LoadError'
+import { useLoginPath } from '../../auth/RequireAuth'
 import { sideTints } from '../../components/Crest'
 import { KeeperIcon } from '../../components/icons'
 import EventEntry, { type NewEvent } from './EventEntry'
@@ -20,6 +23,8 @@ import ScoreHeader from './ScoreHeader'
 
 export default function MatchPage() {
   const { t, i18n } = useTranslation()
+  const { user } = useAuth()
+  const loginPath = useLoginPath()
   const { id = '' } = useParams()
   const queryClient = useQueryClient()
   const notifyError = useNotifyError()
@@ -54,7 +59,7 @@ export default function MatchPage() {
   const [lineupOpen, setLineupOpen] = useState(false)
 
   if (match.isPending) return <Loader />
-  if (match.isError) return <Text>{t(`errors.${errorCode(match.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
+  if (match.isError) return <LoadError error={match.error} />
   const m = match.data
   // a cup match waiting for an earlier round: nothing can be entered or finished yet
   const editable = m.canAdmin && m.status === 'SCHEDULED' && !teamsUndecided(m)
@@ -158,6 +163,11 @@ export default function MatchPage() {
                   })}
                 </Group>
               ))}
+            {!user && m.status === 'SCHEDULED' && (
+              <Button size="lg" fullWidth variant="light" component={Link} to={loginPath}>
+                {t('match.logInToTakePart')}
+              </Button>
+            )}
             {canPickLineup ? (
               <>
                 {/* once there is a lineup it folds into one row; an empty one stays open, events need players */}

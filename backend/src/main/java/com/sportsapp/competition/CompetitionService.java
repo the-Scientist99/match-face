@@ -303,6 +303,28 @@ public class CompetitionService {
         .toList();
   }
 
+  /** Public competitions taking entries that the user has no part in yet, newest first. */
+  @Transactional(readOnly = true)
+  public List<CompetitionSummary> open(UUID userId) {
+    return jdbc.sql("""
+            SELECT BIN_TO_UUID(c.id) id, c.name, c.type, c.status, c.image FROM competition c
+            WHERE c.visibility = 'PUBLIC' AND c.entries_open
+              AND NOT EXISTS (SELECT 1 FROM admin_grant g
+                              WHERE g.resource_type = 'COMPETITION' AND g.resource_id = c.id AND g.user_id = UUID_TO_BIN(:u))
+              AND NOT EXISTS (SELECT 1 FROM competition_team ct JOIN team_player tp ON tp.team_id = ct.team_id
+                              JOIN player p ON p.id = tp.player_id WHERE ct.competition_id = c.id AND p.user_id = UUID_TO_BIN(:u))
+              AND NOT EXISTS (SELECT 1 FROM competition_team ct JOIN admin_grant g ON g.resource_type = 'TEAM' AND g.resource_id = ct.team_id
+                              WHERE ct.competition_id = c.id AND g.user_id = UUID_TO_BIN(:u))
+            ORDER BY c.created_at DESC
+            LIMIT 50
+            """) // ponytail: first 50 only, paginate when the list grows
+        .param("u", userId.toString())
+        .query((rs, i) -> new CompetitionSummary(UUID.fromString(rs.getString("id")), rs.getString("name"),
+            CompetitionType.valueOf(rs.getString("type")), CompetitionStatus.valueOf(rs.getString("status")),
+            ImageStore.url(rs.getString("image"))))
+        .list();
+  }
+
   private Competition lockAsAdmin(UUID userId, UUID competitionId) {
     Competition c = competitions.lockForUpdate(competitionId).orElseThrow(ApiException::notFound);
     access.requireAdmin(userId, ResourceType.COMPETITION, competitionId);

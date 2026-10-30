@@ -1,7 +1,7 @@
 import { Center, Loader } from '@mantine/core'
 import { createBrowserRouter } from 'react-router'
 import { useAuth } from './auth/AuthProvider'
-import RequireAuth from './auth/RequireAuth'
+import RequireAuth, { WaitForAuth } from './auth/RequireAuth'
 import Layout from './components/Layout'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
@@ -48,6 +48,11 @@ export const router = createBrowserRouter([
           { path: 'teams/:id', element: <TeamPage /> },
           { path: 'matches/new', element: <NewMatchPage /> },
           { path: 'competitions/new', element: <NewCompetitionPage /> },
+        ],
+      },
+      {
+        element: <WaitForAuth />,
+        children: [
           { path: 'competitions/:id', element: <CompetitionPage /> },
           { path: 'matches/:id', element: <MatchPage /> },
         ],

@@ -12,16 +12,29 @@ export function safeNext(next: string | null): string {
   return unsafe ? '/' : next
 }
 
+/** Login that comes back to this page. */
+export function useLoginPath(): string {
+  const { pathname, search } = useLocation()
+  return `/login?next=${encodeURIComponent(pathname + search)}`
+}
+
+function Loading() {
+  return (
+    <Center mt="xl">
+      <Loader />
+    </Center>
+  )
+}
+
+/** For pages anyone can open: a returning user's session comes back first, so they aren't served as a visitor. */
+export function WaitForAuth() {
+  return useAuth().ready ? <Outlet /> : <Loading />
+}
+
 export default function RequireAuth() {
   const { user, ready } = useAuth()
-  const location = useLocation()
-  if (!ready) {
-    return (
-      <Center mt="xl">
-        <Loader />
-      </Center>
-    )
-  }
-  if (!user) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />
+  const loginPath = useLoginPath()
+  if (!ready) return <Loading />
+  if (!user) return <Navigate to={loginPath} replace />
   return <Outlet />
 }
