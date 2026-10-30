@@ -10,6 +10,7 @@ import com.sportsapp.match.MatchDtos.EventView;
 import com.sportsapp.match.MatchDtos.LineupView;
 import com.sportsapp.match.MatchDtos.MatchResponse;
 import com.sportsapp.match.MatchDtos.MatchSummary;
+import com.sportsapp.match.MatchDtos.RsvpView;
 import com.sportsapp.match.MatchDtos.SideView;
 import com.sportsapp.sport.Score;
 import com.sportsapp.sport.ScoreEvent;
@@ -104,12 +105,35 @@ public class MatchViews {
             rs.getObject("minute", Integer.class)))
         .list();
 
+    String viewer = viewerId == null ? null : viewerId.toString();
+    record Answer(RsvpView view, boolean mine) {}
+    List<Answer> answers = jdbc.sql("""
+            SELECT BIN_TO_UUID(r.player_id) player_id, p.name, r.side, r.going, COALESCE(p.user_id = UUID_TO_BIN(:u), FALSE) mine
+            FROM match_rsvp r JOIN player p ON p.id = r.player_id
+            WHERE r.match_id = UUID_TO_BIN(:id)
+            """)
+        .param("id", id).param("u", viewer)
+        .query((rs, i) -> new Answer(new RsvpView(uuid(rs, "player_id"), rs.getString("name"), Side.valueOf(rs.getString("side")),
+            rs.getBoolean("going")), rs.getBoolean("mine")))
+        .list();
+    List<RsvpView> rsvps = answers.stream().map(Answer::view)
+        .sorted(Comparator.comparing(RsvpView::side).thenComparing(RsvpView::name, Names.ORDER)).toList();
+    Boolean myRsvp = answers.stream().filter(Answer::mine).findFirst().map(a -> a.view().going()).orElse(null);
+    boolean canRsvp = viewerId != null && row.status() == MatchStatus.SCHEDULED && jdbc.sql("""
+            SELECT EXISTS (SELECT 1 FROM team_player tp JOIN player p ON p.id = tp.player_id
+                           WHERE tp.team_id IN (UUID_TO_BIN(:h), UUID_TO_BIN(:a)) AND p.user_id = UUID_TO_BIN(:u))
+            """)
+        .param("h", row.home().teamId() == null ? null : row.home().teamId().toString())
+        .param("a", row.away().teamId() == null ? null : row.away().teamId().toString())
+        .param("u", viewer).query(Boolean.class).single();
+
     Score score = SportRules.of(row.sport()).score(events.stream().map(e -> new ScoreEvent(e.type(), e.side())).toList());
     return new MatchResponse(matchId, row.version(), row.sport(), row.status(), row.kickoffAt(), row.venue(), row.visibility(),
         row.competitionId(), row.competitionName(), row.round(), row.home(), row.away(), score, row.penaltyWinner(), lineup, events,
         access.canAdmin(viewerId, ResourceType.MATCH, matchId), row.knockout(), mySide(matchId, viewerId),
         viewerId != null && row.competitionId() == null && row.home().teamId() == null
-            && row.visibility() == Visibility.PUBLIC && row.status() == MatchStatus.SCHEDULED, row.maxPerSide());
+            && row.visibility() == Visibility.PUBLIC && row.status() == MatchStatus.SCHEDULED, row.maxPerSide(),
+        rsvps, canRsvp, myRsvp);
   }
 
   /** The side the viewer's own player is on in this match, or null. */

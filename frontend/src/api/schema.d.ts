@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/matches/{id}/rsvp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["rsvp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/matches/{id}/lineup": {
         parameters: {
             query?: never;
@@ -671,15 +687,8 @@ export interface components {
         ImageResponse: {
             imageUrl?: string;
         };
-        LineupEntry: {
-            /** Format: uuid */
-            playerId: string;
-            /** @enum {string} */
-            side: "HOME" | "AWAY";
-            inGoal?: boolean;
-        };
-        SetLineupRequest: {
-            entries: components["schemas"]["LineupEntry"][];
+        RsvpRequest: {
+            going: boolean;
         };
         EventView: {
             /** Format: uuid */
@@ -738,6 +747,17 @@ export interface components {
             joinable?: boolean;
             /** Format: int32 */
             maxPerSide?: number;
+            rsvps?: components["schemas"]["RsvpView"][];
+            canRsvp?: boolean;
+            myRsvp?: boolean;
+        };
+        RsvpView: {
+            /** Format: uuid */
+            playerId?: string;
+            name?: string;
+            /** @enum {string} */
+            side?: "HOME" | "AWAY";
+            going?: boolean;
         };
         Score: {
             /** Format: int32 */
@@ -750,6 +770,16 @@ export interface components {
             teamId?: string;
             name?: string;
             imageUrl?: string;
+        };
+        LineupEntry: {
+            /** Format: uuid */
+            playerId: string;
+            /** @enum {string} */
+            side: "HOME" | "AWAY";
+            inGoal?: boolean;
+        };
+        SetLineupRequest: {
+            entries: components["schemas"]["LineupEntry"][];
         };
         RoundKickoffRequest: {
             /** Format: date-time */
@@ -1194,6 +1224,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ImageResponse"];
+                };
+            };
+        };
+    };
+    rsvp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RsvpRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchResponse"];
                 };
             };
         };

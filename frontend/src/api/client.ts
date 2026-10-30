@@ -20,7 +20,7 @@ export type SideView = WithNull<Schema<'SideView'>, 'teamId' | 'name' | 'imageUr
 export type MatchEvent = WithNull<Schema<'EventView'>, 'playerId' | 'playerName' | 'assistPlayerId' | 'assistPlayerName' | 'minute'>
 export type Match = WithNull<
   Omit<Schema<'MatchResponse'>, 'home' | 'away' | 'events'>,
-  'kickoffAt' | 'venue' | 'visibility' | 'competitionId' | 'competitionName' | 'round' | 'penaltyWinner' | 'mySide' | 'maxPerSide'
+  'kickoffAt' | 'venue' | 'visibility' | 'competitionId' | 'competitionName' | 'round' | 'penaltyWinner' | 'mySide' | 'maxPerSide' | 'myRsvp'
 > & { home: SideView; away: SideView; events: MatchEvent[] }
 export type MatchSummary = WithNull<
   Schema<'MatchSummary'>,

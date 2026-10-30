@@ -288,5 +288,12 @@
     "add": "Dodaj sliku",
     "change": "Promijeni sliku",
     "remove": "Ukloni"
+  },
+  "rsvp": {
+    "title": "Igraš li?",
+    "in": "Dolazim",
+    "out": "Ne dolazim",
+    "inList": "Dolaze ({{count}}): {{names}}",
+    "outList": "Ne dolaze ({{count}}): {{names}}"
   }
 }

@@ -288,5 +288,12 @@
     "add": "Add image",
     "change": "Change image",
     "remove": "Remove"
+  },
+  "rsvp": {
+    "title": "Are you playing?",
+    "in": "I'm in",
+    "out": "I'm out",
+    "inList": "In ({{count}}): {{names}}",
+    "outList": "Out ({{count}}): {{names}}"
   }
 }

@@ -15,6 +15,7 @@ import FinishDialog from './FinishDialog'
 import { formatKickoff } from '../../components/MatchList'
 import { hasStarted, teamsUndecided } from './matchLogic'
 import LineupEditor from './LineupEditor'
+import RsvpCard from './RsvpCard'
 import ScoreHeader from './ScoreHeader'
 
 export default function MatchPage() {
@@ -116,6 +117,11 @@ export default function MatchPage() {
           )}
           {teamsUndecided(m) && <Text c="dimmed">{t('match.waitingForTeams')}</Text>}
           <Stack gap="lg" style={{ order: 2 }}>
+            <RsvpCard
+              match={m}
+              disabled={busy}
+              onAnswer={(going) => run(() => call(api.PUT('/api/matches/{id}/rsvp', { ...path, body: { going } })))}
+            />
             {m.joinable &&
               (m.mySide ? (
                 <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => run(() => call(api.DELETE('/api/matches/{id}/join', path)))}>

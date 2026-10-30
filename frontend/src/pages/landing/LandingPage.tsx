@@ -29,6 +29,9 @@ const SAMPLE: Match = {
   mySide: null,
   joinable: false,
   maxPerSide: null,
+  rsvps: [],
+  canRsvp: false,
+  myRsvp: null,
   events: [
     { id: 'e1', type: 'GOAL', side: 'HOME', playerId: null, playerName: 'Marko Ilić', assistPlayerId: null, assistPlayerName: 'Luka Perović', minute: 12 },
     { id: 'e2', type: 'YELLOW', side: 'AWAY', playerId: null, playerName: 'Stefan Radović', assistPlayerId: null, assistPlayerName: null, minute: 27 },

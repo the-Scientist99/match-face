@@ -20,7 +20,11 @@ function useRoster(teamId: string | null) {
 /** Picks each side's players (a player can't be on both) and who is in goal; Save replaces the lineup. */
 export default function LineupEditor({ match, onSave, disabled }: { match: Match; onSave: (entries: Entry[]) => void; disabled: boolean }) {
   const { t } = useTranslation()
-  const ids = (side: Entry['side']) => match.lineup.filter((l) => l.side === side).map((l) => l.playerId)
+  // an empty lineup starts from the roster players who said they're in
+  const ids = (side: Entry['side']) =>
+    match.lineup.length
+      ? match.lineup.filter((l) => l.side === side).map((l) => l.playerId)
+      : match.rsvps.filter((r) => r.side === side && r.going).map((r) => r.playerId)
   const [home, setHome] = useState(() => ids('HOME'))
   const [away, setAway] = useState(() => ids('AWAY'))
   const [keepers, setKeepers] = useState(() => new Set(match.lineup.filter((l) => l.inGoal).map((l) => l.playerId)))
@@ -31,10 +35,12 @@ export default function LineupEditor({ match, onSave, disabled }: { match: Match
   const first = (side: Entry['side'], players: { id: string; name: string }[]) => [
     ...players,
     ...match.lineup.filter((l) => l.side === side).map((l) => ({ id: l.playerId, name: l.name })),
+    ...match.rsvps.filter((r) => r.side === side && r.going).map((r) => ({ id: r.playerId, name: r.name })),
   ]
   const names = new Map([
     ...(mine.data ?? []).map((p) => [p.id, p.name] as const),
     ...[...homeRoster, ...awayRoster].map((p) => [p.id, p.name] as const),
+    ...match.rsvps.map((r) => [r.playerId, r.name] as const),
     ...match.lineup.map((l) => [l.playerId, l.name] as const),
   ])
 

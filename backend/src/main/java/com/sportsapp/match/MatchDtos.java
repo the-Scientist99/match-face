@@ -57,6 +57,10 @@ public final class MatchDtos {
 
   public record JoinRequest(@NotNull Side side) {}
 
+  public record RsvpRequest(@NotNull Boolean going) {}
+
+  public record RsvpView(UUID playerId, String name, Side side, boolean going) {}
+
   /** {@code penaltyWinner} decides a level cup match (M6). */
   public record FinishRequest(@NotNull Long version, Side penaltyWinner) {}
 
@@ -72,12 +76,14 @@ public final class MatchDtos {
    * {@code lineup}: HOME first, then by name. {@code events}: by minute (unknown last), then entry order.
    * {@code knockout}: a cup match, which can't end level (penalties) and can't be cancelled.
    * {@code mySide}: where the viewer's own player is in the lineup. {@code joinable}: a scheduled public pickup.
-   * {@code maxPerSide}: a pickup's player limit per side, null for none.
+   * {@code maxPerSide}: a pickup's player limit per side, null for none. {@code rsvps}: roster players' answers,
+   * HOME first, then by name. {@code canRsvp}: the viewer is on a roster of this scheduled team match;
+   * {@code myRsvp} is their answer (null: none yet).
    */
   public record MatchResponse(UUID id, long version, Sport sport, MatchStatus status, Instant kickoffAt, String venue,
       Visibility visibility, UUID competitionId, String competitionName, Integer round, SideView home, SideView away,
       Score score, Side penaltyWinner, List<LineupView> lineup, List<EventView> events, boolean canAdmin, boolean knockout,
-      Side mySide, boolean joinable, Integer maxPerSide) {}
+      Side mySide, boolean joinable, Integer maxPerSide, List<RsvpView> rsvps, boolean canRsvp, Boolean myRsvp) {}
 
   /** {@code spotsLeft}: free places on both sides of a capped pickup, null if it has no limit. */
   public record MatchSummary(UUID id, MatchStatus status, Instant kickoffAt, String homeName, String awayName, Score score,

@@ -19,7 +19,8 @@ public final class VisibilitySql {
   /**
    * Selects {@code sport_match.id}s visible to {@code :viewerId} (bound as a UUID string, or null for an
    * anonymous viewer: {@code UUID_TO_BIN(NULL)} is NULL, so only public rows match). One-off matches by
-   * their own visibility, grants and lineup; competition matches by their competition.
+   * their own visibility, grants, lineup and, for team matches, the two rosters; competition matches by
+   * their competition.
    */
   public static final String VISIBLE_MATCH_IDS = """
       SELECT m.id FROM sport_match m
@@ -27,7 +28,9 @@ public final class VisibilitySql {
         m.visibility = 'PUBLIC'
         OR EXISTS (SELECT 1 FROM admin_grant g WHERE g.resource_type = 'MATCH' AND g.resource_id = m.id AND g.user_id = UUID_TO_BIN(:viewerId))
         OR EXISTS (SELECT 1 FROM match_lineup l JOIN player p ON p.id = l.player_id
-                   WHERE l.match_id = m.id AND p.user_id = UUID_TO_BIN(:viewerId)))
+                   WHERE l.match_id = m.id AND p.user_id = UUID_TO_BIN(:viewerId))
+        OR EXISTS (SELECT 1 FROM team_player tp JOIN player p ON p.id = tp.player_id
+                   WHERE tp.team_id IN (m.home_team_id, m.away_team_id) AND p.user_id = UUID_TO_BIN(:viewerId)))
       UNION
       SELECT m.id FROM sport_match m JOIN stage s ON s.id = m.stage_id
       WHERE s.competition_id IN (""" + VISIBLE_COMPETITION_IDS + ")";

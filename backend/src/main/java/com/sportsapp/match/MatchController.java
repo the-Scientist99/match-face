@@ -10,6 +10,7 @@ import com.sportsapp.match.MatchDtos.JoinRequest;
 import com.sportsapp.match.MatchDtos.MatchResponse;
 import com.sportsapp.match.MatchDtos.MatchSummary;
 import com.sportsapp.match.MatchDtos.PatchMatchRequest;
+import com.sportsapp.match.MatchDtos.RsvpRequest;
 import com.sportsapp.match.MatchDtos.SetLineupRequest;
 import com.sportsapp.match.MatchDtos.VersionRequest;
 import jakarta.validation.Valid;
@@ -65,6 +66,13 @@ public class MatchController {
   MatchResponse join(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody JoinRequest req) {
     UUID me = Auth.userId(jwt);
     service.join(me, id, req.side());
+    return views.view(id, me);
+  }
+
+  @PutMapping("/{id}/rsvp")
+  MatchResponse rsvp(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody RsvpRequest req) {
+    UUID me = Auth.userId(jwt);
+    service.rsvp(me, id, req.going());
     return views.view(id, me);
   }
 

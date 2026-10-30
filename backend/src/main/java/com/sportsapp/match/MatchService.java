@@ -35,6 +35,7 @@ public class MatchService {
   private final MatchRepository matches;
   private final MatchLineupRepository lineups;
   private final MatchEventRepository events;
+  private final MatchRsvpRepository rsvps;
   private final AccessService access;
   private final PlayerService players;
   private final TeamService teams;
@@ -42,11 +43,13 @@ public class MatchService {
   private final JdbcClient jdbc;
   private final Clock clock;
 
-  public MatchService(MatchRepository matches, MatchLineupRepository lineups, MatchEventRepository events, AccessService access,
+  public MatchService(MatchRepository matches, MatchLineupRepository lineups, MatchEventRepository events, MatchRsvpRepository rsvps,
+      AccessService access,
       PlayerService players, TeamService teams, MatchViews views, JdbcClient jdbc, Clock clock) {
     this.matches = matches;
     this.lineups = lineups;
     this.events = events;
+    this.rsvps = rsvps;
     this.access = access;
     this.players = players;
     this.teams = teams;
@@ -320,6 +323,23 @@ public class MatchService {
     matches.bumpVersion(matchId);
   }
 
+  /**
+   * "I'm in / I'm out" for a scheduled team match, from a player on either team's roster (home if on both).
+   * It doesn't change the match itself, so its version stays.
+   */
+  @Transactional
+  public void rsvp(UUID userId, UUID matchId, boolean going) {
+    Match m = lockAsReader(userId, matchId);
+    requireScheduled(m);
+    UUID player = players.ownPlayer(userId).getId();
+    Side side = m.getHomeTeamId() != null && teams.rosterIds(m.getHomeTeamId()).contains(player) ? Side.HOME
+        : m.getAwayTeamId() != null && teams.rosterIds(m.getAwayTeamId()).contains(player) ? Side.AWAY : null;
+    if (side == null) throw ApiException.forbidden();
+    MatchRsvp r = rsvps.findByMatchIdAndPlayerId(matchId, player).orElseGet(() -> new MatchRsvp(matchId, player));
+    r.answer(side, going);
+    rsvps.save(r);
+  }
+
   /** Takes the user's own player out of the lineup, unless an event names them. */
   @Transactional
   public void leave(UUID userId, UUID matchId) {
@@ -361,8 +381,8 @@ public class MatchService {
   }
 
   /**
-   * Matches I hold a grant for or play in, plus competition matches of competitions I admin or of teams I
-   * play for: unscheduled first, then newest kickoff, then newest created.
+   * Matches I hold a grant for or play in, competition matches of competitions I admin, and team matches of
+   * teams I play for: unscheduled first, then newest kickoff, then newest created.
    */
   @Transactional(readOnly = true)
   public List<MatchSummary> mine(UUID userId) {
@@ -374,8 +394,8 @@ public class MatchService {
                           WHERE l.match_id = m.id AND p.user_id = UUID_TO_BIN(:u))
                OR EXISTS (SELECT 1 FROM stage s JOIN admin_grant g ON g.resource_type = 'COMPETITION' AND g.resource_id = s.competition_id
                           WHERE s.id = m.stage_id AND g.user_id = UUID_TO_BIN(:u))
-               OR (m.stage_id IS NOT NULL AND EXISTS (SELECT 1 FROM team_player tp JOIN player p ON p.id = tp.player_id
-                          WHERE tp.team_id IN (m.home_team_id, m.away_team_id) AND p.user_id = UUID_TO_BIN(:u)))
+               OR EXISTS (SELECT 1 FROM team_player tp JOIN player p ON p.id = tp.player_id
+                          WHERE tp.team_id IN (m.home_team_id, m.away_team_id) AND p.user_id = UUID_TO_BIN(:u))
             ORDER BY m.kickoff_at IS NULL DESC, m.kickoff_at DESC, m.created_at DESC
             """)
         .param("u", userId.toString())
