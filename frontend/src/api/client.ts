@@ -37,7 +37,7 @@ export type TeamRef = Schema<'TeamRef'>
 export type BracketMatch = WithNull<Omit<Schema<'BracketMatch'>, 'match'>, 'penaltyWinner'> & { match: MatchSummary }
 export type Bracket = { rounds: number; matches: BracketMatch[]; winner: TeamRef | null }
 export type PlayerMatchRow = Omit<Schema<'PlayerMatchRow'>, 'match'> & { match: MatchSummary }
-export type PlayerProfile = WithNull<Omit<Schema<'PlayerProfileResponse'>, 'matches'>, 'imageUrl'> & { matches: PlayerMatchRow[] }
+export type PlayerProfile = WithNull<Omit<Schema<'PlayerProfileResponse'>, 'matches' | 'upcoming'>, 'imageUrl'> & { matches: PlayerMatchRow[]; upcoming: PlayerMatchRow[] }
 
 /** Unwraps an openapi-fetch result: the data, or the error body thrown (for errors.ts to read). */
 export async function call<T>(result: Promise<{ data?: T; error?: unknown }>): Promise<Sent<T>> {

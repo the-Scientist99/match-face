@@ -59,6 +59,6 @@ public class PlayerController {
     Player p = players.getRequired(id);
     boolean canInvite = viewer != null && p.getUserId() == null && viewer.equals(p.getCreatedByUserId());
     return new PlayerProfileResponse(p.getId(), p.getName(), p.getUserId() != null, players.canEdit(viewer, p), canInvite,
-        stats.totals(id, viewer), stats.matches(id, viewer), ImageStore.url(p.getImage()));
+        stats.totals(id, viewer), stats.matches(id, viewer), ImageStore.url(p.getImage()), stats.upcoming(id, viewer), stats.teams(id, viewer));
   }
 }

@@ -1,6 +1,9 @@
 package com.sportsapp.stats;
 
+import com.sportsapp.access.AccessService;
+import com.sportsapp.access.ResourceType;
 import com.sportsapp.access.VisibilitySql;
+import com.sportsapp.competition.TeamRef;
 import com.sportsapp.match.MatchDtos.MatchSummary;
 import com.sportsapp.match.MatchViews;
 import com.sportsapp.match.Side;
@@ -33,10 +36,12 @@ public class PlayerStatsQuery {
 
   private final JdbcClient jdbc;
   private final MatchViews matchViews;
+  private final AccessService access;
 
-  public PlayerStatsQuery(JdbcClient jdbc, MatchViews matchViews) {
+  public PlayerStatsQuery(JdbcClient jdbc, MatchViews matchViews, AccessService access) {
     this.jdbc = jdbc;
     this.matchViews = matchViews;
+    this.access = access;
   }
 
   @Transactional(readOnly = true)
@@ -93,5 +98,41 @@ public class PlayerStatsQuery {
     Map<UUID, MatchSummary> summaries = matchViews.summaries(rows.stream().map(Row::matchId).toList()).stream()
         .collect(Collectors.toMap(MatchSummary::id, Function.identity()));
     return rows.stream().map(r -> new PlayerMatchRow(summaries.get(r.matchId()), r.side(), r.goals(), r.assists())).toList();
+  }
+
+  /** The next three matches the viewer can see where the player is in the lineup or on a playing team's roster, soonest first. */
+  @Transactional(readOnly = true)
+  public List<PlayerMatchRow> upcoming(UUID playerId, @Nullable UUID viewerId) {
+    List<Row> rows = jdbc.sql("""
+            SELECT BIN_TO_UUID(m.id) match_id, COALESCE(l.side, CASE WHEN EXISTS (
+                SELECT 1 FROM team_player tp WHERE tp.team_id = m.home_team_id AND tp.player_id = UUID_TO_BIN(:playerId))
+              THEN 'HOME' ELSE 'AWAY' END) side
+            FROM sport_match m
+            LEFT JOIN match_lineup l ON l.match_id = m.id AND l.player_id = UUID_TO_BIN(:playerId)
+            WHERE m.status = 'SCHEDULED' AND m.kickoff_at > UTC_TIMESTAMP(6)
+              AND (l.player_id IS NOT NULL OR EXISTS (
+                SELECT 1 FROM team_player tp WHERE tp.team_id IN (m.home_team_id, m.away_team_id) AND tp.player_id = UUID_TO_BIN(:playerId)))
+              %s
+            ORDER BY m.kickoff_at LIMIT 3
+            """.formatted(VISIBLE))
+        .param("playerId", playerId.toString())
+        .param("viewerId", viewerId == null ? null : viewerId.toString())
+        .query((rs, i) -> new Row(UUID.fromString(rs.getString("match_id")), Side.valueOf(rs.getString("side")), 0, 0))
+        .list();
+    Map<UUID, MatchSummary> summaries = matchViews.summaries(rows.stream().map(Row::matchId).toList()).stream()
+        .collect(Collectors.toMap(MatchSummary::id, Function.identity()));
+    return rows.stream().map(r -> new PlayerMatchRow(summaries.get(r.matchId()), r.side(), 0, 0)).toList();
+  }
+
+  /** The teams with this player on the roster, by name; only those the viewer may read. */
+  @Transactional(readOnly = true)
+  public List<TeamRef> teams(UUID playerId, @Nullable UUID viewerId) {
+    return jdbc.sql("""
+            SELECT BIN_TO_UUID(t.id) id, t.name FROM team t JOIN team_player tp ON tp.team_id = t.id
+            WHERE tp.player_id = UUID_TO_BIN(:playerId) ORDER BY t.name
+            """)
+        .param("playerId", playerId.toString())
+        .query((rs, i) -> new TeamRef(UUID.fromString(rs.getString("id")), rs.getString("name")))
+        .list().stream().filter(t -> access.canRead(viewerId, ResourceType.TEAM, t.id())).toList();
   }
 }

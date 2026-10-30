@@ -176,4 +176,28 @@ class PlayerStatsTest extends IntegrationTest {
     profile(ana.playerId(), ana).andExpect(jsonPath("$.canInvite").value(false)).andExpect(jsonPath("$.canEdit").value(true));
     profile(a, null).andExpect(jsonPath("$.canInvite").value(false));
   }
+
+  @Test
+  void upcomingShowsLineupMatchesTheViewerCanSee() throws Exception {
+    UUID open = createUpcomingPickup(ana, PUBLIC);
+    setLineup(ana, open, a, Side.AWAY);
+    UUID hidden = createUpcomingPickup(ana, PRIVATE);
+    setLineup(ana, hidden, a, Side.HOME);
+    UUID done = createPickup(ana, PUBLIC);
+    setLineup(ana, done, a, Side.HOME);
+    finish(ana, done);
+    profile(a, ana).andExpect(jsonPath("$.upcoming.length()").value(2));
+    profile(a, null).andExpect(jsonPath("$.upcoming.length()").value(1))
+        .andExpect(jsonPath("$.upcoming[0].match.id").value(open.toString()))
+        .andExpect(jsonPath("$.upcoming[0].side").value("AWAY"));
+  }
+
+  @Test
+  void teamsAreOnlyThoseTheViewerMayRead() throws Exception {
+    UUID team = createTeam(ana, "Blue Harbour", a);
+    profile(a, ana).andExpect(jsonPath("$.teams[0].id").value(team.toString()))
+        .andExpect(jsonPath("$.teams[0].name").value("Blue Harbour"));
+    profile(a, register("Ivan")).andExpect(jsonPath("$.teams.length()").value(0));
+    profile(a, null).andExpect(jsonPath("$.teams.length()").value(0));
+  }
 }

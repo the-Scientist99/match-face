@@ -1072,6 +1072,8 @@ export interface components {
             totals?: components["schemas"]["PlayerTotals"];
             matches?: components["schemas"]["PlayerMatchRow"][];
             imageUrl?: string;
+            upcoming?: components["schemas"]["PlayerMatchRow"][];
+            teams?: components["schemas"]["TeamRef"][];
         };
         PlayerTotals: {
             /** Format: int32 */

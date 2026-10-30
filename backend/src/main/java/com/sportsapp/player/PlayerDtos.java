@@ -2,6 +2,7 @@ package com.sportsapp.player;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import com.sportsapp.competition.TeamRef;
 import com.sportsapp.stats.StatsDtos.PlayerMatchRow;
 import com.sportsapp.stats.StatsDtos.PlayerTotals;
 import java.time.Instant;
@@ -31,9 +32,10 @@ public final class PlayerDtos {
   /**
    * {@code totals} and {@code matches} count only finished matches the viewer can see.
    * {@code canInvite}: the viewer created this guest and it is unclaimed.
+   * {@code upcoming}: the next matches, {@code teams}: the rosters the player is on; both only what the viewer can see.
    */
   public record PlayerProfileResponse(UUID id, String name, boolean claimed, boolean canEdit, boolean canInvite,
-      PlayerTotals totals, List<PlayerMatchRow> matches, String imageUrl) {}
+      PlayerTotals totals, List<PlayerMatchRow> matches, String imageUrl, List<PlayerMatchRow> upcoming, List<TeamRef> teams) {}
 
   public record ClaimInviteResponse(String token, Instant expiresAt) {}
 
