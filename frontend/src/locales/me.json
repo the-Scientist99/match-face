@@ -163,7 +163,9 @@
     "waitingForTeams": "Čeka se da prethodno kolo odluči oba tima.",
     "join": "Pridruži se: {{side}}",
     "leave": "Napusti utakmicu",
-    "startsAt": "Počinje {{time}}. Golovi i rezultat se unose od tada."
+    "startsAt": "Počinje {{time}}. Golovi i rezultat se unose od tada.",
+    "cancelConfirm": "Otkazati utakmicu? Svi u njoj će je vidjeti kao otkazanu. Kasnije je možete ponovo otvoriti.",
+    "keep": "Zadrži"
   },
   "event": {
     "type": {

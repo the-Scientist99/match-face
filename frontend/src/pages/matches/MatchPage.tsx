@@ -1,4 +1,4 @@
-import { Alert, Anchor, Badge, Button, Card, Group, Loader, Stack, Text, VisuallyHidden } from '@mantine/core'
+import { Alert, Anchor, Badge, Button, Card, Group, Loader, Modal, Stack, Text, VisuallyHidden } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -47,6 +47,7 @@ export default function MatchPage() {
   const busy = action.isPending
   const [failedEvent, setFailedEvent] = useState<NewEvent | null>(null)
   const [finishing, setFinishing] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
   const [lineupOpen, setLineupOpen] = useState(false)
 
   if (match.isPending) return <Loader />
@@ -162,10 +163,29 @@ export default function MatchPage() {
                       </Button>
                     )}
                     {!m.knockout && (
-                      <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => run(() => call(api.POST('/api/matches/{id}/cancel', { ...path, body: version })))}>
+                      <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => setCancelling(true)}>
                         {t('match.cancel')}
                       </Button>
                     )}
+                    <Modal opened={cancelling} onClose={() => setCancelling(false)} title={t('match.cancel')} centered>
+                      <Stack>
+                        <Text>{t('match.cancelConfirm')}</Text>
+                        <Group justify="flex-end">
+                          <Button variant="default" onClick={() => setCancelling(false)}>
+                            {t('match.keep')}
+                          </Button>
+                          <Button
+                            color="red"
+                            onClick={() => {
+                              setCancelling(false)
+                              run(() => call(api.POST('/api/matches/{id}/cancel', { ...path, body: version })))
+                            }}
+                          >
+                            {t('match.cancel')}
+                          </Button>
+                        </Group>
+                      </Stack>
+                    </Modal>
                     <FinishDialog
                       match={m}
                       opened={finishing}

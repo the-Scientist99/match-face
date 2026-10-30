@@ -163,7 +163,9 @@
     "waitingForTeams": "Waiting for the earlier round to decide both teams.",
     "join": "Join {{side}}",
     "leave": "Leave match",
-    "startsAt": "Kicks off {{time}}. Goals and the result can be entered from then."
+    "startsAt": "Kicks off {{time}}. Goals and the result can be entered from then.",
+    "cancelConfirm": "Cancel this match? Everyone in it will see it as cancelled. You can reopen it later.",
+    "keep": "Keep it"
   },
   "event": {
     "type": {
