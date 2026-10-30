@@ -4,6 +4,7 @@ import com.sportsapp.access.AccessService;
 import com.sportsapp.access.ResourceType;
 import com.sportsapp.common.ApiException;
 import com.sportsapp.common.Names;
+import com.sportsapp.common.Paging;
 import com.sportsapp.common.Visibility;
 import com.sportsapp.competition.CompetitionDtos.AddTeamRequest;
 import com.sportsapp.competition.CompetitionDtos.ApproveEntryRequest;
@@ -49,8 +50,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class CompetitionService {
-
-  private static final int OPEN_PAGE_SIZE = 9;
 
   private final CompetitionRepository competitions;
   private final CompetitionTeamRepository competitionTeams;
@@ -312,8 +311,7 @@ public class CompetitionService {
    */
   @Transactional(readOnly = true)
   public OpenCompetitions open(UUID userId, String q, int page) {
-    if (page < 0) throw ApiException.badRequest("INVALID_FIELD");
-    String like = "%" + q.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+    String like = Paging.contains(q);
     String open = """
         FROM competition c
         WHERE c.visibility = 'PUBLIC' AND c.entries_open AND c.name LIKE :q
@@ -325,15 +323,14 @@ public class CompetitionService {
                           WHERE ct.competition_id = c.id AND g.user_id = UUID_TO_BIN(:u))
         """; // ponytail: LIKE scans every open competition, a FULLTEXT index when there are many thousands
     int total = jdbc.sql("SELECT COUNT(*) " + open).param("q", like).param("u", userId.toString()).query(Integer.class).single();
-    int totalPages = total / OPEN_PAGE_SIZE + (total % OPEN_PAGE_SIZE > 0 ? 1 : 0);
-    int current = Math.min(page, Math.max(totalPages - 1, 0));
+    Paging paging = Paging.of(total, page);
     List<CompetitionSummary> items = jdbc.sql("""
             SELECT BIN_TO_UUID(c.id) id, c.name, c.type, c.status, c.image
             """ + open + "ORDER BY c.created_at DESC, c.id LIMIT :size OFFSET :offset")
         .param("q", like).param("u", userId.toString())
-        .param("size", OPEN_PAGE_SIZE).param("offset", current * OPEN_PAGE_SIZE)
+        .param("size", paging.size()).param("offset", paging.offset())
         .query(CompetitionService::summary).list();
-    return new OpenCompetitions(items, current, totalPages);
+    return new OpenCompetitions(items, paging.page(), paging.totalPages());
   }
 
   private static CompetitionSummary summary(ResultSet rs, int rowNum) throws SQLException {

@@ -1,10 +1,10 @@
-import { Button, Card, Flex, Group, Loader, Pagination, SimpleGrid, Stack, Text, TextInput, ThemeIcon, Title } from '@mantine/core'
+import { Button, Card, Flex, Group, Loader, Pagination, SimpleGrid, Stack, Tabs, Text, TextInput, ThemeIcon, Title } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router'
-import { api, call, type CompetitionSummary, type MatchSummary, type OpenCompetitions } from '../../api/client'
+import { Link, useSearchParams } from 'react-router'
+import { api, call, type CompetitionSummary, type MatchSummary, type OpenCompetitions, type OpenMatches } from '../../api/client'
 import { ListIcon, PlusIcon, TrophyIcon } from '../../components/icons'
 import Crest from '../../components/Crest'
 import MatchList from '../../components/MatchList'
@@ -46,25 +46,31 @@ function CompetitionCard({ competition: c }: { competition: CompetitionSummary }
   )
 }
 
+type Paged<T> = { items: T[]; page: number; totalPages: number }
+
+type OpenListProps<T> = {
+  label: string
+  searchLabel: string
+  noneFound: string
+  queryKey: string[]
+  fetch: (q: string, page: number) => Promise<Paged<T>>
+  children: (items: T[]) => ReactNode
+}
+
 /** Hidden until there's something to find; once searching it stays, so the box doesn't vanish on no matches. */
-function OpenCompetitionsSection() {
+function OpenList<T>({ label, searchLabel, noneFound, queryKey, fetch, children }: OpenListProps<T>) {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [q] = useDebouncedValue(search.trim(), 300)
   const [page, setPage] = useState(0)
-  const open = useQuery<OpenCompetitions>({
-    queryKey: ['competitions', 'open', q, page],
-    queryFn: () => call(api.GET('/api/competitions/open', { params: { query: { q, page } } })),
-    placeholderData: keepPreviousData,
-  })
-  const data = open.data
+  const { data } = useQuery({ queryKey: [...queryKey, q, page], queryFn: () => fetch(q, page), placeholderData: keepPreviousData })
   if (!data || (!data.items.length && !search)) return null
   return (
-    <Section label={t('home.openCompetitions')}>
+    <Section label={label}>
       <TextInput
         type="search"
-        aria-label={t('home.searchCompetitions')}
-        placeholder={t('home.searchCompetitions')}
+        aria-label={searchLabel}
+        placeholder={searchLabel}
         value={search}
         maxLength={80}
         onChange={(e) => {
@@ -72,15 +78,7 @@ function OpenCompetitionsSection() {
           setPage(0)
         }}
       />
-      {data.items.length ? (
-        <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} spacing="xs">
-          {data.items.map((c) => (
-            <CompetitionCard key={c.id} competition={c} />
-          ))}
-        </SimpleGrid>
-      ) : (
-        <Text c="dimmed">{t('home.noCompetitionsFound')}</Text>
-      )}
+      {data.items.length ? children(data.items) : <Text c="dimmed">{noneFound}</Text>}
       {data.totalPages > 1 && (
         <Pagination
           total={data.totalPages}
@@ -93,44 +91,12 @@ function OpenCompetitionsSection() {
   )
 }
 
-export default function HomePage() {
+function MatchesTab() {
   const { t } = useTranslation()
   const mine = useQuery<MatchSummary[]>({ queryKey: ['matches', 'mine'], queryFn: () => call(api.GET('/api/matches/mine')) })
-  const competitions = useQuery<CompetitionSummary[]>({
-    queryKey: ['competitions', 'mine'],
-    queryFn: () => call(api.GET('/api/competitions/mine')),
-  })
-  const open = useQuery<MatchSummary[]>({ queryKey: ['matches', 'open'], queryFn: () => call(api.GET('/api/matches/open')) })
   const { upcoming, recent } = splitMatches(mine.data ?? [])
   return (
     <Stack gap={28}>
-      {/* wide screens: the actions sit beside the title instead of under it */}
-      <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ md: 'center' }} gap="md">
-        <Title order={2}>{t('home.title')}</Title>
-        <SimpleGrid cols={2} spacing="xs" w={{ md: 400 }}>
-          <Button component={Link} to="/matches/new" size="md" px="sm" leftSection={<PlusIcon size={18} />}>
-            {t('match.new')}
-          </Button>
-          <Button component={Link} to="/competitions/new" size="md" px="sm" variant="light">
-            {t('competition.new')}
-          </Button>
-        </SimpleGrid>
-      </Flex>
-      {!!competitions.data?.length && (
-        <Section label={t('home.competitions')}>
-          <div className="h-scroll">
-            {competitions.data.map((c) => (
-              <CompetitionCard key={c.id} competition={c} />
-            ))}
-          </div>
-        </Section>
-      )}
-      <OpenCompetitionsSection />
-      {!!open.data?.length && (
-        <Section label={t('home.open')}>
-          <MatchList matches={open.data} />
-        </Section>
-      )}
       {mine.isPending ? (
         <Loader />
       ) : (
@@ -143,6 +109,91 @@ export default function HomePage() {
           </Section>
         </div>
       )}
+      <OpenList<MatchSummary>
+        label={t('home.open')}
+        searchLabel={t('home.searchMatches')}
+        noneFound={t('home.noMatchesFound')}
+        queryKey={['matches', 'open']}
+        fetch={(q, page) => call(api.GET('/api/matches/open', { params: { query: { q, page } } })) as Promise<OpenMatches>}
+      >
+        {(matches) => <MatchList matches={matches} />}
+      </OpenList>
+    </Stack>
+  )
+}
+
+function CompetitionsTab() {
+  const { t } = useTranslation()
+  const mine = useQuery<CompetitionSummary[]>({
+    queryKey: ['competitions', 'mine'],
+    queryFn: () => call(api.GET('/api/competitions/mine')),
+  })
+  return (
+    <Stack gap={28}>
+      {mine.isPending ? (
+        <Loader />
+      ) : (
+        <Section label={t('home.competitions')}>
+          {mine.data?.length ? (
+            <div className="h-scroll">
+              {mine.data.map((c) => (
+                <CompetitionCard key={c.id} competition={c} />
+              ))}
+            </div>
+          ) : (
+            <Text c="dimmed">{t('home.noCompetitions')}</Text>
+          )}
+        </Section>
+      )}
+      <OpenList<CompetitionSummary>
+        label={t('home.openCompetitions')}
+        searchLabel={t('home.searchCompetitions')}
+        noneFound={t('home.noCompetitionsFound')}
+        queryKey={['competitions', 'open']}
+        fetch={(q, page) => call(api.GET('/api/competitions/open', { params: { query: { q, page } } })) as Promise<OpenCompetitions>}
+      >
+        {(competitions) => (
+          <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} spacing="xs">
+            {competitions.map((c) => (
+              <CompetitionCard key={c.id} competition={c} />
+            ))}
+          </SimpleGrid>
+        )}
+      </OpenList>
+    </Stack>
+  )
+}
+
+export default function HomePage() {
+  const { t } = useTranslation()
+  const [params, setParams] = useSearchParams()
+  const tab = params.get('tab') === 'competitions' ? 'competitions' : 'matches'
+  return (
+    <Stack gap={28}>
+      {/* wide screens: the actions sit beside the title instead of under it */}
+      <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ md: 'center' }} gap="md">
+        <Title order={2}>{t('nav.home')}</Title>
+        <SimpleGrid cols={2} spacing="xs" w={{ md: 400 }}>
+          <Button component={Link} to="/matches/new" size="md" px="sm" leftSection={<PlusIcon size={18} />}>
+            {t('match.new')}
+          </Button>
+          <Button component={Link} to="/competitions/new" size="md" px="sm" variant="light">
+            {t('competition.new')}
+          </Button>
+        </SimpleGrid>
+      </Flex>
+      <Tabs className="track-tabs" value={tab} onChange={(v) => setParams(v === 'competitions' ? { tab: v } : {}, { replace: true })}>
+        <Tabs.List>
+          <Tabs.Tab value="matches">{t('nav.matches')}</Tabs.Tab>
+          <Tabs.Tab value="competitions">{t('home.tabCompetitions')}</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="matches" pt="lg">
+          <MatchesTab />
+        </Tabs.Panel>
+        <Tabs.Panel value="competitions" pt="lg">
+          <CompetitionsTab />
+        </Tabs.Panel>
+      </Tabs>
     </Stack>
   )
 }

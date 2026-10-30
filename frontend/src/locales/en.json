@@ -30,7 +30,6 @@
     "dark": "Dark"
   },
   "home": {
-    "title": "My matches",
     "upcoming": "Upcoming",
     "recent": "Recent",
     "noUpcoming": "Nothing scheduled.",
@@ -39,6 +38,10 @@
     "openCompetitions": "Competitions open to teams",
     "searchCompetitions": "Search competitions",
     "noCompetitionsFound": "No competitions match that search.",
+    "tabCompetitions": "Competitions",
+    "noCompetitions": "You're not in any competitions yet.",
+    "searchMatches": "Search by team name or venue",
+    "noMatchesFound": "No matches found for that search.",
     "pagePrevious": "Previous page",
     "pageNext": "Next page",
     "open": "Open matches"

@@ -9,6 +9,7 @@ import com.sportsapp.match.MatchDtos.FinishRequest;
 import com.sportsapp.match.MatchDtos.JoinRequest;
 import com.sportsapp.match.MatchDtos.MatchResponse;
 import com.sportsapp.match.MatchDtos.MatchSummary;
+import com.sportsapp.match.MatchDtos.OpenMatches;
 import com.sportsapp.match.MatchDtos.PatchMatchRequest;
 import com.sportsapp.match.MatchDtos.RsvpRequest;
 import com.sportsapp.match.MatchDtos.SetLineupRequest;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -58,8 +60,9 @@ public class MatchController {
   }
 
   @GetMapping("/open")
-  List<MatchSummary> open(@AuthenticationPrincipal Jwt jwt) {
-    return service.open(Auth.userId(jwt));
+  OpenMatches open(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "") String q,
+      @RequestParam(defaultValue = "0") int page) {
+    return service.open(Auth.userId(jwt), q, page);
   }
 
   @PostMapping("/{id}/join")

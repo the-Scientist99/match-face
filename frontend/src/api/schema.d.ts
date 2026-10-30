@@ -1100,6 +1100,13 @@ export interface components {
             /** Format: int32 */
             goals?: number;
         };
+        OpenMatches: {
+            items?: components["schemas"]["MatchSummary"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
         CardRow: {
             /** Format: uuid */
             playerId?: string;
@@ -2307,7 +2314,10 @@ export interface operations {
     };
     open: {
         parameters: {
-            query?: never;
+            query?: {
+                q?: string;
+                page?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2320,7 +2330,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["MatchSummary"][];
+                    "*/*": components["schemas"]["OpenMatches"];
                 };
             };
         };

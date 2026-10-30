@@ -3,12 +3,14 @@ package com.sportsapp.match;
 import com.sportsapp.access.AccessService;
 import com.sportsapp.access.ResourceType;
 import com.sportsapp.common.ApiException;
+import com.sportsapp.common.Paging;
 import com.sportsapp.common.Visibility;
 import com.sportsapp.match.MatchDtos.CreateMatchRequest;
 import com.sportsapp.match.MatchDtos.EventRequest;
 import com.sportsapp.match.MatchDtos.FinishRequest;
 import com.sportsapp.match.MatchDtos.LineupEntry;
 import com.sportsapp.match.MatchDtos.MatchSummary;
+import com.sportsapp.match.MatchDtos.OpenMatches;
 import com.sportsapp.match.MatchDtos.PatchMatchRequest;
 import com.sportsapp.player.PlayerService;
 import com.sportsapp.team.TeamService;
@@ -365,26 +367,33 @@ public class MatchService {
     matches.bumpVersion(matchId);
   }
 
-  /** Upcoming public pickups the user isn't part of yet and with room on a side, soonest first. */
+  /**
+   * Upcoming public pickups the user isn't part of yet and with room on a side, soonest first; {@code q} matches
+   * part of a side's name or the venue, ignoring case and accents (the columns' collation).
+   */
   @Transactional(readOnly = true)
-  public List<MatchSummary> open(UUID userId) {
-    List<UUID> ids = jdbc.sql("""
-            SELECT BIN_TO_UUID(m.id) FROM sport_match m
-            WHERE m.stage_id IS NULL AND m.home_team_id IS NULL AND m.visibility = 'PUBLIC'
-              AND m.status = 'SCHEDULED' AND m.kickoff_at > UTC_TIMESTAMP(6)
-              AND (m.max_per_side IS NULL
-                   OR (SELECT COUNT(*) FROM match_lineup l WHERE l.match_id = m.id AND l.side = 'HOME') < m.max_per_side
-                   OR (SELECT COUNT(*) FROM match_lineup l WHERE l.match_id = m.id AND l.side = 'AWAY') < m.max_per_side)
-              AND NOT EXISTS (SELECT 1 FROM admin_grant g
-                              WHERE g.resource_type = 'MATCH' AND g.resource_id = m.id AND g.user_id = UUID_TO_BIN(:u))
-              AND NOT EXISTS (SELECT 1 FROM match_lineup l JOIN player p ON p.id = l.player_id
-                              WHERE l.match_id = m.id AND p.user_id = UUID_TO_BIN(:u))
-            ORDER BY m.kickoff_at, m.created_at
-            LIMIT 50
-            """) // ponytail: first 50 only, paginate when the list grows
-        .param("u", userId.toString())
+  public OpenMatches open(UUID userId, String q, int page) {
+    String like = Paging.contains(q);
+    String open = """
+        FROM sport_match m
+        WHERE m.stage_id IS NULL AND m.home_team_id IS NULL AND m.visibility = 'PUBLIC'
+          AND m.status = 'SCHEDULED' AND m.kickoff_at > UTC_TIMESTAMP(6)
+          AND (m.home_label LIKE :q OR m.away_label LIKE :q OR m.venue LIKE :q)
+          AND (m.max_per_side IS NULL
+               OR (SELECT COUNT(*) FROM match_lineup l WHERE l.match_id = m.id AND l.side = 'HOME') < m.max_per_side
+               OR (SELECT COUNT(*) FROM match_lineup l WHERE l.match_id = m.id AND l.side = 'AWAY') < m.max_per_side)
+          AND NOT EXISTS (SELECT 1 FROM admin_grant g
+                          WHERE g.resource_type = 'MATCH' AND g.resource_id = m.id AND g.user_id = UUID_TO_BIN(:u))
+          AND NOT EXISTS (SELECT 1 FROM match_lineup l JOIN player p ON p.id = l.player_id
+                          WHERE l.match_id = m.id AND p.user_id = UUID_TO_BIN(:u))
+        """; // ponytail: LIKE scans every open pickup, a FULLTEXT index when there are many thousands
+    int total = jdbc.sql("SELECT COUNT(*) " + open).param("q", like).param("u", userId.toString()).query(Integer.class).single();
+    Paging paging = Paging.of(total, page);
+    List<UUID> ids = jdbc.sql("SELECT BIN_TO_UUID(m.id) " + open + "ORDER BY m.kickoff_at, m.created_at, m.id LIMIT :size OFFSET :offset")
+        .param("q", like).param("u", userId.toString())
+        .param("size", paging.size()).param("offset", paging.offset())
         .query(UUID.class).list();
-    return views.summaries(ids);
+    return new OpenMatches(views.summaries(ids), paging.page(), paging.totalPages());
   }
 
   private MatchEvent eventOf(UUID matchId, UUID eventId) {

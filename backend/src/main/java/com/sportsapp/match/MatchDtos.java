@@ -88,6 +88,9 @@ public final class MatchDtos {
       Set<Side> lineupSides) {}
 
   /** {@code spotsLeft}: free places on both sides of a capped pickup, null if it has no limit. */
+  /** {@code page} counts from 0; {@code totalPages} is 0 when nothing matches. */
+  public record OpenMatches(List<MatchSummary> items, int page, int totalPages) {}
+
   public record MatchSummary(UUID id, MatchStatus status, Instant kickoffAt, String homeName, String awayName, Score score,
       UUID competitionId, String competitionName, Integer round,
       String homeImageUrl, String awayImageUrl, Integer spotsLeft) {}

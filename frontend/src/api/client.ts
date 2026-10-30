@@ -30,6 +30,7 @@ export type CompetitionTeamView = WithNull<Schema<'CompetitionTeamView'>, 'seed'
 export type Competition = WithNull<Omit<Schema<'CompetitionResponse'>, 'teams'>, 'imageUrl'> & { teams: CompetitionTeamView[] }
 export type CompetitionSummary = WithNull<Schema<'CompetitionSummary'>, 'imageUrl'>
 export type OpenCompetitions = Omit<Schema<'OpenCompetitions'>, 'items'> & { items: CompetitionSummary[] }
+export type OpenMatches = Omit<Schema<'OpenMatches'>, 'items'> & { items: MatchSummary[] }
 export type StandingRow = Schema<'StandingRow'>
 export type CompetitionStats = Schema<'CompetitionStatsResponse'>
 export type TeamRef = Schema<'TeamRef'>

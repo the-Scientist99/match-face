@@ -30,7 +30,6 @@
     "dark": "Tamna"
   },
   "home": {
-    "title": "Moje utakmice",
     "upcoming": "Predstojeće",
     "recent": "Odigrane",
     "noUpcoming": "Ništa nije zakazano.",
@@ -39,6 +38,10 @@
     "openCompetitions": "Takmičenja otvorena za prijave",
     "searchCompetitions": "Pretraži takmičenja",
     "noCompetitionsFound": "Nijedno takmičenje ne odgovara pretrazi.",
+    "tabCompetitions": "Takmičenja",
+    "noCompetitions": "Još niste ni u jednom takmičenju.",
+    "searchMatches": "Pretraži po nazivu tima ili terenu",
+    "noMatchesFound": "Nijedna utakmica ne odgovara pretrazi.",
     "pagePrevious": "Prethodna strana",
     "pageNext": "Sljedeća strana",
     "open": "Otvorene utakmice"
