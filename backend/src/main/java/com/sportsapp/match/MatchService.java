@@ -250,6 +250,15 @@ public class MatchService {
     m.setStatus(MatchStatus.SCHEDULED);
   }
 
+  /** Moves a kickoff that is still ahead to now, for a game that starts early; otherwise nothing changes. */
+  @Transactional
+  public void start(UUID userId, UUID matchId, long version) {
+    Match m = lockAsAdmin(userId, matchId);
+    requireVersion(m, version);
+    requireScheduled(m);
+    if (m.getKickoffAt() != null && m.getKickoffAt().isAfter(clock.instant())) m.setKickoffAt(clock.instant());
+  }
+
   /** SCHEDULED → CANCELLED. Not for knockout matches: the bracket needs a winner. */
   @Transactional
   public void cancel(UUID userId, UUID matchId, long version) {

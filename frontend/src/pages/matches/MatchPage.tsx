@@ -9,6 +9,7 @@ import { errorCode, useNotifyError } from '../../api/errors'
 import { sideTints } from '../../components/Crest'
 import { KeeperIcon } from '../../components/icons'
 import EventEntry, { type NewEvent } from './EventEntry'
+import EditDetailsDialog from './EditDetailsDialog'
 import EventList from './EventList'
 import FinishDialog from './FinishDialog'
 import { formatKickoff } from '../../components/MatchList'
@@ -48,6 +49,7 @@ export default function MatchPage() {
   const [failedEvent, setFailedEvent] = useState<NewEvent | null>(null)
   const [finishing, setFinishing] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [editing, setEditing] = useState(false)
   const [lineupOpen, setLineupOpen] = useState(false)
 
   if (match.isPending) return <Loader />
@@ -104,7 +106,14 @@ export default function MatchPage() {
       <div className="split" data-interleave>
         <div>
           {editable && started && <EventEntry match={m} onAdd={addEvent} disabled={busy} />}
-          {editable && !started && <Text c="dimmed">{t('match.startsAt', { time: formatKickoff(m.kickoffAt, i18n.language) })}</Text>}
+          {editable && !started && (
+            <Group justify="space-between" wrap="nowrap" gap="sm">
+              <Text c="dimmed">{t('match.startsAt', { time: formatKickoff(m.kickoffAt, i18n.language) })}</Text>
+              <Button variant="light" disabled={busy} style={{ flexShrink: 0 }} onClick={() => run(() => call(api.POST('/api/matches/{id}/start', { ...path, body: version })))}>
+                {t('match.kickOffNow')}
+              </Button>
+            </Group>
+          )}
           {teamsUndecided(m) && <Text c="dimmed">{t('match.waitingForTeams')}</Text>}
           <Stack gap="lg" style={{ order: 2 }}>
             {m.joinable &&
@@ -152,6 +161,21 @@ export default function MatchPage() {
               </>
             ) : (
               <SimpleLineup match={m} />
+            )}
+            {m.canAdmin && m.status === 'SCHEDULED' && (
+              <>
+                <Button size="lg" fullWidth variant="default" disabled={busy} onClick={() => setEditing(true)}>
+                  {t('match.editDetails')}
+                </Button>
+                {editing && (
+                  <EditDetailsDialog
+                    match={m}
+                    opened
+                    onClose={() => setEditing(false)}
+                    onSave={(patch) => run(() => call(api.PATCH('/api/matches/{id}', { ...path, body: { ...version, ...patch } })))}
+                  />
+                )}
+              </>
             )}
             {m.canAdmin && !teamsUndecided(m) && (
               <Stack gap="sm">

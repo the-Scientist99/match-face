@@ -126,6 +126,13 @@ public class MatchController {
     return views.view(id, me);
   }
 
+  @PostMapping("/{id}/start")
+  MatchResponse start(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody VersionRequest req) {
+    UUID me = Auth.userId(jwt);
+    service.start(me, id, req.version());
+    return views.view(id, me);
+  }
+
   @PostMapping("/{id}/cancel")
   MatchResponse cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody VersionRequest req) {
     UUID me = Auth.userId(jwt);

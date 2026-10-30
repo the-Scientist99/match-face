@@ -165,7 +165,9 @@
     "leave": "Napusti utakmicu",
     "startsAt": "Počinje {{time}}. Golovi i rezultat se unose od tada.",
     "cancelConfirm": "Otkazati utakmicu? Svi u njoj će je vidjeti kao otkazanu. Kasnije je možete ponovo otvoriti.",
-    "keep": "Zadrži"
+    "keep": "Zadrži",
+    "editDetails": "Izmijeni detalje",
+    "kickOffNow": "Počni sada"
   },
   "event": {
     "type": {

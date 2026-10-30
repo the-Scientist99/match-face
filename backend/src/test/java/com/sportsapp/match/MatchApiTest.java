@@ -2,6 +2,7 @@ package com.sportsapp.match;
 
 import static com.sportsapp.common.Visibility.PRIVATE;
 import static com.sportsapp.common.Visibility.PUBLIC;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -215,6 +216,25 @@ class MatchApiTest extends IntegrationTest {
         .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("NOT_STARTED"));
     mvc.perform(post("/api/matches/{id}/cancel", m).with(as(ana)).contentType(APPLICATION_JSON)
             .content(toJson(Map.of("version", version(m)))))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void kickOffNowLetsAnEarlyGameBeScored() throws Exception {
+    TestUser ana = register("Ana");
+    TestUser zoe = register("Zoe");
+    UUID m = createUpcomingPickup(ana, PUBLIC);
+    mvc.perform(post("/api/matches/{id}/start", m).with(as(zoe)).contentType(APPLICATION_JSON).content("{\"version\":0}"))
+        .andExpect(status().isForbidden());
+    mvc.perform(post("/api/matches/{id}/start", m).with(as(ana)).contentType(APPLICATION_JSON).content("{\"version\":0}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.version").value(1));
+    assertThat(Instant.parse(json.readTree(mvc.perform(get("/api/matches/{id}", m)).andReturn().getResponse().getContentAsString())
+        .get("kickoffAt").asString())).isBeforeOrEqualTo(Instant.now());
+    setLineup(ana, m, ana.playerId(), Side.HOME);
+    addEvent(ana, m, "type", "GOAL", "side", "HOME", "playerId", ana.playerId());
+    // already started: nothing to move
+    mvc.perform(post("/api/matches/{id}/start", m).with(as(ana)).contentType(APPLICATION_JSON).content(toJson(Map.of("version", version(m)))))
         .andExpect(status().isOk());
   }
 

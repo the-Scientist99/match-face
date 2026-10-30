@@ -165,7 +165,9 @@
     "leave": "Leave match",
     "startsAt": "Kicks off {{time}}. Goals and the result can be entered from then.",
     "cancelConfirm": "Cancel this match? Everyone in it will see it as cancelled. You can reopen it later.",
-    "keep": "Keep it"
+    "keep": "Keep it",
+    "editDetails": "Edit details",
+    "kickOffNow": "Kick off now"
   },
   "event": {
     "type": {
