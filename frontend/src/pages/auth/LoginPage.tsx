@@ -5,9 +5,11 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
 import { fieldErrors, useNotifyError } from '../../api/errors'
 import { useAuth } from '../../auth/AuthProvider'
 import { safeNext } from '../../auth/RequireAuth'
+import { usePageTitle } from '../../components/usePageTitle'
 
 export default function LoginPage() {
   const { t } = useTranslation()
+  usePageTitle(t('auth.loginTitle'))
   const { user, login } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -35,9 +37,9 @@ export default function LoginPage() {
   }
 
   return (
-    <Paper p="xl" maw={420} mx="auto" mt="xl">
+    <Paper p="xl" maw={420} mx="auto" mt={{ base: "md", sm: 56 }}>
       <Stack component="form" onSubmit={submit}>
-        <Title order={2}>{t('auth.loginTitle')}</Title>
+        <Title order={1}>{t('auth.loginTitle')}</Title>
         <TextInput
           label={t('auth.email')}
           type="email"
@@ -55,7 +57,7 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.currentTarget.value)}
           error={errors.password && t(errors.password)}
         />
-        <Button type="submit" loading={busy}>
+        <Button type="submit" size="lg" loading={busy}>
           {t('auth.login')}
         </Button>
         <Text size="sm">

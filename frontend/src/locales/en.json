@@ -16,7 +16,8 @@
     "main": "Main",
     "home": "Home",
     "players": "Players",
-    "teams": "Teams"
+    "teams": "Teams",
+    "skip": "Skip to content"
   },
   "language": {
     "me": "ME",
@@ -44,7 +45,9 @@
     "noMatchesFound": "No matches found for that search.",
     "pagePrevious": "Previous page",
     "pageNext": "Next page",
-    "open": "Open matches"
+    "open": "Open matches",
+    "next": "Next match",
+    "openMatch": "Open match"
   },
   "errors": {
     "UNKNOWN": "Something went wrong. Please try again.",
@@ -116,7 +119,9 @@
   "common": {
     "save": "Save",
     "cancel": "Cancel",
-    "add": "Add"
+    "add": "Add",
+    "loading": "Loading",
+    "retry": "Try again"
   },
   "players": {
     "title": "My players",
@@ -161,7 +166,8 @@
     "status": {
       "SCHEDULED": "Scheduled",
       "FINISHED": "Finished",
-      "CANCELLED": "Cancelled"
+      "CANCELLED": "Cancelled",
+      "LIVE": "Live"
     },
     "lineup": "Lineup",
     "logInToTakePart": "Log in to take part",
@@ -184,7 +190,14 @@
     "spotsLeft": "Spots left: {{count}}",
     "full": "Full",
     "maxPerSide": "Max players per side",
-    "maxPerSideHint": "Leave empty for no limit. Joins stop when a side is full."
+    "maxPerSideHint": "Leave empty for no limit. Joins stop when a side is full.",
+    "pitch": "Pitch",
+    "list": "List",
+    "you": "You",
+    "lineupView": "Lineup view",
+    "joinShort": "Join",
+    "editLineup": "Edit lineup",
+    "visibilityLabel": "Who can see it"
   },
   "event": {
     "type": {
@@ -208,7 +221,12 @@
     "title": "Events",
     "edit": "Edit",
     "done": "Done",
-    "tapPlayer": "Tap a player to log an event"
+    "tapPlayer": "Tap a player to log an event",
+    "mark": {
+      "YELLOW": "Y",
+      "RED": "R",
+      "OWN_GOAL": "OG"
+    }
   },
   "profile": {
     "appearances": "Matches",
@@ -221,7 +239,9 @@
     "ownGoals": "Own goals",
     "matches": "Matches",
     "noMatches": "No finished matches yet.",
-    "inMatch": "{{goals}} goals, {{assists}} assists"
+    "inMatch": "{{goals}} goals, {{assists}} assists",
+    "form": "Form",
+    "perMatch": "{{value}} per match"
   },
   "claim": {
     "invite": "Invite to claim",
@@ -280,7 +300,8 @@
     },
     "setDate": "Set date",
     "roundDate": "Round {{round}} date",
-    "roundDateHint": "Sets the kickoff of every match in this round that hasn't been played. You can still change single matches on their page."
+    "roundDateHint": "Sets the kickoff of every match in this round that hasn't been played. You can still change single matches on their page.",
+    "typeLabel": "Type"
   },
   "table": {
     "team": "Team",
@@ -291,7 +312,17 @@
     "goalsFor": "GF",
     "goalsAgainst": "GA",
     "goalDifference": "GD",
-    "points": "Pts"
+    "points": "Pts",
+    "caption": "{{name}} standings",
+    "positionFull": "Position",
+    "playedFull": "Played",
+    "wonFull": "Won",
+    "drawnFull": "Drawn",
+    "lostFull": "Lost",
+    "goalsForFull": "Goals for",
+    "goalsAgainstFull": "Goals against",
+    "goalDifferenceFull": "Goal difference",
+    "pointsFull": "Points"
   },
   "stats": {
     "topScorers": "Top scorers",

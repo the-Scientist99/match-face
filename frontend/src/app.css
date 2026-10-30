@@ -1,38 +1,163 @@
-/* Direction "Fresh and friendly" on top of Mantine: mint page, elevated cards, tinted chips, solid teal accents. */
+/* "Matchday Board" on top of Mantine: hairlines instead of shadows, type-led lists, one dark scoreboard per screen. */
 
 :root {
-  --app-bg: #f1fcf8;
-  --app-subtle: #f8f9fa; /* quiet fills: secondary chips */
-  --app-hairline: #dcebe4;
-  --app-track: #e3efe9; /* the competition tabs' track */
-  --app-tint-goal: #e6fcf5;
   --app-num: 'Barlow Semi Condensed', system-ui, sans-serif;
 }
-[data-mantine-color-scheme='dark'] {
+html:root[data-mantine-color-scheme='light'] {
+  --app-bg: #f5f7f4;
+  --app-subtle: #eef2ef; /* quiet fills: hover, secondary chips */
+  --app-hairline: #dce4df;
+  --app-field: #7a8e84; /* control edges: 3.5:1 on white */
+  --app-board: #0f2a22;
+  --app-tile: #1c4a3c;
+  --app-board-dim: #c7d8d0;
+  --app-board-accent: #7fd8b8;
+  --app-tint-goal: #e4f2ec;
+  --app-focus: #087f5b;
+  --mantine-color-text: #0f1f19;
+  --mantine-color-dimmed: #51645b; /* 5.9:1 on the page */
+  --mantine-color-default-border: var(--app-hairline);
+  --mantine-color-error: #b3261e;
+  --mantine-color-teal-text: #06634a;
+  --mantine-color-teal-light-color: #06634a;
+  --mantine-color-teal-light: var(--app-tint-goal);
+}
+html:root[data-mantine-color-scheme='dark'] {
   --app-bg: #0e1613;
-  --app-subtle: rgba(255, 255, 255, 0.05);
-  --app-hairline: rgba(255, 255, 255, 0.1);
-  --app-track: rgba(255, 255, 255, 0.06);
-  --app-tint-goal: rgba(32, 201, 151, 0.16);
+  --app-subtle: #1e2b26;
+  --app-hairline: #2a3a33;
+  --app-field: #7c9288;
+  --app-board: #0b4b39;
+  --app-tile: #14604a;
+  --app-board-dim: #d3e4dc;
+  --app-board-accent: #96f2d7;
+  --app-tint-goal: rgba(99, 230, 190, 0.14);
+  --app-focus: #63e6be;
+  --mantine-color-body: #16211d;
+  --mantine-color-default: #16211d;
+  --mantine-color-default-hover: #1e2b26;
+  --mantine-color-text: #e9f1ed;
+  --mantine-color-dimmed: #a8bab1;
+  --mantine-color-default-border: var(--app-hairline);
+  --mantine-color-teal-text: #63e6be;
+  --mantine-color-error: #ff8a80;
 }
 
-/* The page is mint; cards keep Mantine's body colour (white / dark), so they read as raised surfaces. */
+/* The page is the quiet ground; panels keep Mantine's body colour and a hairline */
 body {
   background-color: var(--app-bg);
+  line-height: 1.5;
+}
+html :focus-visible {
+  outline: 2px solid var(--app-focus);
+  outline-offset: 2px;
 }
 
-/* Translucent chrome: content scrolls underneath, a hairline edge instead of a hard bar */
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: -64px;
+  z-index: 1000;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+  font-weight: 600;
+}
+.skip-link:focus {
+  top: 10px;
+}
+
+/* --- Controls: every target at least 44px, every edge visible --- */
+.mantine-Button-root,
+.mantine-ActionIcon-root:not(.mantine-PasswordInput-visibilityToggle),
+.mantine-Pagination-control {
+  min-height: 44px;
+}
+.mantine-ActionIcon-root:not(.mantine-PasswordInput-visibilityToggle),
+.mantine-Pagination-control {
+  min-width: 44px;
+}
+.mantine-Button-root {
+  font-weight: 600;
+  transition: background-color 120ms ease-out;
+}
+.mantine-Button-root[data-variant='default'] {
+  border-color: var(--app-field);
+}
+[data-mantine-color-scheme] .mantine-Input-wrapper[data-variant='default']:not([data-error]) {
+  --input-bd: var(--app-field);
+}
+[data-mantine-color-scheme] .mantine-Input-input[data-error] {
+  border-width: 2px;
+}
+.mantine-Input-input {
+  min-height: 44px;
+}
+.mantine-Input-input:focus-visible {
+  outline: 2px solid var(--app-focus);
+  outline-offset: 1px;
+}
+.mantine-InputWrapper-label {
+  font-weight: 600;
+  font-size: var(--mantine-font-size-sm);
+}
+.mantine-SegmentedControl-label {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mantine-SegmentedControl-root {
+  --sc-color: var(--mantine-color-body);
+}
+html[data-mantine-color-scheme] .mantine-SegmentedControl-label[data-active] {
+  font-weight: 700;
+}
+.mantine-Badge-root {
+  height: auto;
+  min-height: 26px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+}
+.mantine-Fieldset-root {
+  background: var(--mantine-color-body);
+  border-color: var(--app-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-md);
+  min-width: 0;
+}
+.mantine-Fieldset-legend {
+  font-family: var(--app-num);
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  padding-inline: 8px;
+}
+
+/* --- Chrome --- */
 .app-header {
-  background-color: color-mix(in srgb, var(--mantine-color-body) 72%, transparent);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid color-mix(in srgb, var(--mantine-color-default-border) 55%, transparent);
+  background-color: var(--mantine-color-body);
+  border-bottom: 1px solid var(--app-hairline);
+}
+/* The landing page opens as one dark field, header included */
+.app-header[data-board] {
+  background-color: var(--app-board);
+  border-bottom-color: transparent;
+  --app-focus: var(--app-board-accent);
+  --mantine-color-text: #fff;
+  --mantine-color-dimmed: var(--app-board-dim);
+  --mantine-color-teal-text: var(--app-board-accent);
+  color: #fff;
 }
 
 /* Phones: Matches, Players and Teams in a bottom bar */
 .tab-bar {
-  border-bottom: 0;
-  border-top: 1px solid color-mix(in srgb, var(--mantine-color-default-border) 55%, transparent);
+  background-color: var(--mantine-color-body);
+  border-top: 1px solid var(--app-hairline);
 }
 .tab-bar > nav {
   height: 100%;
@@ -48,11 +173,11 @@ body {
   justify-content: center;
   gap: 2px;
   min-height: 44px;
-  border-radius: 14px;
+  border-radius: 10px;
   text-decoration: none;
   color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
-  font-weight: 600;
+  font-weight: 500;
   -webkit-tap-highlight-color: transparent;
 }
 .tab-bar a[aria-current='page'] {
@@ -60,9 +185,55 @@ body {
   font-weight: 700;
 }
 
-/* Large text reads better slightly tighter; body text stays at 0 */
-h1, h2, h3 {
-  letter-spacing: -0.02em;
+/* Header links: the current page is bolder and underlined, not only coloured */
+.header-nav {
+  align-self: stretch;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+.header-nav a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--mantine-color-dimmed);
+  font-weight: 500;
+  text-decoration: none;
+}
+.header-nav a:hover {
+  color: var(--mantine-color-text);
+}
+.header-nav a[aria-current='page'] {
+  color: var(--mantine-color-text);
+  font-weight: 700;
+  box-shadow: inset 0 -3px 0 var(--app-focus);
+}
+/* The header's New match keeps its icon and name on phones, down to the narrowest */
+@media (max-width: 23.75em) {
+  .new-match-label {
+    display: none;
+  }
+}
+.lang-switch {
+  display: flex;
+  gap: 4px;
+}
+.lang-switch button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mantine-color-dimmed);
+  font: inherit;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+.lang-switch button[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--mantine-color-text) 12%, transparent);
+  color: var(--mantine-color-text);
+  font-weight: 700;
 }
 
 /* The brand never wraps; the header's other items make room instead */
@@ -70,10 +241,46 @@ h1, h2, h3 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  letter-spacing: -0.03em;
+  min-height: 44px;
   text-decoration: none;
   color: inherit;
   white-space: nowrap;
+}
+/* The brand name beside the Kickoff mark: "Match" in ink, "Face" in teal, the sports face */
+.wordmark {
+  font-family: var(--app-num);
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.wordmark > span {
+  color: var(--mantine-color-teal-text);
+}
+
+/* --- Type --- */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.005em;
+}
+.section-title {
+  margin: 0;
+  font-family: var(--app-num);
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+.section-title > span {
+  color: var(--mantine-color-dimmed);
+  font-weight: 600;
+}
+/* A small heading inside a panel (lineup sides, field groups) */
+.section-label .mantine-InputWrapper-label,
+.section-label {
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  color: var(--mantine-color-dimmed);
 }
 
 /* Scores and tables: digits of equal width, so columns and live scores don't jitter */
@@ -84,21 +291,470 @@ table {
 /* Numbers get the condensed sports face */
 .score {
   font-family: var(--app-num);
+  font-weight: 700;
+}
+
+/* --- Panels and rows --- */
+.surface {
+  background-color: var(--mantine-color-body);
+  border: 1px solid var(--app-hairline);
+  border-radius: 16px;
+  padding: var(--mantine-spacing-lg);
+}
+.empty {
+  background-color: var(--mantine-color-body);
+  border: 1px solid var(--app-hairline);
+  border-radius: 16px;
+  padding: var(--mantine-spacing-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--mantine-spacing-md);
+}
+.rows {
+  background-color: var(--mantine-color-body);
+  border: 1px solid var(--app-hairline);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.rows > * + * {
+  border-top: 1px solid var(--app-hairline);
+}
+.row {
+  display: block;
+  padding: 14px 20px;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 120ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.row:focus-visible {
+  outline-offset: -2px;
+}
+@media (hover: hover) {
+  .row:hover {
+    background: var(--app-subtle);
+  }
+}
+/* A card that is one big button (the lineup row) */
+.row-button {
+  width: 100%;
+  min-height: 56px;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+}
+.list-rows > * + * {
+  border-top: 1px solid var(--app-hairline);
+}
+.list-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .list-link:hover {
+    background: var(--app-subtle);
+  }
+}
+
+/* Upcoming match: the day, date and time as the row's first column */
+.date-block {
+  width: 56px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  line-height: 1.15;
+}
+.date-block-day,
+.date-block-time {
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  color: var(--mantine-color-dimmed);
+}
+.date-block-num {
+  font-size: 32px;
+  line-height: 1.1;
+}
+
+/* A row that scrolls sideways, edge to edge on phones */
+.h-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  margin-inline: calc(var(--mantine-spacing-md) * -1);
+  padding: 2px var(--mantine-spacing-md) 8px;
+  scrollbar-width: none;
+}
+.h-scroll > * {
+  flex: 0 0 260px;
+}
+
+/* Tabs: an underline on the current one, wider and bolder as well as coloured */
+.track-tabs .mantine-Tabs-list {
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  --tab-border-color: var(--app-hairline);
+}
+.track-tabs .mantine-Tabs-tab {
+  flex: 0 0 auto;
+  min-height: 48px;
+  padding-inline: 16px;
+  font-size: var(--mantine-font-size-md);
+  font-weight: 500;
+  color: var(--mantine-color-dimmed);
+}
+.track-tabs .mantine-Tabs-tab[data-active] {
+  color: var(--mantine-color-text);
+  font-weight: 700;
+  border-bottom-width: 3px;
+  border-color: var(--app-focus);
+}
+
+/* Instant feedback on press, where a pointer presses */
+.pressable {
+  transition: transform 120ms ease-out, background-color 120ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.pressable:active {
+  transform: scale(0.98);
+}
+
+/* --- The board: one dark scoreboard per screen, drawn with the pitch's lines --- */
+.board {
+  position: relative;
+  overflow: hidden;
+  background: var(--app-board);
+  color: #fff;
+  border-radius: 16px;
+  padding: var(--mantine-spacing-lg);
+  --app-focus: var(--app-board-accent);
+  --mantine-color-text: #fff;
+  --mantine-color-dimmed: var(--app-board-dim);
+  --mantine-color-teal-text: var(--app-board-accent);
+}
+.board > * {
+  position: relative;
+}
+.board > .board-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.board-lines * {
+  fill: none;
+  stroke: #fff;
+  stroke-opacity: 0.09;
+  stroke-width: 2;
+}
+.board-eyebrow {
+  color: var(--app-board-accent);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+}
+.board a:not(.mantine-Button-root) {
+  color: inherit;
+}
+/* A full-width band: the board out of the page column, and out of its padding at the top */
+.bleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-top: calc(var(--mantine-spacing-md) * -1);
+  border-radius: 0;
+  padding: 0;
+}
+.bleed-inner {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-inline: var(--mantine-spacing-md);
+  box-sizing: border-box;
+}
+.app-main {
+  overflow-x: clip;
 }
 
 .score-big {
   display: flex;
   align-items: center;
   gap: 0.15em;
-  font-size: clamp(3rem, 16vw, 4rem);
+  font-size: clamp(4.5rem, 12vw, 7.5rem);
   line-height: 1;
-  letter-spacing: -0.02em;
-  font-weight: 700;
 }
 .score-sep {
-  color: var(--mantine-color-dimmed);
+  color: var(--app-board-dim);
   font-weight: 600;
-  opacity: 0.6;
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: #fff;
+  color: #0f2a22;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+}
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #c92a2a;
+}
+
+/* Lobby header: each side's count beside the kickoff card */
+.lobby-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: clamp(8px, 2vw, 16px);
+  align-items: center;
+}
+.lobby-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 0;
+}
+.lobby-count {
+  font-size: clamp(2rem, 7vw, 3.5rem);
+  line-height: 1;
+  white-space: nowrap;
+}
+.kickoff-card {
+  min-width: 112px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  color: #0f1f19;
+  text-align: center;
+}
+.kickoff-card > div {
+  padding: 8px 12px 6px;
+}
+.kickoff-card > p {
+  margin: 0;
+  padding: 3px 8px;
+  border-top: 1px solid #dce4df;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+}
+.kickoff-time {
+  font-size: clamp(1.875rem, 7vw, 2.75rem);
+  white-space: nowrap;
+  line-height: 1;
+}
+.kickoff-day {
+  color: #51645b;
+  font-size: var(--mantine-font-size-xs);
+}
+/* the pitch takes what the actions leave, and they stack under it on phones */
+.lobby {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-lg);
+  align-items: flex-start;
+}
+.lobby > :first-child {
+  flex: 999 1 560px;
+  min-width: 0;
+}
+.lobby > :last-child {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+/*
+ * The pitch: landscape from sm up, home on the left and away on the right; portrait on phones, home on top.
+ * Lines are drawn in CSS rather than an SVG, so the centre circle stays round at any height.
+ */
+.pitch {
+  --pitch-line: rgba(255, 255, 255, 0.45);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  border-radius: 16px;
+  box-sizing: border-box;
+  background: repeating-linear-gradient(0deg, #0c5a45 0 72px, #0e6650 72px 144px);
+  --app-focus: #fff;
+}
+.half {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.half[data-side='AWAY'] {
+  flex-direction: column-reverse;
+}
+.pitch-line {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-evenly;
+  gap: 4px;
+  padding: 8px 0;
+}
+.pitch-mid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 2px solid var(--pitch-line);
+}
+.pitch-spot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border: 2px solid var(--pitch-line);
+  border-radius: 999px;
+  box-sizing: border-box;
+}
+.pitch-box {
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  height: 72px;
+  border: 2px solid var(--pitch-line);
+  box-sizing: border-box;
+}
+.pitch-box[data-side='HOME'] {
+  top: -2px;
+}
+.pitch-box[data-side='AWAY'] {
+  bottom: -2px;
+}
+@media (min-width: 48em) {
+  .pitch {
+    flex-direction: row;
+    min-height: 540px;
+    padding: 16px;
+    background: repeating-linear-gradient(90deg, #0c5a45 0 72px, #0e6650 72px 144px);
+  }
+  .half {
+    flex-direction: row;
+  }
+  .half[data-side='AWAY'] {
+    flex-direction: row-reverse;
+  }
+  .pitch-line {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+  }
+  .pitch-mid {
+    left: 50%;
+    right: auto;
+    top: 0;
+    bottom: 0;
+    border-top: 0;
+    border-left: 2px solid var(--pitch-line);
+  }
+  .pitch-spot {
+    width: 150px;
+    height: 150px;
+    margin: -75px 0 0 -75px;
+  }
+  .pitch-box {
+    left: auto;
+    right: auto;
+    top: 22%;
+    bottom: 22%;
+    width: 13%;
+    height: auto;
+  }
+  .pitch-box[data-side='HOME'] {
+    top: 22%;
+    left: -2px;
+  }
+  .pitch-box[data-side='AWAY'] {
+    bottom: 22%;
+    right: -2px;
+  }
+}
+.shirt-token {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 104px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #0f1f19;
+  text-decoration: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+.shirt-token[data-open] {
+  cursor: default;
+}
+.shirt-token svg path {
+  fill: var(--tint-solid);
+  stroke: #fff;
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+.shirt-token[data-keeper] svg path {
+  fill: #fab005;
+}
+.shirt-token[data-empty] svg path {
+  fill: none;
+  stroke-dasharray: 2 1.6;
+}
+.shirt-token[data-open] svg path {
+  stroke-opacity: 0.7;
+}
+.shirt-name {
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: #fff;
+  color: #0f1f19;
+  font-family: var(--app-num);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shirt-token[data-empty] .shirt-name {
+  color: #06634a;
+  font-weight: 700;
+}
+@media (hover: hover) {
+  button.shirt-token:hover .shirt-name {
+    background: #e4f2ec;
+  }
+}
+.shirt-sub {
+  padding: 0 6px;
+  border-radius: 5px;
+  background: #0f2a22;
+  color: #fff;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 /*
@@ -141,6 +797,11 @@ table {
 img.crest {
   object-fit: cover;
 }
+/* Crests keep their light fills on the dark board, in either theme */
+.board .crest:not(img) {
+  background: #fff;
+  color: var(--tint-solid);
+}
 /* A crest its editor can tap to pick a new image, with a pencil badge to say so */
 .crest-edit {
   position: relative;
@@ -170,47 +831,61 @@ img.crest {
   background: var(--tint-solid);
 }
 
-/* A side's player buttons on the match page, tinted in that team's colour */
+/* A side's player buttons on the match page */
 .side-button.mantine-Button-root:not(:disabled):not([data-disabled]) {
-  background: var(--tint-soft);
+  background: var(--mantine-color-body);
+  border: 1px solid var(--app-field);
   color: var(--mantine-color-text);
 }
 @media (hover: hover) {
   .side-button.mantine-Button-root:not(:disabled):not([data-disabled]):hover {
-    background: var(--tint-bg);
+    background: var(--app-tint-goal);
   }
 }
-.keeper-badge {
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--mantine-color-body);
-  color: var(--tint-fg);
-  box-shadow: var(--mantine-shadow-xs);
-}
 .dashed-button.mantine-Button-root:not(:disabled):not([data-disabled]) {
-  border: 1px dashed var(--mantine-color-default-border);
+  border: 1px dashed var(--app-field);
   background: transparent;
   color: var(--mantine-color-dimmed);
 }
+/* On a phone, picking an event comes up from the bottom, under the thumb */
+@media (max-width: 47.99em) {
+  .sheet .mantine-Modal-inner {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .sheet .mantine-Modal-content {
+    border-radius: 16px 16px 0 0;
+    flex: 1 1 100%;
+  }
+}
 
-/* Yellow and red cards, drawn as cards */
-.card-icon {
-  display: inline-block;
-  width: 13px;
-  height: 18px;
-  border-radius: 3px;
+/* Event marks: a letter as well as a colour, so they never rely on colour alone */
+.event-mark {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.card-icon {
+  width: 16px;
+  height: 22px;
+  border-radius: 3px;
   background: #fab005;
+  color: #0f1f19;
 }
 .card-icon[data-card='red'] {
-  background: #e03131;
+  background: #c92a2a;
+  color: #fff;
 }
-.icon-own-goal {
-  color: var(--mantine-color-red-filled);
+.own-goal-mark {
+  min-width: 28px;
+  height: 22px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  border: 1.5px solid currentColor;
 }
 .icon-star {
   color: var(--mantine-color-yellow-filled);
@@ -218,243 +893,86 @@ img.crest {
 
 /* Match events: minutes down the middle, home events to the left, away to the right */
 .timeline {
-  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 4px;
-  bottom: 4px;
-  width: 2px;
-  margin-left: -1px;
-  background: var(--app-hairline);
+  gap: 2px;
 }
 .tl-row {
-  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1fr);
   align-items: center;
-  min-height: 48px;
+  min-height: 56px;
 }
 .tl-minute {
   justify-self: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--mantine-color-body);
-  border: 1px solid var(--app-hairline);
-  font-size: 14px;
-  font-weight: 700;
-}
-.tl-dot {
-  justify-self: center;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--mantine-color-body);
-  border: 2px solid var(--app-hairline);
+  font-size: 20px;
 }
 
-/* Upcoming match: the day, date and time in a tinted block */
-.date-block {
-  width: 60px;
-  height: 72px;
-  border-radius: 12px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: var(--app-tint-goal);
-  text-align: center;
-}
-.date-block[data-empty] {
-  background: var(--app-subtle);
-}
-.date-block-day {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--mantine-color-teal-light-color);
-}
-.date-block-num {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1;
-}
-.date-block-time {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--mantine-color-dimmed);
-}
-.card-foot {
-  padding-top: 8px;
-  border-top: 1px solid var(--app-hairline);
-}
-
-/* A row that scrolls sideways, edge to edge on phones */
-.h-scroll {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  margin-inline: calc(var(--mantine-spacing-md) * -1);
-  padding: 2px var(--mantine-spacing-md) 8px;
-  scrollbar-width: none;
-}
-.h-scroll > * {
-  flex: 0 0 220px;
-}
-
-/* A card that is one big button (the lineup row) */
-.row-button {
-  width: 100%;
-  border: 0;
-  font: inherit;
-  color: inherit;
-  text-align: start;
-}
-
-/* Section label above grouped fields (lineup sides, form groups) */
-.section-label .mantine-InputWrapper-label,
-.section-label {
-  font-size: var(--mantine-font-size-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--mantine-color-dimmed);
-}
-
-/* Competition tabs: a track with the current tab raised out of it */
-.track-tabs .mantine-Tabs-list {
-  flex-wrap: nowrap;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--app-track);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.track-tabs .mantine-Tabs-tab {
-  flex: 1 0 auto;
-  min-height: 40px;
-  font-weight: 600;
-}
-.track-tabs .mantine-Tabs-tab[data-active] {
-  background: var(--mantine-color-body);
-  color: var(--mantine-color-text);
-  box-shadow: var(--mantine-shadow-xs);
-  font-weight: 700;
-}
-
-/* Instant feedback on press, a soft lift on hover where a pointer can hover */
-.pressable {
-  transition: transform 120ms ease-out, box-shadow 160ms ease-out, filter 150ms ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.pressable:active {
-  transform: scale(0.98);
-}
-@media (hover: hover) {
-  .pressable:hover {
-    box-shadow: var(--mantine-shadow-md);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pressable,
-  .pressable:active {
-    transition: none;
-    transform: none;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .app-header {
-    background-color: var(--mantine-color-body);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
-@media (prefers-contrast: more) {
-  .app-header {
-    background-color: var(--mantine-color-body);
-    border-bottom-color: var(--mantine-color-text);
-  }
-  .tab-bar {
-    border-top-color: var(--mantine-color-text);
-  }
-  .mantine-Card-root,
-  .mantine-Paper-root {
-    outline: 1px solid var(--mantine-color-default-border);
-  }
-}
-
-/* A raised card on any existing container (forms, lists) without restructuring it */
-.surface {
+/* Standings: the Team and Pts columns stay in view while the rest scrolls between them */
+.table-scroll {
   background-color: var(--mantine-color-body);
-  border-radius: 24px;
-  box-shadow: var(--mantine-shadow-sm);
-  padding: var(--mantine-spacing-lg);
+  border: 1px solid var(--app-hairline);
+  border-radius: 16px;
+  overflow-x: auto;
 }
-
-/* Standings: the leader's row gets a soft teal fill and a filled position disc */
-.standings tbody tr:first-child td {
-  background: var(--app-tint-goal);
+.standings {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  white-space: nowrap;
 }
-.pos-leader {
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  background: var(--mantine-color-teal-filled);
-  color: var(--mantine-primary-color-contrast);
+.standings abbr {
+  text-decoration: none;
 }
-
-/* A card of rows (players, teams, a roster), hairlines between them */
-.list-rows > * + * {
+.standings th,
+.standings td {
+  padding: 12px 10px;
+  text-align: end;
+  font-weight: 400;
+}
+.standings thead th {
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+}
+.standings tbody > tr > * {
   border-top: 1px solid var(--app-hairline);
 }
-.list-link {
-  display: block;
-  color: inherit;
-  text-decoration: none;
-  border-radius: 12px;
-  -webkit-tap-highlight-color: transparent;
+.standings .standings-team,
+.standings .standings-pts {
+  position: sticky;
+  background: var(--mantine-color-body);
 }
-@media (hover: hover) {
-  .list-link:hover {
-    background: var(--app-subtle);
+.standings .standings-team {
+  left: 0;
+  text-align: start;
+  font-weight: 600;
+  padding-inline-start: 16px;
+  white-space: normal;
+  line-height: 1.2;
+  box-shadow: 1px 0 0 var(--app-hairline);
+}
+.standings .standings-pts {
+  right: 0;
+  padding-inline-end: 16px;
+  box-shadow: -1px 0 0 var(--app-hairline);
+}
+.standings tbody .standings-pts {
+  font-size: 22px;
+}
+.standings .standings-gd {
+  font-weight: 600;
+}
+@media (min-width: 48em) {
+  .standings .standings-team {
+    min-width: 240px;
   }
 }
-/* rounded link rows draw their divider inset, so it stays straight */
-.list-rows > .list-link + .list-link {
-  border-top: 0;
-  position: relative;
-}
-.list-rows > .list-link + .list-link::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 12px;
-  right: 12px;
-  border-top: 1px solid var(--app-hairline);
-}
 
-/* Header links: the current page gets a soft teal pill, like the phone tab bar's teal label */
-.header-nav .mantine-Button-root[aria-current='page'] {
-  background: var(--mantine-color-teal-light);
-  color: var(--mantine-color-teal-text);
-}
-
+/* --- Layouts --- */
 /*
  * Two columns on wide screens (md and up), one on phones. Each direct child is a column.
  * data-aside="start": a narrow first column. data-interleave: on phones the columns' items mix,
@@ -482,40 +1000,279 @@ img.crest {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
   }
-  .split[data-aside='start'] {
-    grid-template-columns: 340px minmax(0, 1fr);
-  }
-  /* stays in view while the other column scrolls; scrolls itself if it is taller than the window */
-  .split > .sticky-col {
-    position: sticky;
-    top: calc(60px + var(--mantine-spacing-md));
-    max-height: calc(100vh - 60px - 2 * var(--mantine-spacing-md));
-    overflow-y: auto;
-    scrollbar-width: thin;
-  }
 }
 
-/* Landing page: the pitch beside a picture of the app on wide screens, stacked on phones */
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.action-row > .action-main {
+  flex: 1 1 180px;
+}
+
+/* Landing page */
 .hero {
   display: grid;
-  gap: 32px;
+  gap: 40px;
+  padding-block: 40px 72px;
 }
 @media (min-width: 62em) {
   .hero {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
     align-items: center;
-    gap: 48px;
+    gap: 56px;
+  }
+}
+.hero-title {
+  font-weight: 800;
+  font-size: clamp(3rem, 7vw, 5.25rem);
+  line-height: 0.98;
+  text-wrap: balance;
+}
+.feature {
+  display: grid;
+  gap: 32px;
+  padding-block: 64px;
+  border-bottom: 1px solid var(--app-hairline);
+  align-items: center;
+}
+.feature:last-of-type {
+  border-bottom: 0;
+}
+.feature-title {
+  font-size: clamp(2.25rem, 5vw, 2.75rem);
+  line-height: 1.05;
+}
+@media (min-width: 62em) {
+  .feature {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 56px;
+    padding-block: 88px;
+  }
+}
+.preview-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 40px 48px;
+  gap: 8px;
+  align-items: center;
+  min-height: 52px;
+}
+.preview-row + .preview-row {
+  border-top: 1px solid var(--app-hairline);
+}
+.cta-band {
+  margin-top: 0;
+  margin-bottom: calc((var(--mantine-spacing-xl) + var(--mantine-spacing-md)) * -1);
+}
+.cta-band .bleed-inner {
+  padding-block: 56px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Player profile */
+.player-hero .bleed-inner {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(16px, 4vw, 40px);
+  padding-top: 32px;
+}
+.player-photo {
+  position: relative;
+  flex-shrink: 0;
+  width: clamp(128px, 24vw, 240px);
+  aspect-ratio: 5 / 6;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  background: var(--app-tile);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.player-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.player-photo-initials {
+  font-family: var(--app-num);
+  font-weight: 800;
+  font-size: clamp(3rem, 9vw, 5.5rem);
+  color: #fff;
+}
+.player-photo-edit {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+}
+.player-name {
+  margin: 0;
+  font-family: var(--app-num);
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+.player-name > span {
+  display: block;
+}
+.player-name-first {
+  font-weight: 600;
+  font-size: clamp(1.75rem, 5vw, 3rem);
+}
+.player-name-last {
+  font-weight: 800;
+  font-size: clamp(2.75rem, 9vw, 5.5rem);
+}
+.player-hero-text {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-bottom: 28px;
+}
+.stat-trio {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.stat-trio > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-inline: 8px;
+}
+.stat-trio > div + div {
+  border-inline-start: 1px solid var(--app-hairline);
+}
+.stat-trio dt {
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+}
+.stat-trio dd {
+  margin: 0;
+}
+.stat-trio-value {
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+  line-height: 1.05;
+}
+.stat-trio-note {
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+}
+.form-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.form-grid a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.result-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 18px;
+  background: var(--app-subtle);
+  border: 1px solid transparent;
+}
+.result-pill[data-result='won'] {
+  background: var(--app-board);
+  color: #fff;
+}
+.result-pill[data-result='lost'] {
+  background: transparent;
+  border-color: var(--app-field);
+}
+.totals-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 45%), 1fr));
+  gap: 12px;
+}
+.totals-grid > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  padding: 16px 20px;
+  background: var(--mantine-color-body);
+  border: 1px solid var(--app-hairline);
+  border-radius: 16px;
+}
+.totals-grid dt {
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+}
+.totals-grid dd {
+  margin: 0;
+  font-size: 36px;
+  line-height: 1.05;
+}
+.totals-grid dd[data-zero] {
+  color: var(--mantine-color-dimmed);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable,
+  .pressable:active,
+  .row,
+  .mantine-Button-root {
+    transition: none;
+    transform: none;
   }
 }
 
-/* The brand name beside the Kickoff mark: "Match" in ink, "Face" in teal, the sports face */
-.wordmark {
-  font-family: var(--app-num);
-  font-weight: 800;
-  font-size: 26px;
-  line-height: 1;
-  letter-spacing: -0.01em;
+@media (prefers-contrast: more) {
+  .app-header {
+    border-bottom-color: var(--mantine-color-text);
+  }
+  .tab-bar {
+    border-top-color: var(--mantine-color-text);
+  }
+  .mantine-Card-root,
+  .mantine-Paper-root,
+  .surface,
+  .rows {
+    border-color: var(--mantine-color-text);
+  }
 }
-.wordmark > span {
+
+/* A plain text button: joining from the lobby's list */
+.row-link {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--mantine-color-teal-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* A light panel on a board keeps the page's own text colours */
+html:root[data-mantine-color-scheme='light'] .board .on-light {
+  --mantine-color-text: #0f1f19;
+  --mantine-color-dimmed: #51645b;
+  color: var(--mantine-color-text);
+}
+html:root[data-mantine-color-scheme='dark'] .board .on-light {
+  --mantine-color-text: #e9f1ed;
+  --mantine-color-dimmed: #a8bab1;
+  color: var(--mantine-color-text);
 }

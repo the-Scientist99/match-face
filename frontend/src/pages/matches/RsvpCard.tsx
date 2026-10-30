@@ -14,7 +14,7 @@ export default function RsvpCard({ match, onAnswer, disabled }: { match: Match; 
   return (
     <Card>
       <Stack gap="sm">
-        <Text fw={700}>{t('rsvp.title')}</Text>
+        <h2 className="section-title">{t('rsvp.title')}</h2>
         {match.canRsvp && (
           <Group grow>
             <Button disabled={disabled} variant={match.myRsvp === true ? 'filled' : 'default'} aria-pressed={match.myRsvp === true} onClick={() => onAnswer(true)}>

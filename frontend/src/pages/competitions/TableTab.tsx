@@ -1,75 +1,70 @@
-import { Group, Loader, Paper, Table, Text } from '@mantine/core'
-import { useMediaQuery } from '@mantine/hooks'
+import { Group, Text } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, call, type StandingRow } from '../../api/client'
-import { tintOf } from '../../components/Crest'
+import LoadError from '../../auth/LoadError'
+import Crest from '../../components/Crest'
+import Empty from '../../components/Empty'
+import Loading from '../../components/Loading'
 
 /** +3, 0, −2 (a real minus sign) */
 const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0')
 
-export default function TableTab({ id }: { id: string }) {
+const NUMBERS = ['played', 'won', 'drawn', 'lost', 'goalsFor', 'goalsAgainst'] as const
+
+/** Every column at every width: on a phone the numbers scroll between the Team and Pts columns, which stay put. */
+export default function TableTab({ id, name }: { id: string; name: string }) {
   const { t } = useTranslation()
-  const wide = useMediaQuery('(min-width: 400px)') // GF and GA don't fit on the narrowest phones
   const standings = useQuery<StandingRow[]>({
     queryKey: ['competition', id, 'standings'],
     queryFn: () => call(api.GET('/api/competitions/{id}/standings', { params: { path: { id } } })),
   })
-  if (standings.isPending) return <Loader />
-  const cols: (keyof StandingRow)[] = ['played', 'won', 'drawn', 'lost', ...(wide ? (['goalsFor', 'goalsAgainst'] as const) : []), 'goalDifference', 'points']
+  if (standings.isPending) return <Loading rows={6} />
+  if (standings.isError) return <LoadError error={standings.error} onRetry={() => void standings.refetch()} />
+  if (!standings.data.length) return <Empty text={t('competition.noTeams')} />
+  const heading = (key: (typeof NUMBERS)[number] | 'goalDifference' | 'points') => <abbr title={t(`table.${key}Full`)}>{t(`table.${key}`)}</abbr>
   return (
-    <Paper p="xs">
-      <Table fz="sm" className="standings" verticalSpacing="sm" horizontalSpacing={6} highlightOnHover>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>#</Table.Th>
-            <Table.Th>{t('table.team')}</Table.Th>
-            {cols.map((c) => (
-              <Table.Th key={c} ta="right">
-                {t(`table.${c}`)}
-              </Table.Th>
+    // keyboard users can scroll it too
+    <div className="table-scroll" role="region" aria-label={t('table.caption', { name })} tabIndex={0}>
+      <table className="standings">
+        <caption style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }}>{t('table.caption', { name })}</caption>
+        <thead>
+          <tr>
+            <th scope="col" className="standings-team">
+              {t('table.team')}
+            </th>
+            {NUMBERS.map((c) => (
+              <th key={c} scope="col">
+                {heading(c)}
+              </th>
             ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {standings.data?.map((r, i) => (
-            <Table.Tr key={r.teamId}>
-              <Table.Td>
-                {i === 0 ? (
-                  <span className="pos-leader">{r.position}</span>
-                ) : (
-                  <Text span size="sm" c="dimmed" fw={600} px={6}>
+            <th scope="col">{heading('goalDifference')}</th>
+            <th scope="col" className="standings-pts">
+              {heading('points')}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {standings.data.map((r) => (
+            <tr key={r.teamId}>
+              <th scope="row" className="standings-team">
+                <Group gap={8} wrap="nowrap">
+                  <Text span c="dimmed" fw={600} miw={16}>
                     {r.position}
                   </Text>
-                )}
-              </Table.Td>
-              <Table.Td>
-                <Group gap={8} wrap="nowrap" data-tint={tintOf(r.name)}>
-                  <span className="tint-dot" style={{ width: 8, height: 8 }} />
-                  <Text span size="sm" fw={i === 0 ? 700 : 600}>
-                    {r.name}
-                  </Text>
+                  <Crest name={r.name} size={28} />
+                  {r.name}
                 </Group>
-              </Table.Td>
-              {cols.map((c) =>
-                c === 'points' ? (
-                  <Table.Td key={c} ta="right" className="score" fz={19} fw={700}>
-                    {r.points}
-                  </Table.Td>
-                ) : c === 'goalDifference' ? (
-                  <Table.Td key={c} ta="right" fw={600} c={r.goalDifference > 0 ? 'teal' : 'dimmed'}>
-                    {signed(r.goalDifference)}
-                  </Table.Td>
-                ) : (
-                  <Table.Td key={c} ta="right">
-                    {r[c]}
-                  </Table.Td>
-                ),
-              )}
-            </Table.Tr>
+              </th>
+              {NUMBERS.map((c) => (
+                <td key={c}>{r[c]}</td>
+              ))}
+              <td className="standings-gd">{signed(r.goalDifference)}</td>
+              <td className="standings-pts score">{r.points}</td>
+            </tr>
           ))}
-        </Table.Tbody>
-      </Table>
-    </Paper>
+        </tbody>
+      </table>
+    </div>
   )
 }

@@ -1,4 +1,4 @@
-import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Text, TextInput, Title } from '@mantine/core'
+import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -62,13 +62,12 @@ export default function ManageTab({ competition }: { competition: Competition })
           }}
         />
       )}
-      {competition.entries.length > 0 && <Title order={5}>{t('competition.entriesTitle')}</Title>}
+      {competition.entries.length > 0 && <h2 className="section-title">{t('competition.entriesTitle')}</h2>}
       {competition.entries.map((entry) => (
         <Group key={entry.teamId} justify="space-between">
           <Text>{entry.name}</Text>
           <Group gap="xs">
             <Button
-              size="xs"
               disabled={action.isPending}
               onClick={() => {
                 run(() => call(api.POST('/api/competitions/{id}/entries/{teamId}/approve', { ...entryPath(entry.teamId), body: { seed: seedValue } })))
@@ -89,7 +88,7 @@ export default function ManageTab({ competition }: { competition: Competition })
           </Group>
         </Group>
       ))}
-      <Title order={5}>{t('competition.teams')}</Title>
+      <h2 className="section-title">{t('competition.teams')}</h2>
       {competition.teams.length ? (
         competition.teams.map((ct) => (
           <Group key={ct.teamId} justify="space-between">

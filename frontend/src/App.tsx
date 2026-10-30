@@ -1,8 +1,8 @@
-import { Center, Loader } from '@mantine/core'
 import { createBrowserRouter } from 'react-router'
 import { useAuth } from './auth/AuthProvider'
 import RequireAuth, { WaitForAuth } from './auth/RequireAuth'
 import Layout from './components/Layout'
+import Loading from './components/Loading'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import ClaimPage from './pages/claim/ClaimPage'
@@ -21,11 +21,7 @@ import TeamsPage from './pages/teams/TeamsPage'
 function Index() {
   const { user, ready } = useAuth()
   if (!ready) {
-    return (
-      <Center mt="xl">
-        <Loader />
-      </Center>
-    )
+    return <Loading />
   }
   return user ? <HomePage /> : <LandingPage />
 }

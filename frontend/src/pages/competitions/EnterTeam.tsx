@@ -1,4 +1,4 @@
-import { Anchor, Button, Group, Select, Stack, Text, Title } from '@mantine/core'
+import { Anchor, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -44,7 +44,7 @@ export default function EnterTeam({ competition }: { competition: Competition })
 
   return (
     <Stack className="surface">
-      <Title order={5}>{t('competition.entriesTitle')}</Title>
+      <h2 className="section-title">{t('competition.entriesTitle')}</h2>
       {competition.entries.map((entry) => (
         <Group key={entry.teamId} justify="space-between">
           <div>

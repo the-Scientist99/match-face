@@ -1,5 +1,5 @@
-import { Center, Loader } from '@mantine/core'
 import { Navigate, Outlet, useLocation } from 'react-router'
+import Loading from '../components/Loading'
 import { useAuth } from './AuthProvider'
 
 /**
@@ -16,14 +16,6 @@ export function safeNext(next: string | null): string {
 export function useLoginPath(): string {
   const { pathname, search } = useLocation()
   return `/login?next=${encodeURIComponent(pathname + search)}`
-}
-
-function Loading() {
-  return (
-    <Center mt="xl">
-      <Loader />
-    </Center>
-  )
 }
 
 /** For pages anyone can open: a returning user's session comes back first, so they aren't served as a visitor. */

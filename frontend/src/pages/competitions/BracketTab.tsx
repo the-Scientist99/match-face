@@ -1,10 +1,12 @@
-import { Card, Group, Loader, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
+import { Card, Group, Paper, ScrollArea, Stack, Text } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { api, call, type Bracket, type BracketMatch } from '../../api/client'
-import { errorCode } from '../../api/errors'
+import LoadError from '../../auth/LoadError'
+import Empty from '../../components/Empty'
 import { TrophyIcon } from '../../components/icons'
+import Loading from '../../components/Loading'
 import { roundLabel } from '../matches/matchLogic'
 
 /** An empty slot waits for an earlier round (bye teams are placed straight into round 2). */
@@ -30,7 +32,7 @@ function MatchCard({ bm }: { bm: BracketMatch }) {
   const played = m.status === 'FINISHED'
   const winner = !played ? null : m.score.home > m.score.away ? 'HOME' : m.score.away > m.score.home ? 'AWAY' : bm.penaltyWinner
   return (
-    <Card padding="sm" radius="lg" w={180} className="pressable" component={Link} to={`/matches/${m.id}`}>
+    <Card padding="sm" w={200} className="pressable" component={Link} to={`/matches/${m.id}`}>
       <Side name={m.homeName} score={played ? m.score.home : null} won={winner === 'HOME'} pens={bm.penaltyWinner === 'HOME'} />
       <Side name={m.awayName} score={played ? m.score.away : null} won={winner === 'AWAY'} pens={bm.penaltyWinner === 'AWAY'} />
     </Card>
@@ -44,10 +46,10 @@ export default function BracketTab({ id }: { id: string }) {
     queryKey: ['competition', id, 'bracket'],
     queryFn: () => call(api.GET('/api/competitions/{id}/bracket', { params: { path: { id } } })) as Promise<Bracket>,
   })
-  if (bracket.isPending) return <Loader />
-  if (bracket.isError) return <Text>{t(`errors.${errorCode(bracket.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
+  if (bracket.isPending) return <Loading />
+  if (bracket.isError) return <LoadError error={bracket.error} onRetry={() => void bracket.refetch()} />
   const b = bracket.data
-  if (!b.matches.length) return <Text c="dimmed">{t('competition.noFixtures')}</Text>
+  if (!b.matches.length) return <Empty text={t('competition.noFixtures')} />
   const rounds = Array.from({ length: b.rounds }, (_, i) => i + 1)
   return (
     <Stack>
@@ -68,7 +70,9 @@ export default function BracketTab({ id }: { id: string }) {
             const [key, values] = roundLabel(r, b.rounds)
             return (
               <Stack key={r} gap="xs" justify="space-around">
-                <Title order={6}>{t(key, values)}</Title>
+                <h2 className="section-label" style={{ margin: 0 }}>
+                  {t(key, values)}
+                </h2>
                 {b.matches.filter((bm) => bm.round === r).map((bm) => <MatchCard key={bm.match.id} bm={bm} />)}
               </Stack>
             )

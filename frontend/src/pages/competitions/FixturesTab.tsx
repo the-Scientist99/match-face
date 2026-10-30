@@ -1,9 +1,12 @@
-import { Button, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, call, type MatchSummary } from '../../api/client'
 import { useNotifyError } from '../../api/errors'
+import LoadError from '../../auth/LoadError'
+import Empty from '../../components/Empty'
+import Loading from '../../components/Loading'
 import MatchList from '../../components/MatchList'
 import { groupByRound, isoToLocal, localToIso } from '../matches/matchLogic'
 
@@ -63,16 +66,17 @@ export default function FixturesTab({ id, canAdmin }: { id: string; canAdmin: bo
     queryKey: ['competition', id, 'matches'],
     queryFn: () => call(api.GET('/api/competitions/{id}/matches', { params: { path: { id } } })),
   })
-  if (matches.isPending) return <Loader />
-  if (!matches.data?.length) return <Text c="dimmed">{t('competition.noFixtures')}</Text>
+  if (matches.isPending) return <Loading />
+  if (matches.isError) return <LoadError error={matches.error} onRetry={() => void matches.refetch()} />
+  if (!matches.data.length) return <Empty text={t('competition.noFixtures')} />
   return (
-    <Stack>
+    <Stack gap="xl">
       {groupByRound(matches.data).map(([round, ms]) => (
-        <Stack key={round ?? 'none'} gap="xs">
+        <Stack key={round ?? 'none'} gap={10}>
           <Group justify="space-between">
-            <Title order={5}>{round !== null ? t('competition.round', { round }) : t('competition.unscheduled')}</Title>
+            <h2 className="section-title">{round !== null ? t('competition.round', { round }) : t('competition.unscheduled')}</h2>
             {canAdmin && round !== null && ms.some((m) => m.status === 'SCHEDULED') && (
-              <Button size="compact-sm" variant="subtle" onClick={() => setDating(round)}>
+              <Button variant="subtle" size="sm" onClick={() => setDating(round)}>
                 {t('competition.setDate')}
               </Button>
             )}

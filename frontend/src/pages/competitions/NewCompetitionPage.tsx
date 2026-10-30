@@ -5,11 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { api, call } from '../../api/client'
 import { useNotifyError } from '../../api/errors'
+import { usePageTitle } from '../../components/usePageTitle'
 
 type Visibility = 'PRIVATE' | 'PUBLIC'
 
 export default function NewCompetitionPage() {
   const { t } = useTranslation()
+  usePageTitle(t('competition.new'))
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const notifyError = useNotifyError()
@@ -30,7 +32,7 @@ export default function NewCompetitionPage() {
   return (
     <Stack
       component="form"
-      maw={500}
+      maw={640}
       w="100%"
       mx="auto"
       className="surface"
@@ -39,8 +41,9 @@ export default function NewCompetitionPage() {
         create.mutate()
       }}
     >
-      <Title order={2}>{t('competition.new')}</Title>
+      <Title order={1}>{t('competition.new')}</Title>
       <SegmentedControl
+        aria-label={t('competition.typeLabel')}
         value={type}
         onChange={(v) => setType(v as 'LEAGUE' | 'CUP')}
         data={[
@@ -50,6 +53,7 @@ export default function NewCompetitionPage() {
       />
       <TextInput label={t('competition.name')} value={name} maxLength={80} required onChange={(e) => setName(e.currentTarget.value)} />
       <SegmentedControl
+        aria-label={t('match.visibilityLabel')}
         value={visibility}
         onChange={(v) => setVisibility(v as Visibility)}
         data={[
@@ -68,7 +72,7 @@ export default function NewCompetitionPage() {
       {type === 'LEAGUE' && (
         <Checkbox label={t('competition.doubleRoundRobin')} checked={doubleRoundRobin} onChange={(e) => setDoubleRoundRobin(e.currentTarget.checked)} />
       )}
-      <Button type="submit" loading={create.isPending}>
+      <Button type="submit" size="lg" loading={create.isPending}>
         {t('competition.create')}
       </Button>
     </Stack>

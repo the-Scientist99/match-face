@@ -1,14 +1,18 @@
-import { Badge, Button, Card, Group, Loader, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Badge, Button, Card, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
 import { api, call, type Team } from '../../api/client'
-import { errorCode, useNotifyError } from '../../api/errors'
+import { useNotifyError } from '../../api/errors'
+import LoadError from '../../auth/LoadError'
 import Crest from '../../components/Crest'
+import Empty from '../../components/Empty'
 import EditableCrest, { RemoveImageButton } from '../../components/ImageUpload'
 import { ChevronIcon, PencilIcon } from '../../components/icons'
+import Loading from '../../components/Loading'
 import PlayerPicker from '../../components/PlayerPicker'
+import { usePageTitle } from '../../components/usePageTitle'
 
 function TeamAdmin({ team }: { team: Team }) {
   const { t } = useTranslation()
@@ -69,40 +73,41 @@ export default function TeamPage() {
     retry: false,
   })
   const [editing, setEditing] = useState(false)
+  usePageTitle(team.data?.name)
 
-  if (team.isPending) return <Loader />
-  if (team.isError) return <Text>{t(`errors.${errorCode(team.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
+  if (team.isPending) return <Loading />
+  if (team.isError) return <LoadError error={team.error} />
   const data = team.data
   return (
     <Stack gap="lg">
-      <Paper p="lg" pt="xl">
-        <Stack gap="sm" align="center">
-          {data.canAdmin ? (
-            <EditableCrest kind="teams" id={data.id} name={data.name} imageUrl={data.imageUrl} size={72} />
-          ) : (
-            <Crest name={data.name} size={72} src={data.imageUrl} />
-          )}
-          <Title order={2} ta="center">
+      <Group gap="md" wrap="nowrap">
+        {data.canAdmin ? (
+          <EditableCrest kind="teams" id={data.id} name={data.name} imageUrl={data.imageUrl} size={72} />
+        ) : (
+          <Crest name={data.name} size={72} src={data.imageUrl} />
+        )}
+        <Stack gap={4} align="flex-start" miw={0}>
+          <Title order={1} style={{ overflowWrap: 'anywhere' }}>
             {data.name}
           </Title>
           {data.canAdmin && data.imageUrl && <RemoveImageButton kind="teams" id={data.id} />}
         </Stack>
-      </Paper>
-      <Stack gap={10}>
-        <Text component="h2" className="section-label" m={0}>
-          {data.players.length ? `${t('teams.roster')} · ${data.players.length}` : t('teams.roster')}
-        </Text>
+      </Group>
+      <Stack gap={12}>
+        <h2 className="section-title">
+          {t('teams.roster')} {data.players.length > 0 && <span>· {data.players.length}</span>}
+        </h2>
         {data.players.length ? (
-          <Card p={6} className="list-rows">
+          <Card p={0} className="list-rows">
             {data.players.map((p) => (
               <Link key={p.id} to={`/players/${p.id}`} className="list-link">
-                <Group gap="sm" wrap="nowrap" mih={56} px="sm">
+                <Group gap="sm" wrap="nowrap" mih={56} px="md">
                   <Crest name={p.name} size={32} src={p.imageUrl} />
                   <Text fw={600} flex={1} truncate>
                     {p.name}
                   </Text>
                   {!p.claimed && (
-                    <Badge size="sm" color="gray">
+                    <Badge color="gray">
                       {t('players.guest')}
                     </Badge>
                   )}
@@ -111,7 +116,7 @@ export default function TeamPage() {
             ))}
           </Card>
         ) : (
-          <Text c="dimmed">{t('teams.emptyRoster')}</Text>
+          <Empty text={t('teams.emptyRoster')} />
         )}
       </Stack>
       {data.canAdmin && (

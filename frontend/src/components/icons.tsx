@@ -1,4 +1,5 @@
 import type { ReactNode, SVGProps } from 'react'
+import { useTranslation } from 'react-i18next'
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number }
 
@@ -50,6 +51,12 @@ export const KeeperIcon = (p: IconProps) => (
     <path d="M7 21V11l-2-3 2-4 3 1 2-1 2 1 3-1 2 4-2 3v10z" />
   </Icon>
 )
+export const SearchIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.5 4.5" />
+  </Icon>
+)
 export const PlusIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M12 5v14M5 12h14" />
@@ -71,7 +78,12 @@ export const ChevronIcon = (p: IconProps) => (
   </Icon>
 )
 
-/** A yellow or red card, drawn as a card */
+/** A yellow or red card, drawn as a card with its letter, so it doesn't rest on colour alone */
 export function CardIcon({ color, label }: { color: 'yellow' | 'red'; label?: string }) {
-  return <span className="card-icon" data-card={color} role={label ? 'img' : undefined} aria-label={label} aria-hidden={!label || undefined} />
+  const { t } = useTranslation()
+  return (
+    <span className="event-mark card-icon" data-card={color} role={label ? 'img' : undefined} aria-label={label} aria-hidden={!label || undefined}>
+      {t(`event.mark.${color === 'yellow' ? 'YELLOW' : 'RED'}`)}
+    </span>
+  )
 }

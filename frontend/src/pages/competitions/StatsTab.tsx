@@ -1,10 +1,11 @@
-import { Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Group, SimpleGrid, Stack, Text } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, call, type CompetitionStats } from '../../api/client'
-import { errorCode } from '../../api/errors'
+import LoadError from '../../auth/LoadError'
 import { CardIcon } from '../../components/icons'
+import Loading from '../../components/Loading'
 
 function Cards({ yellow, red }: { yellow: number; red: number }) {
   const { t } = useTranslation()
@@ -26,12 +27,14 @@ function Board({ title, rows }: { title: string; rows: { key: string; name: stri
   const { t } = useTranslation()
   return (
     <Stack gap={6} className="surface">
-      <Title order={5}>{title}</Title>
+      <h2 className="section-title">{title}</h2>
       {rows.length ? (
         rows.map((r) => (
-          <Group key={r.key} justify="space-between">
-            <Text size="sm">{r.name}</Text>
-            <Text component="div" size="sm" fw={600}>
+          <Group key={r.key} justify="space-between" wrap="nowrap" mih={44}>
+            <Text fw={600} truncate>
+              {r.name}
+            </Text>
+            <Text component="div" className="score" fz={24}>
               {r.value}
             </Text>
           </Group>
@@ -51,8 +54,8 @@ export default function StatsTab({ id }: { id: string }) {
     queryKey: ['competition', id, 'stats'],
     queryFn: () => call(api.GET('/api/competitions/{id}/stats', { params: { path: { id } } })),
   })
-  if (stats.isPending) return <Loader />
-  if (stats.isError) return <Text>{t(`errors.${errorCode(stats.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
+  if (stats.isPending) return <Loading />
+  if (stats.isError) return <LoadError error={stats.error} onRetry={() => void stats.refetch()} />
   const s = stats.data
   return (
     <SimpleGrid cols={{ base: 1, sm: 3 }}>

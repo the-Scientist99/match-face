@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { groupByRound, hasStarted, isoToLocal, localToIso, needsPenalties, pickerOptions, roundLabel, showAddGuest, splitMatches, teamsUndecided } from './matchLogic'
+import { groupByRound, hasStarted, isLive, isoToLocal, localToIso, needsPenalties, pickerOptions, pitchRows, resultFor, roundLabel, shirtNames, showAddGuest, splitMatches, teamsUndecided } from './matchLogic'
 
 const m = (id: string, status: 'SCHEDULED' | 'FINISHED' | 'CANCELLED', kickoffAt: string | null) =>
   ({ id, status, kickoffAt }) as Parameters<typeof splitMatches>[0][number]
@@ -84,4 +84,35 @@ test('teamsUndecided: a knockout match waiting for an earlier round', () => {
   expect(teamsUndecided({ knockout: true, home: side('a'), away: side(null) })).toBe(true)
   expect(teamsUndecided({ knockout: true, home: side('a'), away: side('b') })).toBe(false)
   expect(teamsUndecided({ knockout: false, home: side(null), away: side(null) })).toBe(false) // a pickup has labels, no teams
+})
+
+test('isLive: scheduled and past a real kickoff; no date is never live', () => {
+  const now = new Date('2026-11-01T20:00:00Z')
+  expect(isLive({ status: 'SCHEDULED', kickoffAt: '2026-11-01T19:30:00Z' }, now)).toBe(true)
+  expect(isLive({ status: 'SCHEDULED', kickoffAt: '2026-11-01T21:00:00Z' }, now)).toBe(false)
+  expect(isLive({ status: 'SCHEDULED', kickoffAt: null }, now)).toBe(false)
+  expect(isLive({ status: 'FINISHED', kickoffAt: '2026-11-01T19:30:00Z' }, now)).toBe(false)
+})
+
+test('pitchRows: at most three across, biggest rows first, nobody lost', () => {
+  const sizes = (n: number) => pitchRows(Array.from({ length: n }, (_, i) => i)).map((r) => r.length)
+  expect(sizes(0)).toEqual([])
+  expect(sizes(2)).toEqual([2])
+  expect(sizes(4)).toEqual([2, 2])
+  expect(sizes(6)).toEqual([3, 3])
+  expect(sizes(7)).toEqual([3, 2, 2])
+  expect(sizes(10)).toEqual([3, 3, 2, 2])
+  expect(pitchRows([1, 2, 3, 4]).flat()).toEqual([1, 2, 3, 4])
+})
+
+test('shirtNames: surname, an initial for a shared one, the whole name for a stray initial', () => {
+  expect(shirtNames(['Marko Ilić', 'Luka Perović'])).toEqual(['Ilić', 'Perović'])
+  expect(shirtNames(['Marko Ilić', 'Đorđe Ilić'])).toEqual(['M. Ilić', 'Đ. Ilić'])
+  expect(shirtNames(['Marko P', 'Ana'])).toEqual(['Marko P', 'Ana'])
+})
+
+test("resultFor reads the score from the player's side", () => {
+  expect(resultFor({ home: 2, away: 1 }, 'HOME')).toBe('won')
+  expect(resultFor({ home: 2, away: 1 }, 'AWAY')).toBe('lost')
+  expect(resultFor({ home: 1, away: 1 }, 'AWAY')).toBe('drawn')
 })

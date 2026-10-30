@@ -1,53 +1,59 @@
 import {
-  Badge, Button, Card, createTheme, Menu, Modal, MultiSelect, NumberInput, Paper, PasswordInput, SegmentedControl, Select, Tabs, TextInput,
+  Badge, Button, Card, Checkbox, createTheme, Fieldset, Menu, Modal, MultiSelect, NumberInput, Pagination, Paper, PasswordInput, SegmentedControl, Select, Tabs, TextInput,
 } from '@mantine/core'
 
-/** Soft teal-tinted elevation: cards float on the mint page instead of sitting in bordered boxes. */
-const softShadow = '0 4px 16px rgba(12, 166, 120, 0.06), 0 1px 3px rgba(0, 0, 0, 0.05)'
+const DISPLAY = '"Barlow Semi Condensed", system-ui, sans-serif'
+const field = { size: 'md' } as const
 
-/** Direction "Fresh and friendly": mint page, elevated white cards, soft tinted chips, solid teal accents. */
+/** "Matchday Board": hairlines instead of shadows, type-led lists, solid teal accents and one dark scoreboard per screen. */
 export const theme = createTheme({
   primaryColor: 'teal',
-  // filled buttons: teal 9 keeps white text at 5:1 in both schemes (teal 7 was 3.1:1, dark's teal 5 was 2.1:1);
+  // filled buttons: teal 9 keeps white text at 5:1 in both schemes;
   // teal text uses --mantine-color-teal-text, which dark mode lightens on its own
   primaryShade: { light: 9, dark: 9 },
   autoContrast: true,
   defaultRadius: 'md',
   cursorType: 'pointer',
   respectReducedMotion: true,
-  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  fontFamily: '"Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
+  // nothing on screen goes below 14px
+  fontSizes: { xs: '0.875rem', sm: '0.9375rem', md: '1rem', lg: '1.1875rem', xl: '1.5rem' },
+  radius: { xs: '4px', sm: '6px', md: '10px', lg: '16px', xl: '16px' },
   shadows: {
-    xs: '0 1px 3px rgba(0, 0, 0, 0.05)',
-    sm: softShadow,
-    md: '0 8px 24px rgba(12, 166, 120, 0.10), 0 2px 6px rgba(0, 0, 0, 0.06)',
+    xs: 'none',
+    sm: 'none',
+    md: '0 12px 32px rgba(6, 26, 20, 0.18)', // floating layers only: menus, dialogs
   },
   headings: {
+    fontFamily: DISPLAY,
     fontWeight: '700',
     sizes: {
-      h1: { fontSize: '2rem', lineHeight: '1.1' },
-      h2: { fontSize: '1.625rem', lineHeight: '1.15' },
-      h3: { fontSize: '1.375rem', lineHeight: '1.2' },
+      h1: { fontSize: 'clamp(2.25rem, 6vw, 3rem)', lineHeight: '1.05' },
+      h2: { fontSize: '1.5rem', lineHeight: '1.2' },
+      h3: { fontSize: '1.25rem', lineHeight: '1.2' },
       h4: { fontSize: '1.125rem', lineHeight: '1.25' },
       h5: { fontSize: '1rem', lineHeight: '1.3' },
     },
   },
   components: {
-    Button: Button.extend({ defaultProps: { radius: 'lg' } }),
-    Card: Card.extend({ defaultProps: { radius: 24, shadow: 'sm', withBorder: false, padding: 'lg' } }),
-    Paper: Paper.extend({ defaultProps: { radius: 24, shadow: 'sm', withBorder: false } }),
-    Badge: Badge.extend({ defaultProps: { radius: 'xl', variant: 'light' } }),
-    SegmentedControl: SegmentedControl.extend({ defaultProps: { radius: 'xl' } }),
-    Tabs: Tabs.extend({ defaultProps: { variant: 'pills', radius: 'xl' } }),
-    // soft filled fields (no hard outline), rounded like the cards' inner elements
-    TextInput: TextInput.extend({ defaultProps: { variant: 'filled', radius: 'lg' } }),
-    PasswordInput: PasswordInput.extend({ defaultProps: { variant: 'filled', radius: 'lg' } }),
-    NumberInput: NumberInput.extend({ defaultProps: { variant: 'filled', radius: 'lg' } }),
-    Select: Select.extend({ defaultProps: { variant: 'filled', radius: 'lg' } }),
-    MultiSelect: MultiSelect.extend({ defaultProps: { variant: 'filled', radius: 'lg' } }),
+    Button: Button.extend({ defaultProps: { size: 'md' } }),
+    Card: Card.extend({ defaultProps: { radius: 'lg', shadow: 'none', withBorder: true, padding: 'lg' } }),
+    Paper: Paper.extend({ defaultProps: { radius: 'lg', shadow: 'none', withBorder: true } }),
+    Fieldset: Fieldset.extend({ defaultProps: { radius: 'lg' } }),
+    Badge: Badge.extend({ defaultProps: { radius: 'sm', variant: 'light' } }),
+    SegmentedControl: SegmentedControl.extend({ defaultProps: { radius: 'md', size: 'md' } }),
+    Tabs: Tabs.extend({ defaultProps: { variant: 'default' } }),
+    Pagination: Pagination.extend({ defaultProps: { size: 'lg' } }),
+    TextInput: TextInput.extend({ defaultProps: field }),
+    PasswordInput: PasswordInput.extend({ defaultProps: field }),
+    NumberInput: NumberInput.extend({ defaultProps: { ...field, hideControls: true } }), // typed, not nudged: the steppers are 20px and unnamed
+    Checkbox: Checkbox.extend({ defaultProps: { size: 'md' } }),
+    Select: Select.extend({ defaultProps: field }),
+    MultiSelect: MultiSelect.extend({ defaultProps: field }),
     // anchored to their trigger and quick to appear: a short scale from the source, not a slide from nowhere
     Menu: Menu.extend({ defaultProps: { radius: 'lg', shadow: 'md', transitionProps: { transition: 'pop-top-right', duration: 150 } } }),
     Modal: Modal.extend({
-      defaultProps: { radius: 24, centered: true, overlayProps: { blur: 3, backgroundOpacity: 0.35 }, transitionProps: { transition: 'pop', duration: 180 } },
+      defaultProps: { radius: 'lg', shadow: 'md', centered: true, overlayProps: { backgroundOpacity: 0.55 }, transitionProps: { transition: 'pop', duration: 180 } },
     }),
   },
 })

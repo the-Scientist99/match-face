@@ -1,4 +1,4 @@
-import { ActionIcon, Anchor, Badge, Button, Card, Group, Loader, Stack, TextInput, Title } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Button, Card, Group, Stack, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,7 +7,10 @@ import { Link } from 'react-router'
 import { fieldErrors, useNotifyError } from '../../api/errors'
 import { useAuth } from '../../auth/AuthProvider'
 import Crest from '../../components/Crest'
+import Empty from '../../components/Empty'
 import { PencilIcon, PlusIcon } from '../../components/icons'
+import Loading from '../../components/Loading'
+import { usePageTitle } from '../../components/usePageTitle'
 
 function PlayerRow({ player }: { player: Player }) {
   const { t } = useTranslation()
@@ -50,10 +53,10 @@ function PlayerRow({ player }: { player: Player }) {
           onChange={(e) => setEditing(e.currentTarget.value)}
           error={nameError && t(nameError)}
         />
-        <Button type="submit" size="xs" loading={rename.isPending}>
+        <Button type="submit" loading={rename.isPending}>
           {t('common.save')}
         </Button>
-        <Button size="xs" variant="subtle" onClick={() => setEditing(null)}>
+        <Button variant="subtle" onClick={() => setEditing(null)}>
           {t('common.cancel')}
         </Button>
       </Group>
@@ -62,11 +65,11 @@ function PlayerRow({ player }: { player: Player }) {
   return (
     <Group gap="sm" wrap="nowrap" mih={60}>
       <Crest name={player.name} size={36} src={player.imageUrl} />
-      <Anchor component={Link} to={`/players/${player.id}`} c="var(--mantine-color-text)" fw={600} flex={1} truncate>
+      <Anchor component={Link} to={`/players/${player.id}`} c="var(--mantine-color-text)" fw={600} flex={1} py={10} truncate>
         {player.name}
       </Anchor>
       {!player.claimed && (
-        <Badge size="sm" color="gray">
+        <Badge color="gray">
           {t('players.guest')}
         </Badge>
       )}
@@ -81,6 +84,7 @@ function PlayerRow({ player }: { player: Player }) {
 
 export default function PlayersPage() {
   const { t } = useTranslation()
+  usePageTitle(t('players.title'))
   const queryClient = useQueryClient()
   const notifyError = useNotifyError()
   const [name, setName] = useState('')
@@ -96,7 +100,7 @@ export default function PlayersPage() {
 
   return (
     <Stack gap="lg">
-      <Title order={2}>{t('players.title')}</Title>
+      <Title order={1}>{t('players.title')}</Title>
       <Group
         component="form"
         align="flex-end"
@@ -121,15 +125,15 @@ export default function PlayersPage() {
         </Button>
       </Group>
       {mine.isPending ? (
-        <Loader />
+        <Loading />
+      ) : mine.data?.length ? (
+        <Card py={4} className="list-rows">
+          {mine.data.map((p) => (
+            <PlayerRow key={p.id} player={p} />
+          ))}
+        </Card>
       ) : (
-        !!mine.data?.length && (
-          <Card py={4} className="list-rows">
-            {mine.data.map((p) => (
-              <PlayerRow key={p.id} player={p} />
-            ))}
-          </Card>
-        )
+        <Empty text={t('teams.emptyRoster')} />
       )}
     </Stack>
   )

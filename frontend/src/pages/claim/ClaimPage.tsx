@@ -1,11 +1,14 @@
-import { Button, Group, Loader, Stack, Text, Title } from '@mantine/core'
+import { Button, Group, Stack, Text, Title } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router'
 import { api, call } from '../../api/client'
-import { errorCode, useNotifyError } from '../../api/errors'
+import { useNotifyError } from '../../api/errors'
 import { useAuth } from '../../auth/AuthProvider'
+import LoadError from '../../auth/LoadError'
+import Loading from '../../components/Loading'
+import { usePageTitle } from '../../components/usePageTitle'
 
 /** `/claim/:token`: preview the guest's history, then (logged in) merge it into your own player. */
 export default function ClaimPage() {
@@ -33,13 +36,14 @@ export default function ClaimPage() {
     onError: notifyError,
   })
   const next = encodeURIComponent(`/claim/${token}`)
+  usePageTitle(preview.data && t('claim.title', { name: preview.data.playerName }))
 
-  if (preview.isPending || !ready) return <Loader />
-  if (preview.isError) return <Text>{t(`errors.${errorCode(preview.error)}`, { defaultValue: t('errors.UNKNOWN') })}</Text>
+  if (preview.isPending || !ready) return <Loading rows={1} />
+  if (preview.isError) return <LoadError error={preview.error} />
   const p = preview.data
   return (
     <Stack maw={500} w="100%" mx="auto" className="surface">
-      <Title order={2}>{t('claim.title', { name: p.playerName })}</Title>
+      <Title order={1}>{t('claim.title', { name: p.playerName })}</Title>
       <Text>{t('claim.summary', { matches: p.appearances, goals: p.goals })}</Text>
       {user ? (
         <Group>

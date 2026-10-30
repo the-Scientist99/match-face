@@ -1,10 +1,10 @@
-import { Button, FileButton, Loader, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Button, FileButton, Loader, UnstyledButton } from '@mantine/core'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, call } from '../api/client'
 import { useNotifyError } from '../api/errors'
 import { useAuth } from '../auth/AuthProvider'
-import Crest from './Crest'
+import Crest, { initials } from './Crest'
 import { PencilIcon } from './icons'
 import { toSquareJpeg } from './squareImage'
 
@@ -59,12 +59,38 @@ export default function EditableCrest({ name, imageUrl, size, ...owner }: Owner 
   )
 }
 
+/** A large photo for a profile, with the same picker on a button in its corner for someone who may edit it. */
+export function PlayerPhoto({ name, imageUrl, canEdit, ...owner }: Owner & { name: string; imageUrl: string | null; canEdit: boolean }) {
+  const { t } = useTranslation()
+  const save = useImage(owner)
+  return (
+    <div className="player-photo">
+      {imageUrl ? (
+        <img src={imageUrl} alt={name} />
+      ) : (
+        <span className="player-photo-initials" aria-hidden>
+          {initials(name)}
+        </span>
+      )}
+      {canEdit && (
+        <FileButton accept="image/*" disabled={save.isPending} onChange={(file) => file && save.mutate(file)}>
+          {(props) => (
+            <ActionIcon {...props} className="player-photo-edit" variant="white" color="dark" radius="xl" size={44} loading={save.isPending} aria-label={imageUrl ? t('image.change') : t('image.add')}>
+              <PencilIcon size={20} />
+            </ActionIcon>
+          )}
+        </FileButton>
+      )}
+    </div>
+  )
+}
+
 /** A quiet link to remove the image; kept apart from the crest so a stray tap can't delete it. */
 export function RemoveImageButton(owner: Owner) {
   const { t } = useTranslation()
   const save = useImage(owner)
   return (
-    <Button size="compact-sm" variant="subtle" color="gray" loading={save.isPending} onClick={() => save.mutate(null)}>
+    <Button size="sm" px="xs" variant="subtle" color="gray" loading={save.isPending} onClick={() => save.mutate(null)}>
       {t('image.remove')}
     </Button>
   )

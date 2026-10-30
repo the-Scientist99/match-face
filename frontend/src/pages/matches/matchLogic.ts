@@ -20,6 +20,11 @@ export function hasStarted(kickoffAt: string | null, now = new Date()): boolean 
   return !kickoffAt || new Date(kickoffAt) <= now
 }
 
+/** In play: past a real kickoff but not finished. A fixture with no date counts as started, but nobody can say it's on. */
+export function isLive(m: { status: string; kickoffAt: string | null }, now = new Date()): boolean {
+  return m.status === 'SCHEDULED' && !!m.kickoffAt && hasStarted(m.kickoffAt, now)
+}
+
 /** ISO instant → `<input type="datetime-local">` value in local time. */
 export function isoToLocal(iso: string | null): string {
   if (!iso) return ''
@@ -71,4 +76,28 @@ export function needsPenalties(m: { knockout: boolean; score: { home: number; aw
 /** A knockout match waiting for an earlier round to fill a side: nothing can be entered yet. */
 export function teamsUndecided(m: { knockout: boolean; home: { teamId: string | null }; away: { teamId: string | null } }): boolean {
   return m.knockout && (m.home.teamId === null || m.away.teamId === null)
+}
+
+/** The pitch's rows of outfield players: at most three across, the biggest rows first. */
+export function pitchRows<T>(items: T[]): T[][] {
+  const count = Math.ceil(items.length / 3)
+  let at = 0
+  return Array.from({ length: count }, (_, i) => {
+    const size = Math.floor(items.length / count) + (i < items.length % count ? 1 : 0)
+    return items.slice((at += size) - size, at)
+  })
+}
+
+/** The names on the shirts: surnames, an initial when two share one, the whole name when the last word is too short to be one ("Marko P"). */
+export function shirtNames(names: string[]): string[] {
+  const words = names.map((n) => n.trim().split(/\s+/))
+  const short = (w: string[], i: number) => (Array.from(w[w.length - 1]).length >= 3 ? w[w.length - 1] : names[i].trim())
+  const shorts = words.map(short)
+  return shorts.map((s, i) => (shorts.filter((o) => o === s).length > 1 && words[i].length > 1 ? `${Array.from(words[i][0])[0]}. ${s}` : s))
+}
+
+/** A player's result in a finished match, from their side. */
+export function resultFor(score: { home: number; away: number }, side: 'HOME' | 'AWAY'): 'won' | 'drawn' | 'lost' {
+  const diff = side === 'HOME' ? score.home - score.away : score.away - score.home
+  return diff > 0 ? 'won' : diff < 0 ? 'lost' : 'drawn'
 }

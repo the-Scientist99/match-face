@@ -17,7 +17,7 @@ export default function InviteButton({ playerId }: { playerId: string }) {
 
   return (
     <>
-      <Button variant="light" loading={invite.isPending} onClick={() => invite.mutate()}>
+      <Button variant="default" loading={invite.isPending} onClick={() => invite.mutate()}>
         {t('claim.invite')}
       </Button>
       <Modal opened={!!invite.data} onClose={() => invite.reset()} title={t('claim.invite')} centered>

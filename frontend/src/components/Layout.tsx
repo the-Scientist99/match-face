@@ -1,4 +1,4 @@
-import { ActionIcon, AppShell, Button, Container, Group, type MantineColorScheme, Menu, SegmentedControl, Title, useMantineColorScheme } from '@mantine/core'
+import { ActionIcon, AppShell, Button, Container, Group, type MantineColorScheme, Menu, SegmentedControl, useMantineColorScheme } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
@@ -7,7 +7,7 @@ import { useAuth } from '../auth/AuthProvider'
 import type { Lang } from '../lang'
 import Crest, { initials } from './Crest'
 import Logo from './Logo'
-import { BallIcon, PersonIcon, ShieldIcon } from './icons'
+import { BallIcon, PersonIcon, PlusIcon, ShieldIcon } from './icons'
 
 /** Header links on wider screens, the bottom tab bar on phones */
 const TABS = [
@@ -19,7 +19,7 @@ const TABS = [
 const isCurrent = (to: string, path: string) => (to === '/' ? path === '/' || /^\/(matches|competitions)\//.test(path) : path.startsWith(to))
 const LANGS: Lang[] = ['me', 'en']
 /** One width for every page and the header, so their edges line up on wide screens */
-const PAGE_WIDTH = 960
+export const PAGE_WIDTH = 1120
 const SCHEMES: MantineColorScheme[] = ['auto', 'light', 'dark']
 
 export default function Layout() {
@@ -33,25 +33,36 @@ export default function Layout() {
   const changeLang = (lng: string) => setLocale(lng as Lang).catch(notifyError)
   // auto follows the device; Mantine keeps the choice in this browser's localStorage
   const { colorScheme, setColorScheme } = useMantineColorScheme()
+  const landing = !user && pathname === '/'
   return (
-    <AppShell header={{ height: 60 }} footer={{ height: 64, collapsed: !(user && phone) }} padding="md">
-      <AppShell.Header className="app-header" withBorder={false}>
+    <AppShell header={{ height: 64 }} footer={{ height: 64, collapsed: !(user && phone) }} padding="md">
+      <a className="skip-link" href="#main">
+        {t('nav.skip')}
+      </a>
+      <AppShell.Header className="app-header" data-board={landing || undefined} withBorder={false}>
         <Container size={PAGE_WIDTH} h="100%" px="md">
-          <Group h="100%" justify="space-between" wrap="nowrap">
-            <Title order={4} className="brand" renderRoot={(props) => <Link to="/" {...props} />}>
-              <Logo />
-            </Title>
+          <Group h="100%" justify="space-between" wrap="nowrap" gap="xs">
+            <Group h="100%" gap="lg" wrap="nowrap">
+              <Link to="/" className="brand" aria-label="MatchFace">
+                <Logo />
+              </Link>
+              {user && !phone && (
+                // the phone tab bar's links, with the current page marked the same way
+                <nav className="header-nav" aria-label={t('nav.main')}>
+                  {TABS.map(([to, key]) => (
+                    <Link key={to} to={to} aria-current={current(to)}>
+                      {t(key)}
+                    </Link>
+                  ))}
+                </nav>
+              )}
+            </Group>
             <Group gap="xs" wrap="nowrap">
               {user ? (
                 <>
-                  {/* the phone tab bar's links, with the current page marked the same way */}
-                  <Group gap={4} visibleFrom="sm" className="header-nav" component="nav" aria-label={t('nav.main')}>
-                    {TABS.map(([to, key]) => (
-                      <Button key={to} component={Link} to={to} aria-current={current(to)} variant="subtle" color="gray" size="sm">
-                        {t(key)}
-                      </Button>
-                    ))}
-                  </Group>
+                  <Button component={Link} to="/matches/new" size="sm" px="sm" aria-label={t('match.new')} leftSection={<PlusIcon size={18} />}>
+                    <span className="new-match-label">{t('match.new')}</span>
+                  </Button>
                   {/* language lives in the account menu, so a phone's header keeps room for the brand */}
                   <Menu position="bottom-end" width={260}>
                     <Menu.Target>
@@ -66,9 +77,9 @@ export default function Layout() {
                       <Menu.Label>{t('language.label')}</Menu.Label>
                       <SegmentedControl
                         fullWidth
-                        size="xs"
                         mx="xs"
                         mb="xs"
+                        aria-label={t('language.label')}
                         value={i18n.language}
                         onChange={changeLang}
                         data={LANGS.map((lng) => ({ value: lng, label: t(`language.${lng}`) }))}
@@ -76,9 +87,9 @@ export default function Layout() {
                       <Menu.Label>{t('theme.label')}</Menu.Label>
                       <SegmentedControl
                         fullWidth
-                        size="xs"
                         mx="xs"
                         mb="xs"
+                        aria-label={t('theme.label')}
                         value={colorScheme}
                         onChange={(v) => setColorScheme(v as MantineColorScheme)}
                         data={SCHEMES.map((s) => ({ value: s, label: t(`theme.${s}`) }))}
@@ -91,19 +102,20 @@ export default function Layout() {
                 </>
               ) : (
                 <>
-                  <SegmentedControl
-                    size="xs"
-                    value={i18n.language}
-                    onChange={changeLang}
-                    data={LANGS.map((lng) => ({ value: lng, label: t(`language.${lng}`) }))}
-                  />
+                  <div className="lang-switch" role="group" aria-label={t('language.label')}>
+                    {LANGS.map((lng) => (
+                      <button key={lng} type="button" aria-pressed={i18n.language === lng} onClick={() => changeLang(lng)}>
+                        {t(`language.${lng}`)}
+                      </button>
+                    ))}
+                  </div>
                   {ready && (
                     <>
-                      <Button component={Link} to="/login" variant="subtle" size="xs">
+                      <Button component={Link} to="/login" variant="subtle" size="sm" px="xs" c="var(--mantine-color-text)">
                         {t('auth.login')}
                       </Button>
                       {/* phones: the login page links to Register, so the header keeps room for the brand */}
-                      <Button component={Link} to="/register" size="xs" visibleFrom="xs">
+                      <Button component={Link} to="/register" size="sm" visibleFrom="xs" variant={landing ? 'white' : 'filled'}>
                         {t('auth.register')}
                       </Button>
                     </>
@@ -114,13 +126,13 @@ export default function Layout() {
           </Group>
         </Container>
       </AppShell.Header>
-      <AppShell.Main>
+      <AppShell.Main className="app-main" id="main">
         <Container size={PAGE_WIDTH} px={0} pb="xl">
           <Outlet />
         </Container>
       </AppShell.Main>
       {user && phone && (
-        <AppShell.Footer className="app-header tab-bar" withBorder={false}>
+        <AppShell.Footer className="tab-bar" withBorder={false}>
           <nav aria-label={t('nav.main')}>
             {TABS.map(([to, key, Icon]) => (
               <Link key={to} to={to} aria-current={current(to)}>

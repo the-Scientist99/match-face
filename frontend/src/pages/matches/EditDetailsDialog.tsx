@@ -62,6 +62,7 @@ export default function EditDetailsDialog({ match, opened, onClose, onSave }: {
         )}
         {!match.competitionId && (
           <SegmentedControl
+            aria-label={t('match.visibilityLabel')}
             value={visibility}
             onChange={(v) => setVisibility(v as 'PRIVATE' | 'PUBLIC')}
             data={[

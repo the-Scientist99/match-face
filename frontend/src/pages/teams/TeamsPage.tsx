@@ -1,4 +1,4 @@
-import { Button, Card, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Button, Card, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,10 +6,14 @@ import { Link, useNavigate } from 'react-router'
 import { api, call } from '../../api/client'
 import { useNotifyError } from '../../api/errors'
 import Crest from '../../components/Crest'
+import Empty from '../../components/Empty'
 import { ChevronIcon, PlusIcon } from '../../components/icons'
+import Loading from '../../components/Loading'
+import { usePageTitle } from '../../components/usePageTitle'
 
 export default function TeamsPage() {
   const { t } = useTranslation()
+  usePageTitle(t('teams.title'))
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const notifyError = useNotifyError()
@@ -26,7 +30,7 @@ export default function TeamsPage() {
 
   return (
     <Stack gap="lg">
-      <Title order={2}>{t('teams.title')}</Title>
+      <Title order={1}>{t('teams.title')}</Title>
       <Group
         component="form"
         align="flex-end"
@@ -51,12 +55,12 @@ export default function TeamsPage() {
         </Button>
       </Group>
       {mine.isPending ? (
-        <Loader />
+        <Loading />
       ) : mine.data?.length ? (
-        <Card p={6} className="list-rows">
+        <Card p={0} className="list-rows">
           {mine.data.map((team) => (
             <Link key={team.id} to={`/teams/${team.id}`} className="list-link">
-              <Group gap="sm" wrap="nowrap" mih={64} px="sm">
+              <Group gap="sm" wrap="nowrap" mih={64} px="md">
                 <Crest name={team.name} size={40} src={team.imageUrl} />
                 <Text fw={600} flex={1} truncate>
                   {team.name}
@@ -69,7 +73,7 @@ export default function TeamsPage() {
           ))}
         </Card>
       ) : (
-        <Text c="dimmed">{t('teams.none')}</Text>
+        <Empty text={t('teams.none')} />
       )}
     </Stack>
   )

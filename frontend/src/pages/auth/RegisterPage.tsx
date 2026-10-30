@@ -5,9 +5,11 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
 import { fieldErrors, useNotifyError } from '../../api/errors'
 import { useAuth } from '../../auth/AuthProvider'
 import { safeNext } from '../../auth/RequireAuth'
+import { usePageTitle } from '../../components/usePageTitle'
 
 export default function RegisterPage() {
   const { t, i18n } = useTranslation()
+  usePageTitle(t('auth.registerTitle'))
   const { user, register } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -36,9 +38,9 @@ export default function RegisterPage() {
   }
 
   return (
-    <Paper p="xl" maw={420} mx="auto" mt="xl">
+    <Paper p="xl" maw={420} mx="auto" mt={{ base: "md", sm: 56 }}>
       <Stack component="form" onSubmit={submit}>
-        <Title order={2}>{t('auth.registerTitle')}</Title>
+        <Title order={1}>{t('auth.registerTitle')}</Title>
         <TextInput
           label={t('auth.displayName')}
           autoComplete="name"
@@ -67,7 +69,7 @@ export default function RegisterPage() {
           onChange={(e) => setPassword(e.currentTarget.value)}
           error={errors.password && t(errors.password)}
         />
-        <Button type="submit" loading={busy}>
+        <Button type="submit" size="lg" loading={busy}>
           {t('auth.register')}
         </Button>
         <Text size="sm">

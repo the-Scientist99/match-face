@@ -16,7 +16,8 @@
     "main": "Glavni meni",
     "home": "Početna",
     "players": "Igrači",
-    "teams": "Timovi"
+    "teams": "Timovi",
+    "skip": "Preskoči na sadržaj"
   },
   "language": {
     "me": "ME",
@@ -44,7 +45,9 @@
     "noMatchesFound": "Nijedna utakmica ne odgovara pretrazi.",
     "pagePrevious": "Prethodna strana",
     "pageNext": "Sljedeća strana",
-    "open": "Otvorene utakmice"
+    "open": "Otvorene utakmice",
+    "next": "Sljedeća utakmica",
+    "openMatch": "Otvori utakmicu"
   },
   "errors": {
     "UNKNOWN": "Nešto nije u redu. Pokušajte ponovo.",
@@ -116,7 +119,9 @@
   "common": {
     "save": "Sačuvaj",
     "cancel": "Otkaži",
-    "add": "Dodaj"
+    "add": "Dodaj",
+    "loading": "Učitavanje",
+    "retry": "Pokušaj ponovo"
   },
   "players": {
     "title": "Moji igrači",
@@ -161,7 +166,8 @@
     "status": {
       "SCHEDULED": "Zakazana",
       "FINISHED": "Završena",
-      "CANCELLED": "Otkazana"
+      "CANCELLED": "Otkazana",
+      "LIVE": "Uživo"
     },
     "lineup": "Sastavi",
     "logInToTakePart": "Prijavite se da učestvujete",
@@ -184,7 +190,14 @@
     "spotsLeft": "Slobodnih mjesta: {{count}}",
     "full": "Popunjeno",
     "maxPerSide": "Najviše igrača po timu",
-    "maxPerSideHint": "Ostavite prazno za bez ograničenja. Prijave se zatvaraju kad se tim popuni."
+    "maxPerSideHint": "Ostavite prazno za bez ograničenja. Prijave se zatvaraju kad se tim popuni.",
+    "pitch": "Teren",
+    "list": "Spisak",
+    "you": "Ti",
+    "lineupView": "Prikaz sastava",
+    "joinShort": "Pridruži se",
+    "editLineup": "Izmijeni sastave",
+    "visibilityLabel": "Ko može vidjeti"
   },
   "event": {
     "type": {
@@ -208,7 +221,12 @@
     "title": "Događaji",
     "edit": "Uredi",
     "done": "Gotovo",
-    "tapPlayer": "Dodirnite igrača da upišete događaj"
+    "tapPlayer": "Dodirnite igrača da upišete događaj",
+    "mark": {
+      "YELLOW": "Ž",
+      "RED": "C",
+      "OWN_GOAL": "AG"
+    }
   },
   "profile": {
     "appearances": "Utakmice",
@@ -221,7 +239,9 @@
     "ownGoals": "Autogolovi",
     "matches": "Utakmice",
     "noMatches": "Još nema završenih utakmica.",
-    "inMatch": "golovi: {{goals}}, asistencije: {{assists}}"
+    "inMatch": "golovi: {{goals}}, asistencije: {{assists}}",
+    "form": "Forma",
+    "perMatch": "{{value}} po utakmici"
   },
   "claim": {
     "invite": "Pozovi da preuzme profil",
@@ -280,7 +300,8 @@
     },
     "setDate": "Postavi termin",
     "roundDate": "Termin {{round}}. kola",
-    "roundDateHint": "Postavlja termin svim neodigranim utakmicama ovog kola. Pojedinačne utakmice i dalje možete mijenjati na njihovoj stranici."
+    "roundDateHint": "Postavlja termin svim neodigranim utakmicama ovog kola. Pojedinačne utakmice i dalje možete mijenjati na njihovoj stranici.",
+    "typeLabel": "Vrsta"
   },
   "table": {
     "team": "Tim",
@@ -291,7 +312,17 @@
     "goalsFor": "DG",
     "goalsAgainst": "PG",
     "goalDifference": "GR",
-    "points": "Bod"
+    "points": "Bod",
+    "caption": "Tabela: {{name}}",
+    "positionFull": "Pozicija",
+    "playedFull": "Odigrano",
+    "wonFull": "Pobjede",
+    "drawnFull": "Neriješeno",
+    "lostFull": "Porazi",
+    "goalsForFull": "Dati golovi",
+    "goalsAgainstFull": "Primljeni golovi",
+    "goalDifferenceFull": "Gol razlika",
+    "pointsFull": "Bodovi"
   },
   "stats": {
     "topScorers": "Strijelci",
