@@ -55,7 +55,7 @@ export default function CompetitionPage() {
           {c.canAdmin && <Tabs.Tab value="manage">{t('competition.manage')}</Tabs.Tab>}
         </Tabs.List>
         <Tabs.Panel value="fixtures" pt="md">
-          <FixturesTab id={id} />
+          <FixturesTab id={id} canAdmin={c.canAdmin} />
         </Tabs.Panel>
         <Tabs.Panel value="table" pt="md">
           {tab === 'table' && c.type === 'LEAGUE' && <TableTab id={id} />}

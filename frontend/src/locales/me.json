@@ -253,7 +253,10 @@
     "type": {
       "LEAGUE": "Liga",
       "CUP": "Kup"
-    }
+    },
+    "setDate": "Postavi termin",
+    "roundDate": "Termin {{round}}. kola",
+    "roundDateHint": "Postavlja termin svim neodigranim utakmicama ovog kola. Pojedinačne utakmice i dalje možete mijenjati na njihovoj stranici."
   },
   "table": {
     "team": "Tim",

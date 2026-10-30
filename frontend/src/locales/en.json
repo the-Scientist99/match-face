@@ -253,7 +253,10 @@
     "type": {
       "LEAGUE": "League",
       "CUP": "Cup"
-    }
+    },
+    "setDate": "Set date",
+    "roundDate": "Round {{round}} date",
+    "roundDateHint": "Sets the kickoff of every match in this round that hasn't been played. You can still change single matches on their page."
   },
   "table": {
     "team": "Team",

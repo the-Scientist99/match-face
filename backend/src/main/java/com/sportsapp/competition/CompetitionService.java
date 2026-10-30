@@ -22,6 +22,10 @@ import com.sportsapp.match.ScoreSql;
 import com.sportsapp.sport.Sport;
 import com.sportsapp.sport.SportRules;
 import com.sportsapp.team.TeamService;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +51,11 @@ public class CompetitionService {
   private final TeamService teams;
   private final MatchViews matchViews;
   private final JdbcClient jdbc;
+  private final Clock clock;
 
   public CompetitionService(CompetitionRepository competitions, CompetitionTeamRepository competitionTeams, FixtureService fixtures,
-      AccessService access, TeamService teams, MatchViews matchViews, JdbcClient jdbc) {
+      AccessService access, TeamService teams, MatchViews matchViews, JdbcClient jdbc, Clock clock) {
+    this.clock = clock;
     this.matchViews = matchViews;
     this.competitions = competitions;
     this.competitionTeams = competitionTeams;
@@ -122,6 +128,24 @@ public class CompetitionService {
   }
 
   /** (Re)generates every fixture and makes the competition ACTIVE. */
+  /**
+   * One kickoff for every still-scheduled match of a round, e.g. a weekly league's matchday. Bumps their
+   * versions, so an open match page gets STALE on its next detail edit. Lock order competition → match.
+   */
+  @Transactional
+  public void setRoundKickoff(UUID userId, UUID competitionId, int round, Instant kickoffAt) {
+    lockAsAdmin(userId, competitionId);
+    if (kickoffAt.isBefore(clock.instant())) throw ApiException.badRequest("KICKOFF_IN_PAST");
+    int updated = jdbc.sql("""
+            UPDATE sport_match m JOIN stage s ON s.id = m.stage_id
+            SET m.kickoff_at = :k, m.version = m.version + 1
+            WHERE s.competition_id = UUID_TO_BIN(:c) AND m.round = :r AND m.status = 'SCHEDULED'
+            """)
+        .param("k", LocalDateTime.ofInstant(kickoffAt, ZoneOffset.UTC)) // stored as UTC, like Hibernate does
+        .param("c", competitionId.toString()).param("r", round).update();
+    if (updated == 0) throw ApiException.notFound();
+  }
+
   @Transactional
   public void generate(UUID userId, UUID competitionId) {
     Competition c = lockAsAdmin(userId, competitionId);

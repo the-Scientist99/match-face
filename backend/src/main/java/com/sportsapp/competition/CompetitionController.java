@@ -12,6 +12,7 @@ import com.sportsapp.competition.CompetitionDtos.CompetitionResponse;
 import com.sportsapp.competition.CompetitionDtos.CompetitionSummary;
 import com.sportsapp.competition.CompetitionDtos.CreateCompetitionRequest;
 import com.sportsapp.competition.CompetitionDtos.PatchCompetitionRequest;
+import com.sportsapp.competition.CompetitionDtos.RoundKickoffRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -99,6 +101,14 @@ public class CompetitionController {
   CompetitionResponse removeTeam(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @PathVariable UUID teamId) {
     UUID me = Auth.userId(jwt);
     service.removeTeam(me, id, teamId);
+    return service.get(me, id);
+  }
+
+  @PutMapping("/{id}/rounds/{round}/kickoff")
+  CompetitionResponse setRoundKickoff(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @PathVariable int round,
+      @Valid @RequestBody RoundKickoffRequest req) {
+    UUID me = Auth.userId(jwt);
+    service.setRoundKickoff(me, id, round, req.kickoffAt());
     return service.get(me, id);
   }
 

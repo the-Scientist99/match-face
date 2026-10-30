@@ -68,6 +68,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/competitions/{id}/rounds/{round}/kickoff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setRoundKickoff"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/competitions/{id}/image": {
         parameters: {
             query?: never;
@@ -735,6 +751,37 @@ export interface components {
             name?: string;
             imageUrl?: string;
         };
+        RoundKickoffRequest: {
+            /** Format: date-time */
+            kickoffAt: string;
+        };
+        CompetitionResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: int64 */
+            version?: number;
+            name?: string;
+            /** @enum {string} */
+            sport?: "FOOTBALL";
+            /** @enum {string} */
+            type?: "LEAGUE" | "CUP";
+            /** @enum {string} */
+            visibility?: "PUBLIC" | "PRIVATE";
+            /** @enum {string} */
+            status?: "DRAFT" | "ACTIVE";
+            doubleRoundRobin?: boolean;
+            teams?: components["schemas"]["CompetitionTeamView"][];
+            canAdmin?: boolean;
+            completed?: boolean;
+            imageUrl?: string;
+        };
+        CompetitionTeamView: {
+            /** Format: uuid */
+            teamId?: string;
+            name?: string;
+            /** Format: int32 */
+            seed?: number;
+        };
         CreateTeamRequest: {
             name: string;
         };
@@ -806,33 +853,6 @@ export interface components {
             /** @enum {string} */
             visibility: "PUBLIC" | "PRIVATE";
             doubleRoundRobin?: boolean;
-        };
-        CompetitionResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: int64 */
-            version?: number;
-            name?: string;
-            /** @enum {string} */
-            sport?: "FOOTBALL";
-            /** @enum {string} */
-            type?: "LEAGUE" | "CUP";
-            /** @enum {string} */
-            visibility?: "PUBLIC" | "PRIVATE";
-            /** @enum {string} */
-            status?: "DRAFT" | "ACTIVE";
-            doubleRoundRobin?: boolean;
-            teams?: components["schemas"]["CompetitionTeamView"][];
-            canAdmin?: boolean;
-            completed?: boolean;
-            imageUrl?: string;
-        };
-        CompetitionTeamView: {
-            /** Format: uuid */
-            teamId?: string;
-            name?: string;
-            /** Format: int32 */
-            seed?: number;
         };
         AddTeamRequest: {
             /** Format: uuid */
@@ -1200,6 +1220,33 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MatchResponse"];
+                };
+            };
+        };
+    };
+    setRoundKickoff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                round: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoundKickoffRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompetitionResponse"];
                 };
             };
         };

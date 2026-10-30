@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,6 +36,8 @@ public final class CompetitionDtos {
       name = trim(name);
     }
   }
+
+  public record RoundKickoffRequest(@NotNull Instant kickoffAt) {}
 
   public record AddTeamRequest(@NotNull UUID teamId, @Min(1) @Max(64) Integer seed) {}
 
