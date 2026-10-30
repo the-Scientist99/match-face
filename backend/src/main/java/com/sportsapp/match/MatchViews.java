@@ -46,7 +46,7 @@ public class MatchViews {
 
   private record MatchRow(long version, Sport sport, MatchStatus status, Instant kickoffAt, String venue,
       Visibility visibility, Integer round, Side penaltyWinner, SideView home, SideView away, UUID competitionId,
-      String competitionName, boolean knockout) {}
+      String competitionName, boolean knockout, Integer maxPerSide) {}
 
   @Transactional(readOnly = true)
   public MatchResponse view(UUID matchId, @Nullable UUID viewerId) {
@@ -54,7 +54,7 @@ public class MatchViews {
     var row = jdbc.sql("""
             SELECT m.version, m.sport, m.status, m.kickoff_at, m.venue, COALESCE(c.visibility, m.visibility) visibility,
                    m.round, m.penalty_winner_side, BIN_TO_UUID(c.id) competition_id, c.name competition_name,
-                   m.bracket_position IS NOT NULL knockout,
+                   m.bracket_position IS NOT NULL knockout, m.max_per_side,
                    BIN_TO_UUID(m.home_team_id) home_team_id, BIN_TO_UUID(m.away_team_id) away_team_id,
                    COALESCE(ht.name, m.home_label) home_name, COALESCE(at.name, m.away_label) away_name,
                    ht.image home_image, at.image away_image
@@ -73,7 +73,8 @@ public class MatchViews {
             rs.getString("penalty_winner_side") == null ? null : Side.valueOf(rs.getString("penalty_winner_side")),
             new SideView(uuid(rs, "home_team_id"), rs.getString("home_name"), ImageStore.url(rs.getString("home_image"))),
             new SideView(uuid(rs, "away_team_id"), rs.getString("away_name"), ImageStore.url(rs.getString("away_image"))),
-            uuid(rs, "competition_id"), rs.getString("competition_name"), rs.getBoolean("knockout")))
+            uuid(rs, "competition_id"), rs.getString("competition_name"), rs.getBoolean("knockout"),
+            rs.getObject("max_per_side", Integer.class)))
         .optional().orElseThrow(ApiException::notFound);
 
     List<LineupView> lineup = jdbc.sql("""
@@ -108,7 +109,7 @@ public class MatchViews {
         row.competitionId(), row.competitionName(), row.round(), row.home(), row.away(), score, row.penaltyWinner(), lineup, events,
         access.canAdmin(viewerId, ResourceType.MATCH, matchId), row.knockout(), mySide(matchId, viewerId),
         viewerId != null && row.competitionId() == null && row.home().teamId() == null
-            && row.visibility() == Visibility.PUBLIC && row.status() == MatchStatus.SCHEDULED);
+            && row.visibility() == Visibility.PUBLIC && row.status() == MatchStatus.SCHEDULED, row.maxPerSide());
   }
 
   /** The side the viewer's own player is on in this match, or null. */
@@ -130,7 +131,10 @@ public class MatchViews {
             SELECT BIN_TO_UUID(m.id) id, m.status, m.kickoff_at, m.round,
                    BIN_TO_UUID(MAX(c.id)) competition_id, MAX(c.name) competition_name,
                    COALESCE(ht.name, m.home_label) home_name, COALESCE(at.name, m.away_label) away_name,
-                   ht.image home_image, at.image away_image, %s home_goals, %s away_goals
+                   ht.image home_image, at.image away_image, %s home_goals, %s away_goals,
+                   GREATEST(m.max_per_side - (SELECT COUNT(*) FROM match_lineup l WHERE l.match_id = m.id AND l.side = 'HOME'), 0)
+                   + GREATEST(m.max_per_side - (SELECT COUNT(*) FROM match_lineup l WHERE l.match_id = m.id AND l.side = 'AWAY'), 0)
+                     spots_left
             FROM sport_match m
             LEFT JOIN team ht ON ht.id = m.home_team_id
             LEFT JOIN team at ON at.id = m.away_team_id
@@ -144,7 +148,8 @@ public class MatchViews {
         .query((rs, i) -> new MatchSummary(uuid(rs, "id"), MatchStatus.valueOf(rs.getString("status")), instant(rs, "kickoff_at"),
             rs.getString("home_name"), rs.getString("away_name"), new Score(rs.getInt("home_goals"), rs.getInt("away_goals")),
             uuid(rs, "competition_id"), rs.getString("competition_name"), rs.getObject("round", Integer.class),
-            ImageStore.url(rs.getString("home_image")), ImageStore.url(rs.getString("away_image"))))
+            ImageStore.url(rs.getString("home_image")), ImageStore.url(rs.getString("away_image")),
+            rs.getObject("spots_left", Integer.class)))
         .list().stream()
         .collect(Collectors.toMap(MatchSummary::id, Function.identity()));
     return matchIds.stream().map(byId::get).filter(s -> s != null).toList();

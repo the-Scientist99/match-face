@@ -77,7 +77,8 @@
     "NOT_JOINABLE": "Ovoj utakmici se ne možete pridružiti.",
     "ALREADY_JOINED": "Već ste u ovoj utakmici.",
     "INVALID_IMAGE": "Ovu datoteku ne možemo koristiti kao sliku. Probajte JPEG ili PNG.",
-    "CONTENT_TOO_LARGE": "Slika je prevelika (najviše 5 MB)."
+    "CONTENT_TOO_LARGE": "Slika je prevelika (najviše 5 MB).",
+    "SIDE_FULL": "Taj tim je popunjen."
   },
   "auth": {
     "login": "Prijava",
@@ -167,7 +168,11 @@
     "cancelConfirm": "Otkazati utakmicu? Svi u njoj će je vidjeti kao otkazanu. Kasnije je možete ponovo otvoriti.",
     "keep": "Zadrži",
     "editDetails": "Izmijeni detalje",
-    "kickOffNow": "Počni sada"
+    "kickOffNow": "Počni sada",
+    "spotsLeft": "Slobodnih mjesta: {{count}}",
+    "full": "Popunjeno",
+    "maxPerSide": "Najviše igrača po timu",
+    "maxPerSideHint": "Ostavite prazno za bez ograničenja. Prijave se zatvaraju kad se tim popuni."
   },
   "event": {
     "type": {

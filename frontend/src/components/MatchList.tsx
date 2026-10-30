@@ -32,7 +32,7 @@ function TeamLine({ name, image, goals, result }: { name: string | null; image: 
 
 /** Upcoming: a date block beside the two teams. */
 function Upcoming({ m }: { m: MatchSummary }) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const locale = htmlLang(i18n.language as Lang)
   const d = m.kickoffAt ? new Date(m.kickoffAt) : null
   return (
@@ -53,6 +53,11 @@ function Upcoming({ m }: { m: MatchSummary }) {
       <Stack gap={8} flex={1} miw={0}>
         <TeamLine name={m.homeName} image={m.homeImageUrl} />
         <TeamLine name={m.awayName} image={m.awayImageUrl} />
+        {m.spotsLeft !== null && (
+          <Text size="xs" fw={600} c={m.spotsLeft ? 'teal' : 'dimmed'}>
+            {m.spotsLeft ? t('match.spotsLeft', { count: m.spotsLeft }) : t('match.full')}
+          </Text>
+        )}
       </Stack>
       <Text c="dimmed" component="span" display="flex">
         <ChevronIcon size={18} />

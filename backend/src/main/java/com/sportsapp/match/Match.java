@@ -48,6 +48,10 @@ public class Match extends BaseEntity {
 
   private String venue;
 
+  /** Pickups only; null for no limit. */
+  @Column(name = "max_per_side")
+  private Integer maxPerSide;
+
   @Enumerated(EnumType.STRING)
   private MatchStatus status;
 
@@ -93,6 +97,8 @@ public class Match extends BaseEntity {
   public void setKickoffAt(Instant kickoffAt) { this.kickoffAt = kickoffAt; }
   public String getVenue() { return venue; }
   public void setVenue(String venue) { this.venue = venue; }
+  public Integer getMaxPerSide() { return maxPerSide; }
+  public void setMaxPerSide(Integer maxPerSide) { this.maxPerSide = maxPerSide; }
   public MatchStatus getStatus() { return status; }
   public void setStatus(MatchStatus status) { this.status = status; }
   public Visibility getVisibility() { return visibility; }

@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -70,6 +71,47 @@ class JoinApiTest extends IntegrationTest {
     addEvent(ana, m, "type", "GOAL", "side", "HOME", "playerId", ivan.playerId());
     mvc.perform(delete("/api/matches/{id}/join", m).with(as(ivan)))
         .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("PLAYER_HAS_EVENTS"));
+  }
+
+  private UUID createCappedPickup(TestUser owner, int maxPerSide) throws Exception {
+    String body = mvc.perform(post("/api/matches").with(as(owner)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("homeLabel", "Bibs", "awayLabel", "Non-bibs", "visibility", "PUBLIC", "maxPerSide", maxPerSide,
+                "kickoffAt", Instant.now().plusSeconds(3600).toString()))))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.maxPerSide").value(maxPerSide))
+        .andReturn().getResponse().getContentAsString();
+    return UUID.fromString(json.readTree(body).get("id").asString());
+  }
+
+  @Test
+  void aFullSideRefusesJoinsAndFullMatchesLeaveTheOpenList() throws Exception {
+    TestUser ana = register("Ana");
+    TestUser ivan = register("Ivan");
+    TestUser zoe = register("Zoe");
+    TestUser bo = register("Bo");
+    UUID m = createCappedPickup(ana, 1);
+    mvc.perform(get("/api/matches/open").with(as(bo))).andExpect(jsonPath("$[0].spotsLeft").value(2));
+    join(ivan, m, Side.HOME).andExpect(status().isOk());
+    join(zoe, m, Side.HOME).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("SIDE_FULL"));
+    mvc.perform(get("/api/matches/open").with(as(bo))).andExpect(jsonPath("$[0].spotsLeft").value(1));
+    join(zoe, m, Side.AWAY).andExpect(status().isOk());
+    mvc.perform(get("/api/matches/open").with(as(bo))).andExpect(jsonPath("$").value(empty()));
+    // 0 removes the limit; the match is open again
+    mvc.perform(patch("/api/matches/{id}", m).with(as(ana)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("version", version(m), "maxPerSide", 0))))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.maxPerSide").doesNotExist());
+    mvc.perform(get("/api/matches/open").with(as(bo)))
+        .andExpect(jsonPath("$[*].id").value(contains(m.toString())))
+        .andExpect(jsonPath("$[0].spotsLeft").doesNotExist());
+  }
+
+  @Test
+  void onlyPickupsHaveACap() throws Exception {
+    TestUser ana = register("Ana");
+    mvc.perform(post("/api/matches").with(as(ana)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("homeTeamId", createTeam(ana, "Alpha"), "awayTeamId", createTeam(ana, "Beta"), "visibility", "PUBLIC",
+                "maxPerSide", 5, "kickoffAt", Instant.now().plusSeconds(3600).toString()))))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_FIELD"));
   }
 
   @Test

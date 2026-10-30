@@ -720,6 +720,8 @@ export interface components {
             /** @enum {string} */
             mySide?: "HOME" | "AWAY";
             joinable?: boolean;
+            /** Format: int32 */
+            maxPerSide?: number;
         };
         Score: {
             /** Format: int32 */
@@ -768,6 +770,8 @@ export interface components {
             venue?: string;
             /** @enum {string} */
             visibility: "PUBLIC" | "PRIVATE";
+            /** Format: int32 */
+            maxPerSide?: number;
         };
         VersionRequest: {
             /** Format: int64 */
@@ -878,6 +882,8 @@ export interface components {
             venue?: string;
             /** @enum {string} */
             visibility?: "PUBLIC" | "PRIVATE";
+            /** Format: int32 */
+            maxPerSide?: number;
         };
         PatchCompetitionRequest: {
             /** Format: int64 */
@@ -911,6 +917,8 @@ export interface components {
             round?: number;
             homeImageUrl?: string;
             awayImageUrl?: string;
+            /** Format: int32 */
+            spotsLeft?: number;
         };
         PlayerMatchRow: {
             match?: components["schemas"]["MatchSummary"];

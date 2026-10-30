@@ -77,7 +77,8 @@
     "NOT_JOINABLE": "This match can't be joined.",
     "ALREADY_JOINED": "You're already in this match.",
     "INVALID_IMAGE": "That file isn't a picture we can use. Try a JPEG or PNG.",
-    "CONTENT_TOO_LARGE": "That picture is too big (5 MB at most)."
+    "CONTENT_TOO_LARGE": "That picture is too big (5 MB at most).",
+    "SIDE_FULL": "That side is full."
   },
   "auth": {
     "login": "Log in",
@@ -167,7 +168,11 @@
     "cancelConfirm": "Cancel this match? Everyone in it will see it as cancelled. You can reopen it later.",
     "keep": "Keep it",
     "editDetails": "Edit details",
-    "kickOffNow": "Kick off now"
+    "kickOffNow": "Kick off now",
+    "spotsLeft": "Spots left: {{count}}",
+    "full": "Full",
+    "maxPerSide": "Max players per side",
+    "maxPerSideHint": "Leave empty for no limit. Joins stop when a side is full."
   },
   "event": {
     "type": {

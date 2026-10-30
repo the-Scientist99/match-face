@@ -1,4 +1,4 @@
-import { Button, Group, SegmentedControl, Select, Stack, TextInput, Title } from '@mantine/core'
+import { Button, Group, NumberInput, SegmentedControl, Select, Stack, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -24,6 +24,7 @@ export default function NewMatchPage() {
   const [now] = useState(() => isoToLocal(new Date().toISOString())) // the picker's earliest choice; the server checks too
   const [venue, setVenue] = useState('')
   const [visibility, setVisibility] = useState<Visibility>('PRIVATE')
+  const [maxPerSide, setMaxPerSide] = useState<number | string>('')
   const teams = useQuery({ queryKey: ['teams', 'mine'], queryFn: () => call(api.GET('/api/teams/mine')), enabled: kind === 'teams' })
   const teamOptions = (teams.data ?? []).filter((team) => team.canAdmin).map((team) => ({ value: team.id, label: team.name }))
 
@@ -33,7 +34,7 @@ export default function NewMatchPage() {
         api.POST('/api/matches', {
           body: {
             ...(kind === 'pickup'
-              ? { homeLabel, awayLabel }
+              ? { homeLabel, awayLabel, maxPerSide: typeof maxPerSide === 'number' ? maxPerSide : undefined }
               : { homeTeamId: homeTeamId ?? undefined, awayTeamId: awayTeamId ?? undefined }),
             kickoffAt: localToIso(kickoff)!, // the input is required, so never empty here
             venue: venue || undefined,
@@ -90,6 +91,17 @@ export default function NewMatchPage() {
         onChange={(e) => setKickoff(e.currentTarget.value)}
       />
       <TextInput label={t('match.venue')} value={venue} maxLength={100} onChange={(e) => setVenue(e.currentTarget.value)} />
+      {kind === 'pickup' && (
+        <NumberInput
+          label={t('match.maxPerSide')}
+          description={t('match.maxPerSideHint')}
+          min={1}
+          max={30}
+          allowDecimal={false}
+          value={maxPerSide}
+          onChange={setMaxPerSide}
+        />
+      )}
       <SegmentedControl
         value={visibility}
         onChange={(v) => setVisibility(v as Visibility)}

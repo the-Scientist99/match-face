@@ -62,6 +62,7 @@ public class MatchService {
     boolean pickup = req.homeTeamId() == null && req.awayTeamId() == null && req.homeLabel() != null && req.awayLabel() != null;
     if (!teams && !pickup) throw ApiException.badRequest("INVALID_SIDES");
     requireFuture(req.kickoffAt());
+    if (teams && req.maxPerSide() != null) throw ApiException.badRequest("INVALID_FIELD"); // team lineups come from rosters
     Match m = new Match(Sport.FOOTBALL, MatchStatus.SCHEDULED);
     if (teams) {
       if (req.homeTeamId().equals(req.awayTeamId())) throw ApiException.badRequest("SAME_TEAM");
@@ -76,6 +77,7 @@ public class MatchService {
     m.setKickoffAt(req.kickoffAt());
     m.setVenue(req.venue());
     m.setVisibility(req.visibility());
+    m.setMaxPerSide(req.maxPerSide());
     UUID id = matches.save(m).getId();
     access.grantOwner(userId, ResourceType.MATCH, id);
     return id;
@@ -93,6 +95,10 @@ public class MatchService {
     if (req.visibility() != null) {
       if (m.getStageId() != null) throw ApiException.badRequest("INVALID_FIELD"); // competition matches use its visibility
       m.setVisibility(req.visibility());
+    }
+    if (req.maxPerSide() != null) {
+      if (m.getStageId() != null || m.getHomeTeamId() != null) throw ApiException.badRequest("INVALID_FIELD");
+      m.setMaxPerSide(req.maxPerSide() == 0 ? null : req.maxPerSide()); // lowering it keeps who's already in
     }
   }
 
@@ -305,7 +311,11 @@ public class MatchService {
     }
     requireScheduled(m);
     UUID player = players.ownPlayer(userId).getId();
-    if (lineups.findByMatchIdAndPlayerId(matchId, player).isPresent()) throw ApiException.conflict("ALREADY_JOINED");
+    List<MatchLineup> lineup = lineups.findByMatchId(matchId);
+    if (lineup.stream().anyMatch(l -> l.getPlayerId().equals(player))) throw ApiException.conflict("ALREADY_JOINED");
+    if (m.getMaxPerSide() != null && lineup.stream().filter(l -> l.getSide() == side).count() >= m.getMaxPerSide()) {
+      throw ApiException.conflict("SIDE_FULL");
+    }
     lineups.save(new MatchLineup(matchId, player, side, false));
     matches.bumpVersion(matchId);
   }
@@ -324,13 +334,16 @@ public class MatchService {
     matches.bumpVersion(matchId);
   }
 
-  /** Upcoming public pickups the user isn't part of yet, soonest first. */
+  /** Upcoming public pickups the user isn't part of yet and with room on a side, soonest first. */
   @Transactional(readOnly = true)
   public List<MatchSummary> open(UUID userId) {
     List<UUID> ids = jdbc.sql("""
             SELECT BIN_TO_UUID(m.id) FROM sport_match m
             WHERE m.stage_id IS NULL AND m.home_team_id IS NULL AND m.visibility = 'PUBLIC'
               AND m.status = 'SCHEDULED' AND m.kickoff_at > UTC_TIMESTAMP(6)
+              AND (m.max_per_side IS NULL
+                   OR (SELECT COUNT(*) FROM match_lineup l WHERE l.match_id = m.id AND l.side = 'HOME') < m.max_per_side
+                   OR (SELECT COUNT(*) FROM match_lineup l WHERE l.match_id = m.id AND l.side = 'AWAY') < m.max_per_side)
               AND NOT EXISTS (SELECT 1 FROM admin_grant g
                               WHERE g.resource_type = 'MATCH' AND g.resource_id = m.id AND g.user_id = UUID_TO_BIN(:u))
               AND NOT EXISTS (SELECT 1 FROM match_lineup l JOIN player p ON p.id = l.player_id
