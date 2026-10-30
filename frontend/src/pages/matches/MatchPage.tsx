@@ -128,13 +128,23 @@ export default function MatchPage() {
                   {t('match.leave')}
                 </Button>
               ) : (
-                <Group grow>
+                <Group grow align="stretch">
                   {(['HOME', 'AWAY'] as const).map((side) => {
                     const full = m.maxPerSide !== null && lineupCount(side) >= m.maxPerSide
                     return (
-                      <Button key={side} size="lg" disabled={busy || full} onClick={() => run(() => call(api.POST('/api/matches/{id}/join', { ...path, body: { side } })))}>
-                        <Stack gap={0} align="center">
-                          <span>{t('match.join', { side: side === 'HOME' ? m.home.name : m.away.name })}</span>
+                      <Button
+                        key={side}
+                        size="lg"
+                        h="auto"
+                        mih={50}
+                        py={8}
+                        px="sm"
+                        styles={{ label: { whiteSpace: 'normal', lineHeight: 1.25 } }}
+                        disabled={busy || full}
+                        onClick={() => run(() => call(api.POST('/api/matches/{id}/join', { ...path, body: { side } })))}
+                      >
+                        <Stack gap={0} align="center" ta="center">
+                          <span style={{ overflowWrap: 'anywhere' }}>{t('match.join', { side: side === 'HOME' ? m.home.name : m.away.name })}</span>
                           {m.maxPerSide !== null && (
                             <Text span size="xs" fw={500}>
                               {full ? t('match.full') : `${lineupCount(side)}/${m.maxPerSide}`}
