@@ -12,6 +12,7 @@ import com.sportsapp.competition.CompetitionDtos.CompetitionResponse;
 import com.sportsapp.competition.CompetitionDtos.CompetitionSummary;
 import com.sportsapp.competition.CompetitionDtos.CompetitionTeamView;
 import com.sportsapp.competition.CompetitionDtos.CreateCompetitionRequest;
+import com.sportsapp.competition.CompetitionDtos.OpenCompetitions;
 import com.sportsapp.competition.CompetitionDtos.PatchCompetitionRequest;
 import com.sportsapp.image.ImageStore;
 import com.sportsapp.match.MatchDtos.MatchSummary;
@@ -25,6 +26,8 @@ import com.sportsapp.match.ScoreSql;
 import com.sportsapp.sport.Sport;
 import com.sportsapp.sport.SportRules;
 import com.sportsapp.team.TeamService;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -46,6 +49,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class CompetitionService {
+
+  private static final int OPEN_PAGE_SIZE = 9;
 
   private final CompetitionRepository competitions;
   private final CompetitionTeamRepository competitionTeams;
@@ -295,34 +300,46 @@ public class CompetitionService {
                           WHERE ct.competition_id = c.id AND g.user_id = UUID_TO_BIN(:u))
             """)
         .param("u", userId.toString())
-        .query((rs, i) -> new CompetitionSummary(UUID.fromString(rs.getString("id")), rs.getString("name"),
-            CompetitionType.valueOf(rs.getString("type")), CompetitionStatus.valueOf(rs.getString("status")),
-            ImageStore.url(rs.getString("image"))))
+        .query(CompetitionService::summary)
         .list().stream()
         .sorted(Comparator.comparing(CompetitionSummary::name, Names.ORDER))
         .toList();
   }
 
-  /** Public competitions taking entries that the user has no part in yet, newest first. */
+  /**
+   * Public competitions taking entries that the user has no part in yet, newest first; {@code q} matches part
+   * of the name, ignoring case and accents (the column's collation). A page past the end gives the last one.
+   */
   @Transactional(readOnly = true)
-  public List<CompetitionSummary> open(UUID userId) {
-    return jdbc.sql("""
-            SELECT BIN_TO_UUID(c.id) id, c.name, c.type, c.status, c.image FROM competition c
-            WHERE c.visibility = 'PUBLIC' AND c.entries_open
-              AND NOT EXISTS (SELECT 1 FROM admin_grant g
-                              WHERE g.resource_type = 'COMPETITION' AND g.resource_id = c.id AND g.user_id = UUID_TO_BIN(:u))
-              AND NOT EXISTS (SELECT 1 FROM competition_team ct JOIN team_player tp ON tp.team_id = ct.team_id
-                              JOIN player p ON p.id = tp.player_id WHERE ct.competition_id = c.id AND p.user_id = UUID_TO_BIN(:u))
-              AND NOT EXISTS (SELECT 1 FROM competition_team ct JOIN admin_grant g ON g.resource_type = 'TEAM' AND g.resource_id = ct.team_id
-                              WHERE ct.competition_id = c.id AND g.user_id = UUID_TO_BIN(:u))
-            ORDER BY c.created_at DESC
-            LIMIT 50
-            """) // ponytail: first 50 only, paginate when the list grows
-        .param("u", userId.toString())
-        .query((rs, i) -> new CompetitionSummary(UUID.fromString(rs.getString("id")), rs.getString("name"),
-            CompetitionType.valueOf(rs.getString("type")), CompetitionStatus.valueOf(rs.getString("status")),
-            ImageStore.url(rs.getString("image"))))
-        .list();
+  public OpenCompetitions open(UUID userId, String q, int page) {
+    if (page < 0) throw ApiException.badRequest("INVALID_FIELD");
+    String like = "%" + q.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+    String open = """
+        FROM competition c
+        WHERE c.visibility = 'PUBLIC' AND c.entries_open AND c.name LIKE :q
+          AND NOT EXISTS (SELECT 1 FROM admin_grant g
+                          WHERE g.resource_type = 'COMPETITION' AND g.resource_id = c.id AND g.user_id = UUID_TO_BIN(:u))
+          AND NOT EXISTS (SELECT 1 FROM competition_team ct JOIN team_player tp ON tp.team_id = ct.team_id
+                          JOIN player p ON p.id = tp.player_id WHERE ct.competition_id = c.id AND p.user_id = UUID_TO_BIN(:u))
+          AND NOT EXISTS (SELECT 1 FROM competition_team ct JOIN admin_grant g ON g.resource_type = 'TEAM' AND g.resource_id = ct.team_id
+                          WHERE ct.competition_id = c.id AND g.user_id = UUID_TO_BIN(:u))
+        """; // ponytail: LIKE scans every open competition, a FULLTEXT index when there are many thousands
+    int total = jdbc.sql("SELECT COUNT(*) " + open).param("q", like).param("u", userId.toString()).query(Integer.class).single();
+    int totalPages = total / OPEN_PAGE_SIZE + (total % OPEN_PAGE_SIZE > 0 ? 1 : 0);
+    int current = Math.min(page, Math.max(totalPages - 1, 0));
+    List<CompetitionSummary> items = jdbc.sql("""
+            SELECT BIN_TO_UUID(c.id) id, c.name, c.type, c.status, c.image
+            """ + open + "ORDER BY c.created_at DESC, c.id LIMIT :size OFFSET :offset")
+        .param("q", like).param("u", userId.toString())
+        .param("size", OPEN_PAGE_SIZE).param("offset", current * OPEN_PAGE_SIZE)
+        .query(CompetitionService::summary).list();
+    return new OpenCompetitions(items, current, totalPages);
+  }
+
+  private static CompetitionSummary summary(ResultSet rs, int rowNum) throws SQLException {
+    return new CompetitionSummary(UUID.fromString(rs.getString("id")), rs.getString("name"),
+        CompetitionType.valueOf(rs.getString("type")), CompetitionStatus.valueOf(rs.getString("status")),
+        ImageStore.url(rs.getString("image")));
   }
 
   private Competition lockAsAdmin(UUID userId, UUID competitionId) {

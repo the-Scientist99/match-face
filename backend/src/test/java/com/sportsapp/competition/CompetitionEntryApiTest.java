@@ -309,29 +309,87 @@ class CompetitionEntryApiTest extends IntegrationTest {
     mvc.perform(get("/api/competitions/mine").with(as(zoe))).andExpect(jsonPath("$[*].id").value(not(hasItem(c.toString()))));
   }
 
+  private ResultActions openList(TestUser user, String query) throws Exception {
+    return mvc.perform(get("/api/competitions/open" + query).with(as(user)));
+  }
+
+  private ResultActions search(TestUser user, String q) throws Exception {
+    return mvc.perform(get("/api/competitions/open").param("q", q).with(as(user)));
+  }
+
+  private UUID createNamed(String name) throws Exception {
+    String body = mvc.perform(post("/api/competitions").with(as(ana)).contentType(APPLICATION_JSON)
+            .content(toJson(Map.of("name", name, "type", "CUP", "visibility", "PUBLIC", "entriesOpen", true))))
+        .andExpect(status().isCreated())
+        .andReturn().getResponse().getContentAsString();
+    return UUID.fromString(json.readTree(body).get("id").asString());
+  }
+
   @Test
   void openListsPublicCompetitionsTakingEntriesThatIHaveNoPartIn() throws Exception {
     UUID open = create("PUBLIC", true);
     create("PUBLIC", false);
     create("PRIVATE", false);
     UUID started = playingLeague();
-    mvc.perform(get("/api/competitions/open").with(as(bob))).andExpect(jsonPath("$[*].id").value(contains(open.toString())));
-    mvc.perform(get("/api/competitions/open").with(as(ana))).andExpect(jsonPath("$").value(empty()));
-    mvc.perform(get("/api/competitions/open").with(as(bob))).andExpect(jsonPath("$[*].id").value(not(hasItem(started.toString()))));
+    openList(bob, "").andExpect(jsonPath("$.items[*].id").value(contains(open.toString())));
+    openList(ana, "").andExpect(jsonPath("$.items").value(empty())).andExpect(jsonPath("$.totalPages").value(0));
+    openList(bob, "").andExpect(jsonPath("$.items[*].id").value(not(hasItem(started.toString()))));
   }
 
   @Test
   void openLeavesOutACompetitionMyTeamIsIn() throws Exception {
     UUID c = create("PUBLIC", true);
     enter(bob, c, bees).andExpect(status().isOk());
-    mvc.perform(get("/api/competitions/open").with(as(bob))).andExpect(jsonPath("$[*].id").value(contains(c.toString())));
+    openList(bob, "").andExpect(jsonPath("$.items[*].id").value(contains(c.toString())));
     approve(ana, c, bees, "{}").andExpect(status().isOk());
-    mvc.perform(get("/api/competitions/open").with(as(bob))).andExpect(jsonPath("$").value(empty()));
+    openList(bob, "").andExpect(jsonPath("$.items").value(empty()));
     TestUser ivan = register("Ivan");
     putOnRoster(bees, ivan.playerId());
-    mvc.perform(get("/api/competitions/open").with(as(ivan))).andExpect(jsonPath("$").value(empty()));
+    openList(ivan, "").andExpect(jsonPath("$.items").value(empty()));
     TestUser zoe = register("Zoe");
-    mvc.perform(get("/api/competitions/open").with(as(zoe))).andExpect(jsonPath("$[*].id").value(contains(c.toString())));
+    openList(zoe, "").andExpect(jsonPath("$.items[*].id").value(contains(c.toString())));
+  }
+
+  @Test
+  void searchFindsPartOfTheNameIgnoringCaseAndAccents() throws Exception {
+    UUID zabljak = createNamed("Žabljak Summer Cup");
+    createNamed("Podgorica League");
+    openList(bob, "?q=summer").andExpect(jsonPath("$.items[*].id").value(contains(zabljak.toString())));
+    openList(bob, "?q=ZABLJAK").andExpect(jsonPath("$.items[*].id").value(contains(zabljak.toString())));
+    search(bob, " summer ").andExpect(jsonPath("$.items[*].id").value(contains(zabljak.toString())));
+    openList(bob, "?q=nowhere").andExpect(jsonPath("$.items").value(empty()));
+  }
+
+  @Test
+  void searchTakesWildcardsLiterally() throws Exception {
+    UUID percent = createNamed("100% Football");
+    createNamed("Plain");
+    search(bob, "%").andExpect(jsonPath("$.items[*].id").value(contains(percent.toString())));
+    search(bob, "_").andExpect(jsonPath("$.items").value(empty()));
+    search(bob, "\\").andExpect(jsonPath("$.items").value(empty()));
+  }
+
+  @Test
+  void openPagesNewestFirstWithNoOverlap() throws Exception {
+    List<UUID> ids = new java.util.ArrayList<>();
+    for (int i = 0; i < 10; i++) ids.add(createNamed("Cup " + i));
+    java.util.Collections.reverse(ids);
+    openList(bob, "").andExpect(jsonPath("$.items", hasSize(9))).andExpect(jsonPath("$.page").value(0)).andExpect(jsonPath("$.totalPages").value(2))
+        .andExpect(jsonPath("$.items[0].id").value(ids.getFirst().toString()));
+    openList(bob, "?page=1").andExpect(jsonPath("$.page").value(1))
+        .andExpect(jsonPath("$.items[*].id").value(contains(ids.getLast().toString())));
+  }
+
+  @Test
+  void aPagePastTheEndGivesTheLastOne() throws Exception {
+    for (int i = 0; i < 10; i++) createNamed("Cup " + i);
+    openList(bob, "?page=2147483647").andExpect(jsonPath("$.page").value(1)).andExpect(jsonPath("$.items", hasSize(1)));
+    openList(bob, "?q=nowhere&page=5").andExpect(jsonPath("$.page").value(0)).andExpect(jsonPath("$.items").value(empty()));
+  }
+
+  @Test
+  void aNegativePageIsRefused() throws Exception {
+    openList(bob, "?page=-1").andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_FIELD"));
   }
 
   @Test

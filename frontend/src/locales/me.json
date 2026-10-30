@@ -37,6 +37,10 @@
     "noRecent": "Još nema odigranih utakmica.",
     "competitions": "Moja takmičenja",
     "openCompetitions": "Takmičenja otvorena za prijave",
+    "searchCompetitions": "Pretraži takmičenja",
+    "noCompetitionsFound": "Nijedno takmičenje ne odgovara pretrazi.",
+    "pagePrevious": "Prethodna strana",
+    "pageNext": "Sljedeća strana",
     "open": "Otvorene utakmice"
   },
   "errors": {

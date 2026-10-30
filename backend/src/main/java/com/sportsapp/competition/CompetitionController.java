@@ -13,6 +13,7 @@ import com.sportsapp.competition.CompetitionDtos.CompetitionResponse;
 import com.sportsapp.competition.CompetitionDtos.CompetitionSummary;
 import com.sportsapp.competition.CompetitionDtos.CreateCompetitionRequest;
 import com.sportsapp.competition.CompetitionDtos.EntryRequest;
+import com.sportsapp.competition.CompetitionDtos.OpenCompetitions;
 import com.sportsapp.competition.CompetitionDtos.PatchCompetitionRequest;
 import com.sportsapp.competition.CompetitionDtos.RoundKickoffRequest;
 import jakarta.validation.Valid;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -60,8 +62,9 @@ public class CompetitionController {
   }
 
   @GetMapping("/open")
-  List<CompetitionSummary> open(@AuthenticationPrincipal Jwt jwt) {
-    return service.open(Auth.userId(jwt));
+  OpenCompetitions open(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "") String q,
+      @RequestParam(defaultValue = "0") int page) {
+    return service.open(Auth.userId(jwt), q, page);
   }
 
   @GetMapping("/{id}")

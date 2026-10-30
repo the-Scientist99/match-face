@@ -37,6 +37,10 @@
     "noRecent": "No matches played yet.",
     "competitions": "My competitions",
     "openCompetitions": "Competitions open to teams",
+    "searchCompetitions": "Search competitions",
+    "noCompetitionsFound": "No competitions match that search.",
+    "pagePrevious": "Previous page",
+    "pageNext": "Next page",
     "open": "Open matches"
   },
   "errors": {

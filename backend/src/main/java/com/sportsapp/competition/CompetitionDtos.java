@@ -66,4 +66,7 @@ public final class CompetitionDtos {
   public record BracketResponse(int rounds, List<BracketMatch> matches, TeamRef winner) {}
 
   public record CompetitionSummary(UUID id, String name, CompetitionType type, CompetitionStatus status, String imageUrl) {}
+
+  /** {@code page} counts from 0; {@code totalPages} is 0 when nothing matches. */
+  public record OpenCompetitions(List<CompetitionSummary> items, int page, int totalPages) {}
 }

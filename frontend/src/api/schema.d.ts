@@ -1174,6 +1174,13 @@ export interface components {
             status?: "DRAFT" | "ACTIVE";
             imageUrl?: string;
         };
+        OpenCompetitions: {
+            items?: components["schemas"]["CompetitionSummary"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -2428,7 +2435,10 @@ export interface operations {
     };
     open_1: {
         parameters: {
-            query?: never;
+            query?: {
+                q?: string;
+                page?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2441,7 +2451,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CompetitionSummary"][];
+                    "*/*": components["schemas"]["OpenCompetitions"];
                 };
             };
         };
